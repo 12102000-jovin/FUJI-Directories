@@ -67,7 +67,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         }
     }
 }
-
 ?>
 
 <form method="POST" class="d-none" id="addQADocumentForm" novalidate>
@@ -108,7 +107,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                     // Format the number with leading zeros (e.g., 0 -> R00, 9 -> R09, 10 -> R10)
                     $rev = "R" . str_pad($i, 2, "0", STR_PAD_LEFT);
 
-                    echo "<option value=\"$rev\">$rev</option>";
+                    // Check if the current value is R00 and set it as selected
+                    $selected = ($rev === 'R00') ? 'selected' : '';
+
+                    echo "<option value=\"$rev\" $selected>$rev</option>";
                 }
                 ?>
             </select>
@@ -221,9 +223,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 Please provide the approver.
             </div>
         </div>
+        <?php $today = date('Y-m-d'); ?>
         <div class="form-group col-md-6 mt-3">
             <label for="lastUpdated" class="fw-bold">Last Updated</label>
-            <input type="date" max="9999-12-31" name="lastUpdated" class="form-control" id="lastUpdated" required>
+            <input type="date" max="9999-12-31" name="lastUpdated" class="form-control" id="lastUpdated"
+                value="<?php echo $today; ?>" required>
             <div class="invalid-feedback">
                 Please provide the last updated date.
             </div>
@@ -238,7 +242,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                         style="color:#043f9d; border: 1px solid #043f9d">Yes</label>
 
                     <input type="radio" class="btn-check" name="iso9001" id="iso9001No" value="0" autocomplete="off"
-                        required>
+                        checked required>
                     <label class="btn btn-custom" for="iso9001No"
                         style="color:#043f9d; border: 1px solid #043f9d">No</label>
                 </div>
@@ -261,7 +265,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         <span id="constructedType"></span>
         <span id="constructedDocumentCode"></span>
     </div>
-
+    <p class="error-message alert alert-danger text-center p-1 d-none"
+        style="font-size: 1.5vh; width:100%;" id="result"></p>
     <div class="form-group col-md-12">
         <label for="department" class="fw-bold">Department</label>
         <select class="form-select" aria-label="department" name="department" id="selectedDepartment">
@@ -421,9 +426,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         });
 
         confirmDocumentNameBtn.addEventListener('click', function () {
-            addQADocumentForm.classList.remove("d-none");
-            QANameConstructionForm.classList.add("d-none");
-        })
+            document.getElementById('result').classList.remove("d-block");
+            document.getElementById('result').classList.add("d-none")
+
+            // Get the document name from the constructedQANameContainer
+            const qaDocument = constructedQANameContainer.textContent
+                .replace(/\s+/g, ''); // Remove all whitespace including newlines
+
+            // Check if the document name is not empty
+            if (!qaDocument) {
+                document.getElementById('result').innerHTML = "Please enter a document name.";
+                return;
+            }
+
+            fetch('../AJAXphp/check-qa-duplicate.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    qaDocument: qaDocument
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    // Log the server response for debugging
+                    console.log('Server Response:', data);
+
+                    // Handle the response from the server
+                    if (data.includes("Duplicate document found.")) {
+                        document.getElementById('result').innerHTML = data;
+                        document.getElementById('result').classList.remove("d-none");
+                        document.getElementById('result').classList.add("d-block");
+                    } else if (data.includes("No duplicate found.")) {
+                        addQADocumentForm.classList.remove("d-none");
+                        QANameConstructionForm.classList.add("d-none");
+                        document.getElementById('result').classList.remove("d-block");
+                        document.getElementById('result').classList.add("d-none");
+                        document.getElementById('result').innerHTML = ""; // Clear any previous messages
+                    } else {
+                        console.error('Unexpected response:', data);
+                        document.getElementById('result').innerHTML = "Unexpected response from the server.";
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    document.getElementById('result').innerHTML = "An error occurred while processing the request.";
+                });
+        });
+
 
         editDocumentNameButton.forEach(button => {
             button.addEventListener('click', function () {
