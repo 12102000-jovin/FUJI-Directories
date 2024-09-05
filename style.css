@@ -1,0 +1,39 @@
+* {
+  font-family: "Avenir", sans-serif;
+}
+
+/* ========================== Styling for Signature Color ========================== */
+.signature-color {
+  color: #043f9d;
+}
+
+/* ========================== Styling for Background ========================== */
+.signature-bg-color {
+  background-color: #043f9d;
+}
+
+.background-color {
+  background-color: #eef3f9;
+}
+
+/* ========================== Styling for Signature button ========================== */
+.signature-btn {
+  background-color: #043f9d;
+  color: white;
+  transition: 0.3s ease !important;
+}
+
+.signature-btn:hover {
+  background-color: #3665b1;
+  color: white;
+}
+
+/* ========================== White Background ========================== */
+.bg-white {
+  background-color: white;
+}
+
+/* ========================== Gray Background ========================== */
+.bg-gray {
+  background-color: #f4f5f6;
+}
