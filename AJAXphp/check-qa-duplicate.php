@@ -12,16 +12,17 @@ if ($conn->connect_error) {
 
 // Get the document name from the request
 $qaDocument = isset($_POST['qaDocument']) ? $_POST['qaDocument'] : '';
+$qaId = isset($_POST['qaId']) ? $_POST['qaId'] : '';
 
 // Prepare SQL statement to check for duplicates
-$check_document_sql = "SELECT COUNT(*) FROM quality_assurance WHERE qa_document = ?";
+$check_document_sql = "SELECT COUNT(*) FROM quality_assurance WHERE qa_document = ? AND qa_id != ?";
 $check_document_stmt = $conn->prepare($check_document_sql);
 if (!$check_document_stmt) {
     echo "Prepare failed: " . $conn->error;
     exit();
 }
 
-$check_document_stmt->bind_param("s", $qaDocument);
+$check_document_stmt->bind_param("si", $qaDocument, $qaId);
 $check_document_stmt->execute();
 $check_document_stmt->bind_result($document_count);
 $check_document_stmt->fetch();
@@ -31,4 +32,4 @@ $check_document_stmt->close();
 echo $document_count > 0 ? "Duplicate document found. " : "No duplicate found.";
 
 $conn->close();
-?>
+

@@ -86,6 +86,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
 ?>
 
 <form method="POST" id="editQADocumentForm" novalidate>
+    <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
+        id="duplicateErrorMessage"></p>
     <div class="row">
         <input type="hidden" name="qaIdToEdit" id="qaIdToEdit">
         <div class="form-group col-md-6">
@@ -236,7 +238,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="lastUpdatedToEdit" class="fw-bold">Last Updated</label>
-            <input type="date" max="9999-12-31" name="lastUpdatedToEdit" class="form-control" id="lastUpdatedToEdit" required>
+            <input type="date" max="9999-12-31" name="lastUpdatedToEdit" class="form-control" id="lastUpdatedToEdit"
+                required>
             <div class="invalid-feedback">
                 Please provide the last updated date.
             </div>
@@ -287,6 +290,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
         const iso9001YesToEdit = document.getElementById("iso9001YesToEdit");
         const iso9001NoToEdit = document.getElementById("iso9001NoToEdit");
         const iso9001InvalidFeedback = document.getElementById("iso9001InvalidFeedback");
+        const qaDocumentToEdit = document.getElementById("qaDocumentToEdit");
+        const qaIdToEdit = document.getElementById("qaIdToEdit");
+
 
         documentDescriptionToEdit.value = "";
 
@@ -302,34 +308,82 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
             }
         }
 
+        function checkDuplicateDocument() {
+            const documentName = qaDocumentToEdit.value.trim();
+            const qaId = qaIdToEdit.value.trim();
+            const duplicateErrorMessage = document.getElementById('duplicateErrorMessage');
+
+            console.log(duplicateErrorMessage);
+            duplicateErrorMessage.classList.add("d-block");
+
+            // Make an AJAX request to check for duplicates
+            return fetch('../AJAXphp/check-qa-duplicate.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    qaDocument: documentName,
+                    qaId: qaId
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    // Log the server response for debugging
+                    console.log('Server Response:', data);
+
+                    // Handle the response from the server
+                    if (data.includes("Duplicate document found.")) {
+                        duplicateErrorMessage.innerHTML = data;
+                        duplicateErrorMessage.classList.remove("d-none");
+                        duplicateErrorMessage.classList.add("d-block");
+                        return false; // Duplicate found
+                    } else if (data.includes("No duplicate found.")) {
+                        duplicateErrorMessage.classList.remove("d-block");
+                        duplicateErrorMessage.classList.add("d-none");
+                        duplicateErrorMessage.innerHTML = ""; // Clear any previous messages
+                        return true; // No duplicate
+                    } else {
+                        console.error('Unexpected response:', data);
+                        duplicateErrorMessage.innerHTML = "Unexpected response from the server.";
+                        return false; // Assume validation failure
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    duplicateErrorMessage.innerHTML = "An error occurred while processing the request.";
+                    return false; // Assume validation failure
+                });
+        }
+
         function validateForm() {
-            let isValid = true;
-
             // Check radio button selections
-            if (!checkISO9001RadioSelection()) {
-                isValid = false;
-            }
-
-            // Check if the form itself is valid (HTML5 validation)
-            if (!editQADocumentForm.checkValidity()) {
-                isValid = false;
-            }
-            return isValid;
+            const isISO9001Valid = checkISO9001RadioSelection();
+            return checkDuplicateDocument().then(isDuplicateValid => {
+                // Ensure both ISO9001 validation and duplicate check pass
+                return isISO9001Valid && isDuplicateValid;
+            });
         }
 
         editQADocumentForm.addEventListener('submit', function (event) {
-            // Check form validity
-            if (!validateForm()) {
-                event.preventDefault();
-                event.stopPropagation();
-                // Add was-validated class to trigger Bootstrap validation styles
-                editQADocumentForm.classList.add('was-validated');
-            } else {
-                editQADocumentForm.classList.remove('was-validated');
-            }
+            // Prevent default form submission
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Perform validation
+            validateForm().then(isValid => {
+                if (isValid) {
+                    // If form is valid, submit the form
+                    editQADocumentForm.submit();
+                } else {
+                    // If form is not valid, add was-validated class
+                    editQADocumentForm.classList.add('was-validated');
+                }
+            });
         }, false);
 
         iso9001YesToEdit.addEventListener('change', checkISO9001RadioSelection);
         iso9001NoToEdit.addEventListener('change', checkISO9001RadioSelection);
     });
+
 </script>

@@ -4,9 +4,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("../db_connect.php");
+require_once("../db_connect.php");
 
-$config = include ('../config.php');
+$config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -463,9 +463,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
 <div class="row-cols-1 row-cols-md-3">
     <div class="bg-white rounded col-12 col-md-12">
+
         <form method="POST" enctype="multipart/form-data" id="addEmployeeForm" class="needs-validation" novalidate>
             <div class="row">
+
+                <div class="container px-5">
+                    <p class="error-message alert alert-danger text-center d-none p-1" style="font-size: 1.5vh;"
+                        id="duplicateErrorMessage"></p>
+                </div>
+
                 <div class="col-12 col-lg-6 px-md-5">
+
                     <!-- ================ P E R S O N A L   D E T A I L S ================  -->
                     <div class="row">
                         <p class="signature-color fw-bold">Personal Details</p>
@@ -542,7 +550,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
                         <div class="form-group col-md-6 mt-3">
                             <label for="visaExpiryDate" class="fw-bold"><small>Visa Expiry Date</small></label>
-                            <input type="date" max="9999-12-31" name="visaExpiryDate" class="form-control" id="visaExpiryDate">
+                            <input type="date" max="9999-12-31" name="visaExpiryDate" class="form-control"
+                                id="visaExpiryDate">
                             <div class="invalid-feedback">
                                 Please provide a visa expiry date.
                             </div>
@@ -634,7 +643,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                         <p class="signature-color fw-bold">Employment Details</p>
                         <div class="form-group col-md-3">
                             <label for="employeeId" class="fw-bold"><small>Employee Id</small></label>
-                            <input type="number" min="0" class="form-control" id="employeeId" name="employeeId" required>
+                            <input type="number" min="0" class="form-control" id="employeeId" name="employeeId"
+                                required>
                             <div class="invalid-feedback">
                                 Please provide an employee ID.
                             </div>
@@ -642,7 +652,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
                         <div class="form-group col-md-5">
                             <label for="startDate" class="fw-bold mt-3 mt-md-0"><small>Date Hired</small></label>
-                            <input type="date" max="9999-12-31" class="form-control" id="startDate" name="startDate" required>
+                            <input type="date" max="9999-12-31" class="form-control" id="startDate" name="startDate"
+                                required>
                             <div class="invalid-feedback">
                                 Please provide a hire date.
                             </div>
@@ -773,8 +784,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <label for="annualSalary" class="fw-bold"><small>Annual Salary</small></label>
                             <div class="input-group">
                                 <span class="input-group-text rounded-start">$</span>
-                                <input type="number" min="0" step="any" class="form-control rounded-end" id="annualSalary"
-                                    name="annualSalary" aria-describedby="annualSalary">
+                                <input type="number" min="0" step="any" class="form-control rounded-end"
+                                    id="annualSalary" name="annualSalary" aria-describedby="annualSalary">
                                 <div class="invalid-feedback">
                                     Please provide the Annual Salary.
                                 </div>
@@ -858,7 +869,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                                     <label class="btn btn-sm btn-custom" for="higherEducationLoanProgrammeYes"
                                         style="color:#043f9d; border: 1px solid #043f9d">Yes</label>
                                     <input type="radio" class="btn-check" name="higherEducationLoanProgramme"
-                                        id="higherEducationLoanProgrammeNo" value="0" autocomplete="off" checked required>
+                                        id="higherEducationLoanProgrammeNo" value="0" autocomplete="off" checked
+                                        required>
                                     <label class="btn btn-sm btn-custom" for="higherEducationLoanProgrammeNo"
                                         style="color:#043f9d; border: 1px solid #043f9d">No</label>
                                 </div>
@@ -914,18 +926,53 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             const profileImageInvalidFeedback = document.getElementById("profileImageInvalidFeedback");
 
             const emailInput = document.getElementById("email");
+            const employeeIdInput = document.getElementById("employeeId");
+            const duplicateErrorMessage = document.getElementById('duplicateErrorMessage');
 
-            // To print the input element itself
-            console.log(`Here is the input element:`, emailInput);
+            // Function to check duplicate employee ID
+            async function checkDuplicateEmployeeId() {
+                const employeeId = employeeIdInput.value.trim();
+
+                try {
+                    const response = await fetch('../AJAXphp/check-emp-id-duplicate.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            employeeId: employeeId
+                        })
+                    });
+
+                    const data = await response.text();
+                    console.log('Server Response:', data);
+
+                    if (data.includes("Duplicate employee found.")) {
+                        duplicateErrorMessage.innerHTML = data;
+                        duplicateErrorMessage.classList.remove("d-none");
+                        duplicateErrorMessage.classList.add("d-block");
+                        return false; // Duplicate found
+                    } else if (data.includes("No duplicate found.")) {
+                        duplicateErrorMessage.classList.remove("d-block");
+                        duplicateErrorMessage.classList.add("d-none");
+                        duplicateErrorMessage.innerHTML = ""; // Clear any previous messages
+                        return true; // No duplicate
+                    } else {
+                        console.error('Unexpected response:', data);
+                        duplicateErrorMessage.innerHTML = "Unexpected response from the server.";
+                        return false; // Assume validation failure
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    duplicateErrorMessage.innerHTML = "An error occurred while processing the request.";
+                    return false; // Assume validation failure
+                }
+            }
 
             function checkEmailInput() {
-                // Get the email input value
                 const emailInputValue = emailInput.value;
-
-                // Regular expression for validating an email address
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                // Check if the email matches the pattern
                 if (emailPattern.test(emailInputValue)) {
                     console.log('Valid email address');
                     emailInput.classList.remove('is-invalid');
@@ -939,36 +986,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 }
             }
 
-
             function checkProfileImageInput() {
-                // Check if a file has been selected
                 if (profileImageInput.files.length === 0) {
-                    console.log("No file selected")
+                    console.log("No file selected");
                     profileImageInvalidFeedback.classList.remove("d-block");
                     profileImageInvalidFeedback.classList.add("d-none");
                     return true;
                 }
 
-                // Get the selected file
                 const file = profileImageInput.files[0];
                 const fileName = file.name.toLowerCase();
                 const allowedExtensions = ['jpg', 'jpeg', 'png'];
-
-                // Get the file extension
                 const fileExtension = fileName.split('.').pop();
 
-                // Check if the file extension is allowed
                 if (allowedExtensions.includes(fileExtension)) {
-                    console.log('File is valid')
+                    console.log('File is valid');
                     profileImageInvalidFeedback.classList.remove("d-block");
                     profileImageInvalidFeedback.classList.add("d-none");
                     profileImageInput.classList.remove('is-invalid');
                     profileImageInput.classList.add('is-valid');
-
                     return true;
-
                 } else {
-                    console.log('File is invalid')
+                    console.log('File is invalid');
                     profileImageInvalidFeedback.classList.remove("d-none");
                     profileImageInvalidFeedback.classList.add("d-block");
                     profileImageInput.classList.remove('is-valid');
@@ -976,7 +1015,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     return false;
                 }
             }
-
 
             function checkFinancialSupplementDebtRadioSelection() {
                 if (!financialSupplementDebtYes.checked && !financialSupplementDebtNo.checked) {
@@ -1002,22 +1040,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 }
             }
 
-            function validateForm() {
+            async function validateForm() {
                 let isValid = true;
 
-                // Check email input
+                // Check if the email is valid
                 if (!checkEmailInput()) {
                     isValid = false;
                 }
 
+                // Check if the profile image is valid
+                if (!checkProfileImageInput()) {
+                    isValid = false;
+                }
+
                 // Check radio button selections
-                if (!checkFinancialSupplementDebtRadioSelection() || !checkHigherEducationLoanProgrammeRadioSelection() || !checkProfileImageInput()) {
+                if (!checkFinancialSupplementDebtRadioSelection() || !checkHigherEducationLoanProgrammeRadioSelection()) {
+                    isValid = false;
+                }
+
+                // Check for duplicate employee ID
+                if (!(await checkDuplicateEmployeeId())) {
                     isValid = false;
                 }
 
                 // Check if the form itself is valid (HTML5 validation)
-
-                // Only check HTML5 validity if custom validation passes
                 if (isValid && !form.checkValidity()) {
                     isValid = false;
                 }
@@ -1025,23 +1071,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 return isValid;
             }
 
-            form.addEventListener('submit', function (event) {
+            form.addEventListener('submit', async function (event) {
+                // Prevent default form submission
+                event.preventDefault();
+                event.stopPropagation();
 
-                checkFinancialSupplementDebtRadioSelection();
-                checkHigherEducationLoanProgrammeRadioSelection();
-                checkEmailInput();
+                // Perform validation
+                const isValid = await validateForm();
 
-                // Ensure all validations are checked
-                if (!validateForm()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    form.classList.add('was-validated');
+                if (isValid) {
+                    // If form is valid, submit the form
+                    form.submit();
                 } else {
-                    form.classList.remove('was-validated');
+                    form.classList.add('was-validated');
                 }
             }, false);
 
-            // Add event listeners to both radio buttons for real-time validation
+            // Add event listeners to elements for real-time validation
             financialSupplementDebtYes.addEventListener('change', checkFinancialSupplementDebtRadioSelection);
             financialSupplementDebtNo.addEventListener('change', checkFinancialSupplementDebtRadioSelection);
             higherEducationLoanProgrammeYes.addEventListener('change', checkHigherEducationLoanProgrammeRadioSelection);
@@ -1049,6 +1095,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             emailInput.addEventListener('input', checkEmailInput);
             profileImageInput.addEventListener('change', checkProfileImageInput);
         });
+
     </script>
 
     <script>
@@ -1189,6 +1236,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
             // Initialize fields based on the currently selected option
             updateDepartmentFields();
+        })
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const employeeIdInput = document.getElementById("employeeId");
+
+            employeeIdInput.addEventListener('blur', function () {
+                console.log("clicked away");
+            })
         })
     </script>
 </div>

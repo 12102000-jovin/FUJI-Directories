@@ -265,8 +265,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         <span id="constructedType"></span>
         <span id="constructedDocumentCode"></span>
     </div>
-    <p class="error-message alert alert-danger text-center p-1 d-none"
-        style="font-size: 1.5vh; width:100%;" id="result"></p>
+    <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
+        id="result"></p>
     <div class="form-group col-md-12">
         <label for="department" class="fw-bold">Department</label>
         <select class="form-select" aria-label="department" name="department" id="selectedDepartment">
@@ -337,47 +337,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         const editDocumentNameButton = document.querySelectorAll(".editDocumentNameButton");
         const departmentToSubmit = document.getElementById("departmentToSubmit");
         const typeToSubmit = document.getElementById("typeToSubmit");
+        const iso9001Yes = document.getElementById("iso9001Yes");
+        const iso9001No = document.getElementById("iso9001No");
+        const iso9001InvalidFeedback = document.getElementById("iso9001InvalidFeedback");
+
+        const departmentMap = {
+            "Quality Assurance": "00-QA",
+            "Management": "01-MN",
+            "Estimating": "02-ES",
+            "Accounts": "03-AC",
+            "Projects": "04-PJ",
+            "Engineering": "05-EN",
+            "Electrical": "06-EL",
+            "Sheet Metal": "07-SM",
+            "Operations Support": "08-OS",
+            "Human Resources": "09-HR",
+            "Research & Development": "10-RD",
+            "Work, Health and Safety": "11-WH",
+            "Quality Control": "12-QC",
+            "Special Projects": "15-SP"
+        };
+
+        const typeMap = {
+            "CAPA": "-CP",
+            "External Documents": "-ED",
+            "Employee Record": "-ER",
+            "Form": "-FO",
+            "Internal Documents": "-ID",
+            "Process/Procedure": "-PR",
+            "Quiz": "-QZ",
+            "Policy": "-PO",
+            "Manuals": "-MA",
+            "Work Instruction": "-WI",
+            "Additional Duties": "-AD",
+            "Job Description": "-JD",
+            "Risk Assessment": "-RA"
+        };
 
         function updateFullyConstructedDocumentName() {
-            fullyConstructedDocumentName.value = constructedDocumentPrefix.textContent + constructedType.textContent + constructedDocumentCode.textContent;
+            const fullDocumentName = constructedDocumentPrefix.textContent + constructedType.textContent + constructedDocumentCode.textContent;
+            fullyConstructedDocumentName.value = fullDocumentName;
+            constructedQANameContainer.textContent = fullDocumentName; // Update the container as well
             departmentToSubmit.value = department.options[department.selectedIndex].text;
             typeToSubmit.value = type.options[type.selectedIndex].text;
         }
 
+
         department.addEventListener('change', function () {
             const selectedDepartment = department.options[department.selectedIndex].text;
-            constructedDocumentPrefix.classList.remove("d-none");
-            constructedDocumentPrefix.classList.add("d-block");
-            if (selectedDepartment === "Quality Assurance") {
-                constructedDocumentPrefix.textContent = "00-QA";
-            } else if (selectedDepartment === "Management") {
-                constructedDocumentPrefix.textContent = "01-MN";
-            } else if (selectedDepartment === "Estimating") {
-                constructedDocumentPrefix.textContent = "02-ES";
-            } else if (selectedDepartment === "Accounts") {
-                constructedDocumentPrefix.textContent = "03-AC";
-            } else if (selectedDepartment === "Projects") {
-                constructedDocumentPrefix.textContent = "04-PJ";
-            } else if (selectedDepartment === "Engineering") {
-                constructedDocumentPrefix.textContent = "05-EN";
-            } else if (selectedDepartment === "Electrical") {
-                constructedDocumentPrefix.textContent = "06-EL";
-            } else if (selectedDepartment === "Sheet Metal") {
-                constructedDocumentPrefix.textContent = "07-SM";
-            } else if (selectedDepartment === "Operations Support") {
-                constructedDocumentPrefix.textContent = "08-OS";
-            } else if (selectedDepartment === "Human Resources") {
-                constructedDocumentPrefix.textContent = "09-HR";
-            } else if (selectedDepartment === "Research & Development") {
-                constructedDocumentPrefix.textContent = "10-RD";
-            } else if (selectedDepartment === "Work, Health and Safety") {
-                constructedDocumentPrefix.textContent = "11-WH";
-            } else if (selectedDepartment === "Quality Control") {
-                constructedDocumentPrefix.textContent = "12-QC";
-            } else if (selectedDepartment === "Special Projects") {
-                constructedDocumentPrefix.textContent = "15-SP";
-            }
-
+            constructedDocumentPrefix.textContent = departmentMap[selectedDepartment] || "";
             constructedQANameContainer.classList.remove("d-none");
             selectTypeFormGroup.classList.remove("d-none");
             selectTypeFormGroup.classList.add("d-block");
@@ -386,54 +394,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
 
         type.addEventListener('change', function () {
             const selectedType = type.options[type.selectedIndex].text;
-            if (selectedType === "CAPA") {
-                constructedType.textContent = "-CP";
-            } else if (selectedType === "External Documents") {
-                constructedType.textContent = "-ED";
-            } else if (selectedType === "Employee Record") {
-                constructedType.textContent = "-ER";
-            } else if (selectedType === "Form") {
-                constructedType.textContent = "-FO";
-            } else if (selectedType === "Internal Documents") {
-                constructedType.textContent = "-ID";
-            } else if (selectedType === "Process/Procedure") {
-                constructedType.textContent = "-PR";
-            } else if (selectedType === "Quiz") {
-                constructedType.textContent = "-QZ";
-            } else if (selectedType === "Policy") {
-                constructedType.textContent = "-PO";
-            } else if (selectedType === "Manuals") {
-                constructedType.textContent = "-MA";
-            } else if (selectedType === "Work Instruction") {
-                constructedType.textContent = "-WI";
-            } else if (selectedType === "Additional Duties") {
-                constructedType.textContent = "-AD";
-            } else if (selectedType === "Job Description") {
-                constructedType.textContent = "-JD";
-            } else if (selectedType === "Risk Assessment") {
-                constructedType.textContent = "-RA";
-            }
-
+            constructedType.textContent = typeMap[selectedType] || "";
             documentCodeFormGroup.classList.remove("d-none");
             documentCodeFormGroup.classList.add("d-block");
             updateFullyConstructedDocumentName();
         });
 
         documentCode.addEventListener('input', function () {
-            constructedDocumentCode.textContent = "-" + documentCode.value;
+            constructedDocumentCode.textContent = "-" + documentCode.value.trim();
             confirmDocumentNameBtn.classList.remove("d-none");
             updateFullyConstructedDocumentName();
         });
 
         confirmDocumentNameBtn.addEventListener('click', function () {
-            document.getElementById('result').classList.remove("d-block");
-            document.getElementById('result').classList.add("d-none")
+            document.getElementById('result').classList.add("d-none");
+            const qaDocument = constructedQANameContainer.textContent.replace(/\s+/g, '');
 
-            // Get the document name from the constructedQANameContainer
-            const qaDocument = constructedQANameContainer.textContent
-                .replace(/\s+/g, ''); // Remove all whitespace including newlines
-
-            // Check if the document name is not empty
             if (!qaDocument) {
                 document.getElementById('result').innerHTML = "Please enter a document name.";
                 return;
@@ -441,19 +417,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
 
             fetch('../AJAXphp/check-qa-duplicate.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    qaDocument: qaDocument
-                })
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ qaDocument: qaDocument })
             })
                 .then(response => response.text())
                 .then(data => {
-                    // Log the server response for debugging
                     console.log('Server Response:', data);
-
-                    // Handle the response from the server
                     if (data.includes("Duplicate document found.")) {
                         document.getElementById('result').innerHTML = data;
                         document.getElementById('result').classList.remove("d-none");
@@ -461,9 +430,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                     } else if (data.includes("No duplicate found.")) {
                         addQADocumentForm.classList.remove("d-none");
                         QANameConstructionForm.classList.add("d-none");
-                        document.getElementById('result').classList.remove("d-block");
-                        document.getElementById('result').classList.add("d-none");
-                        document.getElementById('result').innerHTML = ""; // Clear any previous messages
+                        document.getElementById('result').innerHTML = "";
                     } else {
                         console.error('Unexpected response:', data);
                         document.getElementById('result').innerHTML = "Unexpected response from the server.";
@@ -475,23 +442,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 });
         });
 
-
         editDocumentNameButton.forEach(button => {
             button.addEventListener('click', function () {
                 addQADocumentForm.classList.add("d-none");
                 QANameConstructionForm.classList.remove("d-none");
-            })
-        })
-    });
-</script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const addQADocumentForm = document.getElementById("addQADocumentForm");
-        const documentDescription = document.getElementById("documentDescription");
-        const iso9001Yes = document.getElementById("iso9001Yes");
-        const iso9001No = document.getElementById("iso9001No");
-        const iso9001InvalidFeedback = document.getElementById("iso9001InvalidFeedback");
+            });
+        });
 
         documentDescription.value = "";
 
@@ -499,23 +455,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             if (!iso9001Yes.checked && !iso9001No.checked) {
                 iso9001InvalidFeedback.classList.remove("d-none");
                 iso9001InvalidFeedback.classList.add("d-block");
-                return false; // Indicates validation failure
+                return false;
             } else {
-                iso9001InvalidFeedback.classList.remove("d-block");
                 iso9001InvalidFeedback.classList.add("d-none");
-                return true; // Indicates validation success
+                return true;
             }
         }
 
         function validateForm() {
             let isValid = true;
 
-            // Check radio button selections
             if (!checkISO9001RadioSelection()) {
                 isValid = false;
             }
 
-            // Check if the form itself is valid (HTML5 validation)
             if (!addQADocumentForm.checkValidity()) {
                 isValid = false;
             }
@@ -524,11 +477,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         }
 
         addQADocumentForm.addEventListener('submit', function (event) {
-            // Check form validity
             if (!validateForm()) {
                 event.preventDefault();
                 event.stopPropagation();
-                // Add was-validated class to trigger Bootstrap validation styles
                 addQADocumentForm.classList.add('was-validated');
             } else {
                 addQADocumentForm.classList.remove('was-validated');
@@ -538,4 +489,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             iso9001No.addEventListener('change', checkISO9001RadioSelection);
         }, false);
     });
+
 </script>
