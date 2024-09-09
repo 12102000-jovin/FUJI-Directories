@@ -7,6 +7,10 @@ error_reporting(E_ALL);
 require_once ("../db_connect.php");
 require_once ("../status_check.php");
 
+$folder_name = "Quality Assurances";
+
+require_once("../group_role_check.php");
+
 $config = include ('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];

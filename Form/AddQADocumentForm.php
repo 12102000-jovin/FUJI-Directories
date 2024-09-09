@@ -197,7 +197,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 <option value="Pending approval">Pending approval</option>
                 <option value="To be created">To be created</option>
                 <option value="Revision/Creation requested">Revision/Creation requested</option>
-                <option value="N/A">N/A</option>
             </select>
             <div class="invalid-feedback">
                 Please provide a status.
@@ -240,7 +239,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                         required>
                     <label class="btn btn-custom" for="iso9001Yes"
                         style="color:#043f9d; border: 1px solid #043f9d">Yes</label>
-
                     <input type="radio" class="btn-check" name="iso9001" id="iso9001No" value="0" autocomplete="off"
                         checked required>
                     <label class="btn btn-custom" for="iso9001No"
@@ -284,7 +282,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <option value="Research & Development">Research & Development</option>
             <option value="Special Projects">Special Projects</option>
             <option value="Work, Health and Safety">Work, Health and Safety</option>
-            <option value="N/A">N/A</option>
         </select>
     </div>
 
@@ -397,7 +394,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             constructedType.textContent = typeMap[selectedType] || "";
             documentCodeFormGroup.classList.remove("d-none");
             documentCodeFormGroup.classList.add("d-block");
-            updateFullyConstructedDocumentName();
+            updateFullyConstructedDocumentName();xww
         });
 
         documentCode.addEventListener('input', function () {
@@ -489,5 +486,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             iso9001No.addEventListener('change', checkISO9001RadioSelection);
         }, false);
     });
+</script>
+<script>
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Optional: Prevents default behavior of Enter key (like form submission)
 
+            // Get the div element
+            var confirmButtonDiv = document.getElementById('confirmDocumentNameBtn');
+
+            // Check if the div does not contain the 'd-none' class
+            if (!confirmButtonDiv.classList.contains('d-none')) {
+                // Find the button inside the div and simulate a click
+                var button = confirmButtonDiv.querySelector('button');
+                if (button) {
+                    button.click();
+                }
+            }
+        }
+    });
 </script>

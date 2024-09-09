@@ -4,13 +4,13 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require ("../db_connect.php");
-require_once ("../status_check.php");
+require("../db_connect.php");
+require_once("../status_check.php");
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
 $role = $_SESSION['role'] ?? '';
 
-$config = include ('../config.php');
+$config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -31,7 +31,7 @@ $total_employees_count = 0;
 foreach ($departments as $department_id => $department_name) {
     $count_sql = "SELECT COUNT(*) AS department_count FROM employees WHERE department='$department_id'";
     $count_result = $conn->query($count_sql);
-    
+
     if ($count_result) {
         $row = $count_result->fetch_assoc();
         $department_counts[$department_name] = $row['department_count'];
@@ -396,7 +396,9 @@ $folders_result->free();
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <nav aria-label="breadcrumb ">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="?menu=home-index">Home</a></li>
+                        <li class="breadcrumb-item"><a
+                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
+                        </li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">HR
                             Dashboard</li>
                     </ol>
@@ -426,7 +428,8 @@ $folders_result->free();
                                         <tr>
                                             <td class="fw-bold" style="color:#043f9d">Total Employees</td>
                                             <td class="fw-bold" style="color:#043f9d">
-                                                <?php echo $total_employees_count ?></td>
+                                                <?php echo $total_employees_count ?>
+                                            </td>
                                         </tr>
                                     </tbody>
 

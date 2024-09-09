@@ -4,10 +4,14 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("../db_connect.php");
-require_once ("../status_check.php");
+require_once("../db_connect.php");
+require_once("../status_check.php");
 
-$config = include ('../config.php');
+$folder_name = "Human Resources";
+
+require_once("../group_role_check.php");
+
+$config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -693,7 +697,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
 </head>
 
 <body class="background-color">
-    <?php require_once ("../Menu/DropdownNavMenu.php") ?>
+    <?php require_once("../Menu/DropdownNavMenu.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <nav aria-label="breadcrumb" class="mb-3 hide-print">
             <ol class="breadcrumb m-0">
@@ -1299,6 +1303,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                     <div class="card bg-white border-0 rounded shadow-lg mt-4">
                         <div class="p-3">
                             <p class="fw-bold signature-color">Files</p>
+                            <!-- 00 - Employee Documents -->
                             <div class="d-flex justify-content-center">
                                 <div class="row col-12 p-2 background-color rounded shadow-sm">
                                     <div class="col-auto d-flex align-items-center">
@@ -1342,6 +1347,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     </div>
                                 </div>
                             </div>
+                            <!-- 01 - Induction and Training Documents-->
+                            <div class="d-flex justify-content-center mt-3">
+                                <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                    <div class="col-auto d-flex align-items-center">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip"
+                                                data-bs-placement="top" title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                    </a>
+                                                </div>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex justify-content-start">
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                        01 - Induction and Training Documents
+                                                    </a>
+                                                </div>
+                                                <span>
+                                                    <div class="d-flex align-items-center">
+                                                        <small id="pay-review-directory-path" class="me-1 text-break"
+                                                            style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
+                                                        <button id="copy-button" class="btn rounded btn-sm"
+                                                            onclick="copyDirectoryPath(this)"><i
+                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                            <small class="text-primary">Copy</small>
+                                                        </button>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 02 - Resume, ID, and Qualification -->
                             <div class="d-flex justify-content-center mt-3">
                                 <div class="row col-12 p-2 background-color rounded shadow-sm">
                                     <div class="col-auto d-flex align-items-center">
@@ -1386,6 +1436,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     </div>
                                 </div>
                             </div>
+                            <!-- 03 - Accounts -->
+                            <div class="d-flex justify-content-center mt-3">
+                                <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                    <div class="col-auto d-flex align-items-center">
+                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Open Folder">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                <form method="POST">
+                                                    <input type="hidden" name="annualLeaveFolder">
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                    </a>
+                                                </form>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex justify-content-start">
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                        03 - Accounts
+                                                    </a>
+                                                </div>
+                                                <span>
+                                                    <div class="d-flex align-items-center">
+                                                        <small id="annual-leaves-directory-path" class="me-1 text-break"
+                                                            style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
+                                                        <button id="copy-button-annual" class="btn rounded btn-sm"
+                                                            onclick="copyDirectoryPath(this)"><i
+                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                            <small class="text-primary">Copy</small>
+                                                        </button>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 04 - Leave -->
                             <div class="d-flex justify-content-center mt-3">
                                 <div class="row col-12 p-2 background-color rounded shadow-sm">
                                     <div class="col-auto d-flex align-items-center">
@@ -1415,6 +1511,90 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
+                                                        <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                            onclick="copyDirectoryPath(this)"><i
+                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                            <small class="text-primary">Copy</small>
+                                                        </button>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 05 - HR Actions -->
+                            <div class="d-flex justify-content-center mt-3">
+                                <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                    <div class="col-auto d-flex align-items-center">
+                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Open Folder">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
+                                                    target="_blank"
+                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                        class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                </a>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex justify-content-start">
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                        05 - HR Actions
+                                                    </a>
+                                                </div>
+                                                <span>
+                                                    <div class="d-flex align-items-center">
+                                                        <small id="directory-path" class="me-1 text-break"
+                                                            style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
+                                                        <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                            onclick="copyDirectoryPath(this)"><i
+                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                            <small class="text-primary">Copy</small>
+                                                        </button>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 06 - Work Compensation -->
+                            <div class="d-flex justify-content-center mt-3">
+                                <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                    <div class="col-auto d-flex align-items-center">
+                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Open Folder">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
+                                                    target="_blank"
+                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                        class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                </a>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex justify-content-start">
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                        06 - Work Compensation
+                                                    </a>
+                                                </div>
+                                                <span>
+                                                    <div class="d-flex align-items-center">
+                                                        <small id="directory-path" class="me-1 text-break"
+                                                            style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
                                                         <button id="copy-button-policies" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1523,7 +1703,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                                 <td class="align-middle col-md-6">
                                                                     <span
                                                                         class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
-                                                                    <input type="date" max="9999-12-31" class="form-control edit-mode d-none mx-auto"
+                                                                    <input type="date" max="9999-12-31"
+                                                                        class="form-control edit-mode d-none mx-auto"
                                                                         name="editDate"
                                                                         value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
                                                                         style="width: 80%">
@@ -1585,9 +1766,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <label for="newWage" class="form-label fw-bold">New Wage</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text">$</span>
-                                                        <input type="number" min="0" step="any" class="form-control rounded-end"
-                                                            id="newWage" name="newWage" placeholder="Enter new wage"
-                                                            required>
+                                                        <input type="number" min="0" step="any"
+                                                            class="form-control rounded-end" id="newWage" name="newWage"
+                                                            placeholder="Enter new wage" required>
                                                         <div class="invalid-feedback">
                                                             Please provide new wage amount.
                                                         </div>
@@ -1598,8 +1779,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                 <div class="col-6">
                                                     <label for="updateWageDate" class="form-label fw-bold">Update
                                                         Date</label>
-                                                    <input type="date" max="9999-12-31" class="form-control" id="updateWageDate"
-                                                        name="updateWageDate" value="<?php echo date('Y-m-d'); ?>" required>
+                                                    <input type="date" max="9999-12-31" class="form-control"
+                                                        id="updateWageDate" name="updateWageDate"
+                                                        value="<?php echo date('Y-m-d'); ?>" required>
                                                     <div class="invalid-feedback">
                                                         Please provide the date of the wage update.
                                                     </div>
@@ -1648,7 +1830,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                                 <td class="align-middle col-md-6">
                                                                     <span
                                                                         class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
-                                                                    <input type="date" max="9999-12-31" class="form-control edit-mode d-none mx-auto"
+                                                                    <input type="date" max="9999-12-31"
+                                                                        class="form-control edit-mode d-none mx-auto"
                                                                         name="editSalaryDate"
                                                                         value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
                                                                         style="width: 80%">
@@ -1708,9 +1891,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <label for="newSalary" class="form-label fw-bold">New Salary</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text">$</span>
-                                                        <input type="number" min="0" step="any" class="form-control rounded-end"
-                                                            id="newSalary" name="newSalary" placeholder="Enter new salary"
-                                                            required>
+                                                        <input type="number" min="0" step="any"
+                                                            class="form-control rounded-end" id="newSalary" name="newSalary"
+                                                            placeholder="Enter new salary" required>
                                                         <div class="invalid-feedback">
                                                             Please provide new salary amount.
                                                         </div>
@@ -1721,9 +1904,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                 <div class="col-6">
                                                     <label for="updateSalaryDate" class="form-label fw-bold">Update
                                                         Date</label>
-                                                    <input type="date" max="9999-12-31" class="form-control" id="updateSalaryDate"
-                                                        name="updateSalaryDate" value="<?php echo date('Y-m-d'); ?>"
-                                                        required>
+                                                    <input type="date" max="9999-12-31" class="form-control"
+                                                        id="updateSalaryDate" name="updateSalaryDate"
+                                                        value="<?php echo date('Y-m-d'); ?>" required>
                                                     <div class="invalid-feedback">
                                                         Please provide the date of the salary update.
                                                     </div>
@@ -1797,7 +1980,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                         </div>
                     </div>
                     <!-- ================== Edit Profile Modal ================== -->
-                    <?php require_once ("../Form/EditEmployeeDetailsForm.php") ?>
+                    <?php require_once("../Form/EditEmployeeDetailsForm.php") ?>
 
                     <!-- ================== Add Policies Modal ================== -->
                     <div class="modal fade" id="addPoliciesModal" tabindex="-1" aria-labelledby="addPoliciesModalLabel"
@@ -1888,7 +2071,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <input type="hidden" name="reviewType" value="First Month Review" />
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
-                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate" name="reviewDate">
+                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                    name="reviewDate">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -1950,7 +2134,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <input type="hidden" name="reviewType" value="Third Month Review" />
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
-                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate" name="reviewDate">
+                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                    name="reviewDate">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2012,7 +2197,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <input type="hidden" name="reviewType" value="Sixth Month Review" />
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
-                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate" name="reviewDate">
+                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                    name="reviewDate">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2073,7 +2259,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <input type="hidden" name="reviewType" value="Ninth Month Review" />
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
-                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate" name="reviewDate">
+                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                    name="reviewDate">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2096,7 +2283,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                     </div>
                 </div>
 
-                <?php require_once ("../logout.php") ?>
+                <?php require_once("../logout.php") ?>
             </div>
             <?php
                 }

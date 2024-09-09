@@ -4,13 +4,13 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("./../db_connect.php");
+require_once("./../db_connect.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// Get user's role from login session
+// Get user's employee id from login session
 $employeeId = $_SESSION['employee_id'];
 
 // SQL Query to retrieve users details
@@ -34,7 +34,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username'])) {
     $employeeId = $_POST["employeeId"];
     $username = $_POST['username'];
     $password = $_POST['password'];
-    $role = $_POST['role'];
 
     // Check if the username already exists in the users table
     $check_existing_username_sql = "SELECT COUNT(*) AS count FROM users WHERE username = ?";
@@ -57,9 +56,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username'])) {
             $error_message = "Error: User with employee ID $employeeId already exists.";
         } else {
             // Proceed with inserting the new user
-            $add_user_sql = "INSERT INTO users (employee_id, username, password, role) VALUES (?,?,?,?)";
+            $add_user_sql = "INSERT INTO users (employee_id, username, password) VALUES (?,?,?)";
             $add_user_result = $conn->prepare($add_user_sql);
-            $add_user_result->bind_param("ssss", $employeeId, $username, $password, $role);
+            $add_user_result->bind_param("sss", $employeeId, $username, $password);
 
             // Execute the prepared statement 
             if ($add_user_result->execute()) {
@@ -77,12 +76,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToEdit'])) 
     $employeeIdToEdit = $_POST['employeeIdToEdit'];
     $editUsername = $_POST['editUsername'];
     $editPassword = $_POST['editPassword'];
-    $editRole = $_POST['editRole'];
 
-
-    $edit_user_sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE employee_id = ?";
+    $edit_user_sql = "UPDATE users SET username = ?, password = ? WHERE employee_id = ?";
     $edit_user_result = $conn->prepare($edit_user_sql);
-    $edit_user_result->bind_param("sssi", $editUsername, $editPassword, $editRole, $employeeIdToEdit);
+    $edit_user_result->bind_param("ssi", $editUsername, $editPassword, $employeeIdToEdit);
 
     // Execute prepared statement
     if ($edit_user_result->execute()) {
@@ -427,7 +424,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                 <form method="POST" id="addUserForm" novalidate>
                     <div class="modal-body">
                         <div class="row">
-                            <div class="form-group col-md-6">
+                            <div class="form-group col-md-12">
                                 <label for="employeeId" class="fw-bold">Employee</label>
                                 <select name="employeeId" aria-label="employeeId" class="form-select" id="employeeId"
                                     required>
@@ -440,17 +437,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide an employee.
-                                </div>
-                            </div>
-                            <div class="form-group col-md-6 mt-2 mt-md-0">
-                                <label for="role" class="fw-bold">Role</label>
-                                <select name="role" aria-label="role" class="form-select" id="role" required>
-                                    <option disabled selected hidden></option>
-                                    <option value="general"> General</option>
-                                    <option value="admin"> Admin</option>
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please provide a role.
                                 </div>
                             </div>
                             <div class="form-group col-md-6 mt-3">
@@ -507,23 +493,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
 
                         <div class="form-group mt-4">
                             <label for="editPassword" class="fw-bold">Password</label>
-                            <input id="editPassword" name="editPassword" class="form-control" required/>
+                            <input id="editPassword" name="editPassword" class="form-control" required />
                             <div class="invalid-feedback">
                                 Please provide a password.
                             </div>
                         </div>
-                        <div class="form-group mt-4">
-                            <label for="editRole" class="fw-bold">Role</label>
-                            <select class="form-select" aria-label="editRole" name="editRole" id="editRole" required>
-                                <option disabled selected hidden>Select Role</option>
-                                <option value="general">General</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Please provide a role.
-                            </div>
-                        </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -597,7 +571,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     var password = button.getAttribute('data-password');
                     var firstName = button.getAttribute('data-first-name');
                     var lastName = button.getAttribute('data-last-name');
-                    var role = button.getAttribute('data-role');
 
                     // Set the text content of the span in the edit user modal
                     document.querySelector('#editUserModal #editFirstName').textContent = firstName;
@@ -617,9 +590,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     // Prepopulate the user username
                     document.querySelector('#editUserModal #editPassword').value = password;
 
-                    console.log(role);
-
-                    document.getElementById('editRole').value = role;
                     // Show the modal
                     editUserModal.show();
                 });
@@ -693,10 +663,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
         });
     </script>
 
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 </body>
 
 </html>
-

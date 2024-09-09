@@ -4,9 +4,9 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("./../db_connect.php");
+require_once("./../db_connect.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -21,13 +21,14 @@ $users_result = $conn->query($users_sql);
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['selectedUsers'])) {
     $selectedUsers = $_POST['selectedUsers'];
     $groupId = $_POST['group_id'];
+    $role = isset($_POST['role']) && $_POST['role'] === 'admin' ? 'admin' : 'general';
 
     // Iterate over the array of selected user IDs
     foreach ($selectedUsers as $userId) {
         // Query to add users to group 
-        $add_member_to_group_sql = "INSERT INTO users_groups (user_id, group_id) VALUES (?, ?)";
+        $add_member_to_group_sql = "INSERT INTO users_groups (user_id, group_id, `role`) VALUES (?, ?, ?)";
         $add_member_to_group_result = $conn->prepare($add_member_to_group_sql);
-        $add_member_to_group_result->bind_param("ii", $userId, $groupId);
+        $add_member_to_group_result->bind_param("iis", $userId, $groupId, $role);
         $add_member_to_group_result->execute();
     }
 }
@@ -193,7 +194,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
     <div class="container-fluid">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a></li>
+                <li class="breadcrumb-item"><a
+                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
+                </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Groups</li>
             </ol>
         </nav>
@@ -293,13 +296,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                             </button>
                         </div>
                         <div class="col-12 col-md-4 mb-3 mb-md-0">
-                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-users.php" class="btn signature-btn p-3 w-100">
+                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-users.php"
+                                class="btn signature-btn p-3 w-100">
                                 <i class="fa-solid fa-user me-1 fa-lg signature-color"></i>
                                 <span class="signature-color fw-bold">Manage Users</span>
                             </a>
                         </div>
                         <div class="col-12 col-md-4">
-                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-folders.php" class="btn signature-btn p-3 w-100">
+                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-folders.php"
+                                class="btn signature-btn p-3 w-100">
                                 <i class="fa-solid fa-folder me-1 fa-lg text-warning"></i>
                                 <span class="text-warning fw-bold">Manage Folders</span>
                             </a>
@@ -462,7 +467,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                             </div>
                             <div class="mt-4 p-3 background-color rounded-3 shadow-lg"
                                 id="selectedUsersSection<?= $group_id ?>" style="display: none;">
-                                <p class="mb-1 signature-color fw-bold">Selected Users</p>
+                                <div class="d-flex justify-content-between">
+                                    <p class="mb-1 signature-color fw-bold">Selected Users</p>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="role" name="role" value="admin">
+                                        <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm" for="role"> Admin </label>
+                                    </div>
+
+                                </div>
                                 <ul id="selectedUsersList<?= $group_id ?>" class="list-group"></ul>
                             </div>
                             <div class="d-flex justify-content-center">

@@ -55,7 +55,6 @@ $folders_result = $conn->query($folders_sql);
             top: 0;
             z-index: 1000;
             background-color: white;
-           
         }
     </style>
 </head>
