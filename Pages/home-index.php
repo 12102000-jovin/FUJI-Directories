@@ -7,6 +7,8 @@ $config = include ('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
+require_once ("../system_role_check.php");
+
 // SQL Query to get the folders
 $folders_sql = "SELECT DISTINCT f.*
 FROM folders f

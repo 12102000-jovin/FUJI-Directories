@@ -10,7 +10,7 @@ $config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// Get user's employee id from login session
+// Get user's role from login session
 $employeeId = $_SESSION['employee_id'];
 
 // SQL Query to retrieve users details
@@ -34,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username'])) {
     $employeeId = $_POST["employeeId"];
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $role = $_POST['role'];
 
     // Check if the username already exists in the users table
     $check_existing_username_sql = "SELECT COUNT(*) AS count FROM users WHERE username = ?";
@@ -56,9 +57,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username'])) {
             $error_message = "Error: User with employee ID $employeeId already exists.";
         } else {
             // Proceed with inserting the new user
-            $add_user_sql = "INSERT INTO users (employee_id, username, password) VALUES (?,?,?)";
+            $add_user_sql = "INSERT INTO users (employee_id, username, password, role) VALUES (?,?,?,?)";
             $add_user_result = $conn->prepare($add_user_sql);
-            $add_user_result->bind_param("sss", $employeeId, $username, $password);
+            $add_user_result->bind_param("ssss", $employeeId, $username, $password, $role);
 
             // Execute the prepared statement 
             if ($add_user_result->execute()) {
@@ -76,10 +77,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToEdit'])) 
     $employeeIdToEdit = $_POST['employeeIdToEdit'];
     $editUsername = $_POST['editUsername'];
     $editPassword = $_POST['editPassword'];
+    $editRole = $_POST['editRole'];
 
-    $edit_user_sql = "UPDATE users SET username = ?, password = ? WHERE employee_id = ?";
+
+    $edit_user_sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE employee_id = ?";
     $edit_user_result = $conn->prepare($edit_user_sql);
-    $edit_user_result->bind_param("ssi", $editUsername, $editPassword, $employeeIdToEdit);
+    $edit_user_result->bind_param("sssi", $editUsername, $editPassword, $editRole, $employeeIdToEdit);
 
     // Execute prepared statement
     if ($edit_user_result->execute()) {
@@ -339,7 +342,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
     $employees_result->data_seek(0);
     while ($employee_row = $employees_result->fetch_assoc()) {
         $employee_id = $employee_row['employee_id'];
-        $employee_group_access_sql = $employee_group_access_sql = "SELECT DISTINCT `groups`.group_name, folders.folder_name, `groups`.group_id, folders.folder_id
+        $employee_group_access_sql = $employee_group_access_sql = "SELECT DISTINCT `groups`.group_name, folders.folder_name, `groups`.group_id, folders.folder_id, users_groups.role
             FROM `groups`
             JOIN groups_folders ON `groups`.group_id = groups_folders.group_id
             JOIN folders ON folders.folder_id = groups_folders.folder_id
@@ -365,7 +368,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             $current_group_id = null;
 
                             // Initialize arrays to store unique group names and folder names
-                            $unique_group_names = [];
+                            $unique_groups = [];
                             $unique_folders = [];
 
                             // Fetch all rows from the result set
@@ -374,37 +377,71 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 $group_name = htmlspecialchars($row['group_name']);
                                 $folder_id = htmlspecialchars($row['folder_id']);
                                 $folder_name = htmlspecialchars($row['folder_name']);
+                                $role = htmlspecialchars($row['role']);
 
-                                // Collect unique group names
-                                if (!isset($unique_group_names[$group_id])) {
-                                    $unique_group_names[$group_id] = $group_name;
+                                // Collect unique group names and associated roles
+                                if (!isset($unique_groups[$group_id])) {
+                                    $unique_groups[$group_id] = [
+                                        'name' => $group_name,
+                                        'role' => $role
+                                    ];
                                 }
 
                                 // Collect unique folder names
-                                $unique_folders[$folder_id] = $folder_name;
+                                if (!isset($unique_folders[$folder_id])) {
+                                    $unique_folders[$folder_id] = $folder_name;
+                                }
                             }
 
-                            // Output unique group names
-                            if (!empty($unique_group_names)) {
+                            // Output unique group names and their roles
+                            if (!empty($unique_groups)) {
                                 echo "<strong class='signature-color'>Groups:</strong>";
-                                echo "<div class='mb-3'> </div>";
-                                foreach ($unique_group_names as $group_id => $group_name) {
-                                    echo "<p>$group_name</p>";
+                                echo "<div class='mb-3'>";
+                                echo "<div class='table-responsive rounded-3 shadow-lg bg-light m-0'>";
+                                echo "<table class='table table-hover mb-0 pb-0'>";
+                                echo "<thead>
+                                        <tr> 
+                                            <th class='col-6 text-center'>Group</th>
+                                            <th class='col-6 text-center'>Role</th>
+                                        </tr>
+                                    </thead>";
+                                // Table body
+                                echo "<tbody>";
+                                foreach ($unique_groups as $group_id => $group_data) {
+                                    echo "<tr>
+                                        <td class='py-2'>{$group_data['name']}</td>
+                                        <td class='text-center py-2'>
+                                            <span class='badge rounded-pill text-bg-danger'>{$group_data['role']}</span>
+                                        </td>
+                                    </tr>";
                                 }
-                                echo "<hr>";
+                                echo "</tbody>";
+                                echo "</table>";
+                                echo "</div>";
+                                echo "</div>";
                             }
 
                             // Output unique folder names
                             if (!empty($unique_folders)) {
-                                echo "<strong class='signature-color'>Folders:</strong><br>";
-                                echo "<div class='mb-3'> </div>";
+                                echo "<strong class='signature-color'>Folders:</strong>";
+                                echo "<div class='mb-3'>";
+                                echo "<div class='table-responsive rounded-3 shadow-lg'>";
+
+                                // Create a container for the folder list
+                                echo "<div class='list-group'>";
                                 foreach ($unique_folders as $folder_id => $folder_name) {
-                                    echo "<p>$folder_name</p>";
+                                    echo "<a href='#' class='list-group-item list-group-item-action'>
+                                            $folder_name
+                                        </a>";
                                 }
+                                echo "</div>";
+                                echo "</div>";
+                                echo "</div>";
                             }
                         } else {
                             echo '<p>No group or folder access found.</p>';
                         }
+
                         ?>
                     </div>
                 </div>
@@ -424,7 +461,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                 <form method="POST" id="addUserForm" novalidate>
                     <div class="modal-body">
                         <div class="row">
-                            <div class="form-group col-md-12">
+                            <div class="form-group col-md-6">
                                 <label for="employeeId" class="fw-bold">Employee</label>
                                 <select name="employeeId" aria-label="employeeId" class="form-select" id="employeeId"
                                     required>
@@ -437,6 +474,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 </select>
                                 <div class="invalid-feedback">
                                     Please provide an employee.
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6 mt-2 mt-md-0">
+                                <label for="role" class="fw-bold">System Role</label>
+                                <select name="role" aria-label="role" class="form-select" id="role" required>
+                                    <option disabled selected hidden></option>
+                                    <option value="general"> General</option>
+                                    <option value="admin"> Admin</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please provide a role.
                                 </div>
                             </div>
                             <div class="form-group col-md-6 mt-3">
@@ -498,6 +546,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 Please provide a password.
                             </div>
                         </div>
+                        <div class="form-group mt-4">
+                            <label for="editRole" class="fw-bold">Role</label>
+                            <select class="form-select" aria-label="editRole" name="editRole" id="editRole" required>
+                                <option disabled selected hidden>Select Role</option>
+                                <option value="general">General</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please provide a role.
+                            </div>
+                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -571,6 +631,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     var password = button.getAttribute('data-password');
                     var firstName = button.getAttribute('data-first-name');
                     var lastName = button.getAttribute('data-last-name');
+                    var role = button.getAttribute('data-role');
 
                     // Set the text content of the span in the edit user modal
                     document.querySelector('#editUserModal #editFirstName').textContent = firstName;
@@ -590,6 +651,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     // Prepopulate the user username
                     document.querySelector('#editUserModal #editPassword').value = password;
 
+                    console.log(role);
+
+                    document.getElementById('editRole').value = role;
                     // Show the modal
                     editUserModal.show();
                 });
@@ -662,6 +726,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
             })
         });
     </script>
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 

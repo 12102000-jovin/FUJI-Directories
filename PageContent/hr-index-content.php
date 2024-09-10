@@ -8,7 +8,8 @@ require("../db_connect.php");
 require_once("../status_check.php");
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
-$role = $_SESSION['role'] ?? '';
+
+require_once ("../system_role_check.php");
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
@@ -312,6 +313,7 @@ if ($user_details_result && $user_details_result->num_rows > 0) {
     $employeeId = 'N/A';
     $profileImage = '';
 }
+
 
 // Free up memory
 $user_details_result->free();

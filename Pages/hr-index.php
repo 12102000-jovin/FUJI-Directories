@@ -7,11 +7,11 @@ require_once("../db_connect.php");
 require_once("../status_check.php");
 
 $folder_name = "Human Resources";
-
 require_once("../group_role_check.php");
+
 ?>
 
-<style>
+<style> 
     html,
     body {
         overflow-x: hidden;
@@ -41,5 +41,4 @@ require_once("../group_role_check.php");
         </div>
     </div>
     <?php require_once("../logout.php") ?>
-
 </body>

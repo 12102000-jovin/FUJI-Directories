@@ -8,7 +8,6 @@ require_once ("../db_connect.php");
 require_once ("../status_check.php");
 
 $folder_name = "Quality Assurances";
-
 require_once("../group_role_check.php");
 
 $config = include ('../config.php');
@@ -18,7 +17,6 @@ $projectName = $config['project_name'];
 // Retrieve session data
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
-$role = $_SESSION['role'] ?? '';
 
 // Sorting Variables
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'qa_document';
@@ -63,96 +61,6 @@ $total_records_sql = "SELECT COUNT(*) AS total FROM quality_assurance WHERE $whe
 $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
-
-// //  ========================= O P E N  (Q A)  D O C U M E N T [PDF] ========================= 
-// if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qa_document"])) {
-//     $qaDocument = $_POST["qa_document"];
-
-//     $directory = "../../../../../QA/$qaDocument.pdf";
-
-//     // Escape the directory path for security
-//     $escaped_directory = escapeshellarg($directory);
-
-//     // Determine the operating system
-//     $os = strtoupper(substr(PHP_OS, 0, 3));
-
-//     if ($os === 'WIN') {
-//         // Windows Command Shell
-//         $command = "start \"\" " . $escaped_directory;
-//     } else if ($os === "DAR") {
-//         // macOS Shell Command
-//         $command = "open {$escaped_directory}";
-//     } else {
-//         // Unix-based command (Linux)
-//         $command = "xdg-open " . $escaped_directory;
-//     }
-
-//     // Execute the shell command and capture output and return status
-//     $output = [];
-//     $return_var = 0;
-//     exec($command . ' 2>&1', $output, $return_var);
-
-//     // Check if the command was executed successfully
-//     if ($return_var !== 0) {
-//         // Build the current URL with query parameters
-//         $current_url = $_SERVER['PHP_SELF'];
-//         if (!empty($_SERVER['QUERY_STRING'])) {
-//             $current_url .= '?' . $_SERVER['QUERY_STRING'];
-//         }
-
-//         // Output JavaScript to show alert and reload the page with parameters
-//         echo "<script>
-//                 alert('Failed to open the document.');
-//                 window.location.href = '" . $current_url . "';
-//               </script>";
-//         exit();
-//     }
-// }
-
-// // =========================  O P E N  (Q A)  D O C U M E N T [DOC] =========================
-// if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["wip_document"])) {
-//     $wipDocument = $_POST["wip_document"];
-//     $directory = "../../../../../QA/$wipDocument.docx";
-
-//     // Escape the directory path for security
-//     $escaped_directory = escapeshellarg($directory);
-
-//     // Determine the operating system
-//     $os = strtoupper(substr(PHP_OS, 0, 3));
-
-//     // Construct the command based on the OS
-//     if ($os === "WIN") {
-//         // Windows Command Shell
-//         $command = "start \"\" " . $escaped_directory;
-//     } elseif ($os === "DAR") {
-//         // macOS Shell Command
-//         $command = "open " . $escaped_directory;
-//     } else {
-//         // Unix-based command (Linux)
-//         $command = "xdg-open " . $escaped_directory;
-//     }
-
-//     // Execute the shell command and capture output and return status
-//     $output = [];
-//     $return_var = 0;
-//     exec($command . ' 2>&1', $output, $return_var);
-
-//     // Check if the command was executed successfully
-//     if ($return_var !== 0) {
-//         // Build the current URL with query parameters
-//         $current_url = $_SERVER['PHP_SELF'];
-//         if (!empty($_SERVER['QUERY_STRING'])) {
-//             $current_url .= '?' . $_SERVER['QUERY_STRING'];
-//         }
-
-//         // Output JavaScript to show alert and reload the page with parameters
-//         echo "<script>
-//                 alert('Failed to open the document.');
-//                 window.location.href = '" . $current_url . "';
-//               </script>";
-//         exit();
-//     }
-// }
 
 // ========================= D E L E T E  D O C U M E N T =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToDelete"])) {
@@ -612,7 +520,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     </form> -->
                                     <form class="document-form" method="POST">
                                         <input type="hidden" value=<?= $row['qa_document'] ?> name="qa_document">
-                                        <a href="info.php?file=<?= urlencode($row['qa_document']) ?>.pdf" target="_blank"
+                                        <a href="pdf.php?file=<?= urlencode($row['qa_document']) ?>.pdf" target="_blank"
                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                             <?= htmlspecialchars($row["qa_document"], ENT_QUOTES, 'UTF-8') ?>
                                         </a>

@@ -19,7 +19,6 @@ if (isset($_GET['logout']) && ($_GET['logout']) === 'true') {
     exit();
 }
 
-
 // Check if the user is logged in and has an active session
 if (isset($_SESSION['username']) && isset($_SESSION['logged_in'])) {
     // Check if the last activity timestamp is set

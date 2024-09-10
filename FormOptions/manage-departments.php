@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 require_once ("./../db_connect.php");
 require_once ("./../status_check.php");
+require_once ("../system_role_check.php");
 
 ?>
 

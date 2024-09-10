@@ -3,14 +3,12 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-require_once ("../db_connect.php");
+require_once("../db_connect.php");
 
-$config = include ('../config.php');
+$config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// Retrieve session data
-$role = $_SESSION['role'] ?? '';
 
 // Default query to fetch all employees
 $employee_list_sql = "SELECT * FROM employees";
@@ -152,34 +150,65 @@ if ($employee_list_result->num_rows > 0) {
                             placeholder="Search Employee" oninput="filterEmployees(this.value)">
                     </div>
                     <div class="d-flex">
-                        <div class="dropdown">
-                            <button class="btn text-white dropdown-toggle" data-bs-toggle="dropdown"
-                                aria-expanded="false" style="background-color:#043f9d;">
-                                <small class="text-nowrap fw-bold">Sort by</small>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0);"
-                                        onclick="sortByName('asc', 'all-employees')">Name
-                                        <i class="fa-solid fa-arrow-down-a-z" style="color:#043f9d"></i></a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0);"
-                                        onclick="sortByName('desc', 'all-employees')">Name
-                                        <i class="fa-solid fa-arrow-down-z-a" style="color:#043f9d"></i></a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0);"
-                                        onclick="sortByEmployeeID('asc', 'all-employees')">Id <i
-                                            class="fa-solid fa-arrow-down-1-9" style="color:#043f9d"></i></a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0);"
-                                        onclick="sortByEmployeeID('desc', 'all-employees')">Id <i
-                                            class="fa-solid fa-arrow-down-9-1" style="color:#043f9d"></i></a>
-                                </li>
-                            </ul>
-                        </div>
+                        <?php if ($role == "admin") { ?>
+                            <div class="dropdown">
+                                <button class="btn text-white dropdown-toggle" data-bs-toggle="dropdown"
+                                    aria-expanded="false" style="background-color:#043f9d;">
+                                    <small class="text-nowrap fw-bold">Sort by</small>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByName('asc', 'all-employees')">Name
+                                            <i class="fa-solid fa-arrow-down-a-z" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByName('desc', 'all-employees')">Name
+                                            <i class="fa-solid fa-arrow-down-z-a" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByEmployeeID('asc', 'all-employees')">Id <i
+                                                class="fa-solid fa-arrow-down-1-9" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByEmployeeID('desc', 'all-employees')">Id <i
+                                                class="fa-solid fa-arrow-down-9-1" style="color:#043f9d"></i></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        <?php } else { ?>
+                            <div class="dropdown">
+                                <button class="btn text-white dropdown-toggle" data-bs-toggle="dropdown"
+                                    aria-expanded="false" style="background-color:#043f9d;">
+                                    <small class="text-nowrap fw-bold">Sort by</small>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByName('asc', 'wages-employees')">Name
+                                            <i class="fa-solid fa-arrow-down-a-z" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByName('desc', 'wages-employees')">Name
+                                            <i class="fa-solid fa-arrow-down-z-a" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByEmployeeID('asc', 'wages-employees')">Id <i
+                                                class="fa-solid fa-arrow-down-1-9" style="color:#043f9d"></i></a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0);"
+                                            onclick="sortByEmployeeID('desc', 'wages-employees')">Id <i
+                                                class="fa-solid fa-arrow-down-9-1" style="color:#043f9d"></i></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -562,7 +591,7 @@ if ($employee_list_result->num_rows > 0) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <?php require ("../Form/EmployeeDetailsForm.php") ?>
+                        <?php require("../Form/EmployeeDetailsForm.php") ?>
                     </div>
                 </div>
             </div>
@@ -590,16 +619,18 @@ if ($employee_list_result->num_rows > 0) {
 
         function sortCards(containerId, order, sortBy) {
             const cardsContainer = document.getElementById(containerId);
+            if (!cardsContainer) return; // Skip if container is not found
+
             let cards = Array.from(cardsContainer.children);
 
             cards.sort((cardA, cardB) => {
                 let valueA, valueB;
                 if (sortBy === 'name') {
-                    valueA = cardA.querySelector('.employee-name').innerText.trim().toLowerCase();
-                    valueB = cardB.querySelector('.employee-name').innerText.trim().toLowerCase();
+                    valueA = cardA.querySelector('.employee-name')?.innerText.trim().toLowerCase() || '';
+                    valueB = cardB.querySelector('.employee-name')?.innerText.trim().toLowerCase() || '';
                 } else {
-                    valueA = cardA.querySelector('.card-subtitle').innerText.trim().toLowerCase().replace('employee id: ', '');
-                    valueB = cardB.querySelector('.card-subtitle').innerText.trim().toLowerCase().replace('employee id: ', '');
+                    valueA = cardA.querySelector('.card-subtitle')?.innerText.trim().toLowerCase().replace('employee id: ', '') || '';
+                    valueB = cardB.querySelector('.card-subtitle')?.innerText.trim().toLowerCase().replace('employee id: ', '') || '';
                 }
 
                 if (order === 'asc') {
@@ -618,9 +649,9 @@ if ($employee_list_result->num_rows > 0) {
             const cards = document.querySelectorAll('.employee-card');
 
             cards.forEach(card => {
-                const name = card.querySelector('.card-title').innerText.toLowerCase();
-                const id = card.querySelector('.card-subtitle').innerText.toLowerCase();
-                const nickname = card.querySelector('.nickname').innerText.toLowerCase();
+                const name = card.querySelector('.card-title')?.innerText.toLowerCase() || '';
+                const id = card.querySelector('.card-subtitle')?.innerText.toLowerCase() || '';
+                const nickname = card.querySelector('.nickname')?.innerText.toLowerCase() || '';
 
                 if (name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm.toLowerCase()) || nickname.includes(searchTerm.toLowerCase())) {
                     card.style.display = 'block'; // Show the card
@@ -643,10 +674,11 @@ if ($employee_list_result->num_rows > 0) {
         }
     </script>
 
+
     <script>
         // Function to initialize and show employees based on current tab
         function initializeEmployees(tabId, numToShow) {
-            const tabContent = document.getElementById(tabId); 
+            const tabContent = document.getElementById(tabId);
             if (!tabContent) {
                 console.error(`Element with ID ${tabId} not found.`);
                 return; // Exit the function if the element is not found

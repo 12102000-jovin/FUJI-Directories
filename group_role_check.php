@@ -30,7 +30,7 @@ $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     // Echo the role
     $role = $row['role'];
-    echo "Role: " . $role;
+    // echo "Group Role: " . $role;
 
     if ($role === "restricted") {
 

@@ -3,8 +3,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once ("../db_connect.php");
-require_once ("../status_check.php");
+require_once("../db_connect.php");
+require_once("../status_check.php");
 
 ?>
 
@@ -32,18 +32,18 @@ require_once ("../status_check.php");
 <body>
     <div class="row">
         <div class="col-auto pe-0 d-none d-md-block sidebar">
-            <?php require ("../Menu/SideNavMenu/SideMenu.php") ?>
+            <?php require("../Menu/SideNavMenu/SideMenu.php") ?>
         </div>
         <div class="col p-0">
             <div class="sticky-top-menu">
-                <?php require ("../Menu/SideNavMenu/TopMenu.php") ?>
+                <?php require("../Menu/SideNavMenu/TopMenu.php") ?>
             </div>
             <div class="container-fluid mt-4">
-                <?php require ("../PageContent/home-index-content.php"); ?>
+                <?php require("../PageContent/home-index-content.php"); ?>
             </div>
         </div>
     </div>
-    <?php require_once ("../logout.php") ?>
+    <?php require_once("../logout.php") ?>
 
 </body>
 

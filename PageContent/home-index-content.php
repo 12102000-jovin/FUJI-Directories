@@ -7,6 +7,7 @@ $config = include ('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
+
 // SQL Query to get the folders
 $folders_sql = "SELECT DISTINCT f.*
 FROM folders f

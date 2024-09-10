@@ -13,7 +13,6 @@ $projectName = $config['project_name'];
 // Retrieve session data
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
-$role = $_SESSION['role'] ?? '';
 
 // SQL Query to get the folders
 $folders_sql = "

@@ -3,18 +3,17 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once ("./../db_connect.php");
-require_once ("./../status_check.php");
+require_once("./../db_connect.php");
+require_once("./../status_check.php");
+require_once ("../system_role_check.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
-
 
 // Retrieve session data
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
-$role = $_SESSION['role'] ?? '';
 
 // Prepare the SQL query to avoid SQL injection
 $user_details_query = "
@@ -115,7 +114,7 @@ $user_details_result->free();
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">Profile</a>
                 </li>
-                <?php if ($role === "admin"): ?>
+                <?php if ($systemRole === "admin"): ?>
                     <li><a class="dropdown-item"
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-users.php">Manage
                             User Access</a>
@@ -124,14 +123,22 @@ $user_details_result->free();
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-credential.php?employee_id=<?php echo $employeeId ?>">Manage
                         Credential</a></li>
-                <li class="dropdown-submenu">
-                    <a class="dropdown-item dropdown-toggle" href="#">Manage Form Options</a>
-                    <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-departments.php">Manage Department</a></li>
-                        <li><a class="dropdown-item" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-visa.php">Manage Visa</a></li>
-                        <li><a class="dropdown-item" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-position.php">Manage Position</a></li>
-                    </ul>
-                </li>
+                <?php if ($systemRole === "admin"): ?>
+                    <li class="dropdown-submenu">
+                        <a class="dropdown-item dropdown-toggle" href="#">Manage Form Options</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item"
+                                    href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-departments.php">Manage
+                                    Department</a></li>
+                            <li><a class="dropdown-item"
+                                    href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-visa.php">Manage
+                                    Visa</a></li>
+                            <li><a class="dropdown-item"
+                                    href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-position.php">Manage
+                                    Position</a></li>
+                        </ul>
+                    </li> 
+                    <?php endif; ?>
                 <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"
                         data-bs-target="#logoutModal">Logout</a></li>
             </ul>

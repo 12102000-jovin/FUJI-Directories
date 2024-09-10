@@ -6,10 +6,29 @@ error_reporting(E_ALL);
 // Connect to the database
 require_once("../db_connect.php");
 require_once("../status_check.php");
+require_once("../system_role_check.php");
+
+// Get employee_id from the URL
+if (isset($_GET['employee_id'])) {
+    $employeeId = $_GET['employee_id'];
+}
 
 $folder_name = "Human Resources";
-
 require_once("../group_role_check.php");
+
+$get_payroll_type_sql = "SELECT payroll_type FROM employees WHERE employee_id = ?";
+$get_payroll_type_stmt = $conn->prepare($get_payroll_type_sql);
+$get_payroll_type_stmt->bind_param("s", $employeeId);
+$get_payroll_type_stmt->execute();
+$get_payroll_type_stmt->bind_result($employee_payroll_type);
+$get_payroll_type_stmt->fetch();
+$get_payroll_type_stmt->close();
+
+if ($role === "general" && $employee_payroll_type === "salary") {
+    echo "<script>
+    window.location.href = 'http://$serverAddress/$projectName/access_restricted.php';
+  </script>";
+}
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
@@ -40,11 +59,6 @@ $position_result = $conn->query($position_sql);
 // Get all the department
 $department_sql = "SELECT * FROM department";
 $department_result = $conn->query($department_sql);
-
-// Get employee_id from the URL
-if (isset($_GET['employee_id'])) {
-    $employeeId = $_GET['employee_id'];
-}
 
 // SQL to get the employee details
 $employee_details_sql = "SELECT employees.*, visa.visa_name, position.position_name, department.department_name

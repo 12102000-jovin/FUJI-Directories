@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result_employee_id->num_rows > 0) {
                 $employee_id = $result_employee_id->fetch_assoc();
                 $_SESSION['employee_id'] = $employee_id['employee_id'];
-                $_SESSION['role'] = $employee_id['role'];
+                $_SESSION['systemRole'] = $employee_id['role'];
                 $_SESSION['user_id'] = $employee_id['user_id'];
             }
 
