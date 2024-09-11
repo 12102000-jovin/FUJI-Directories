@@ -97,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 Please provide a QA Document.
             </div>
         </div>
-        <div class="form-group col-md-6">
+        <div class="form-group col-md-6 mt-md-0 mt-3">
             <label for="documentNameToEdit" class="fw-bold">Document Name</label>
             <input type="text" name="documentNameToEdit" class="form-control" id="documentNameToEdit" required>
             <div class="invalid-feedback">
@@ -186,8 +186,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
             <label for="ownerToEdit" class="fw-bold">Owner</label>
             <select class="form-select" aria-label="ownerToEdit" name="ownerToEdit" id="ownerToEdit" required>
                 <option disabled selected hidden></option>
+                <option value="Accounts Manager">Accounts Manager</option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Engineering Department Manager">Engineering Department Manager</option>
                 <option value="Electrical Department Manager">Electrical Department Manager</option>
                 <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
                 </option>
@@ -225,7 +226,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 required>
                 <option disabled selected hidden></option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Engineering Department Manager">Engineering Department Manager</option>
                 <option value="Electrical Department Manager">Electrical Department Manager</option>
                 <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
                 </option>

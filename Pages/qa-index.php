@@ -4,13 +4,13 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("../db_connect.php");
-require_once ("../status_check.php");
+require_once("../db_connect.php");
+require_once("../status_check.php");
 
 $folder_name = "Quality Assurances";
 require_once("../group_role_check.php");
 
-$config = include ('../config.php');
+$config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -246,7 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
 </head>
 
 <body class="background-color">
-    <?php require ("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/DropdownNavMenu.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <div class="d-flex justify-content-between align-items-center">
             <nav aria-label="breadcrumb">
@@ -617,7 +617,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                             <div class="d-flex align-items-center">
                                                 <input type="hidden" name="qaIdToEditStatusCell"
                                                     value="<?= htmlspecialchars($row['qa_id']) ?>">
-                                                <select name="statusCellToEdit" class="form-select w-100"
+                                                <select name="statusCellToEdit" class="form-select" style="min-width: 150px"
                                                     onchange="this.form.submit()">
                                                     <option value="Approved" <?= $row['status'] === 'Approved' ? 'selected' : '' ?>>
                                                         Approved</option>
@@ -629,6 +629,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                     <option value="Revision/Creation requested"
                                                         <?= $row['status'] === 'Revision/Creation requested' ? 'selected' : '' ?>>
                                                         Revision/Creation requested</option>
+                                                    <option value="N/A"
+                                                        <?= $row['status'] === 'N/A' ? 'selected' : '' ?>>
+                                                        N/A</option>
                                                 </select>
                                                 <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
                                                     onclick="cancelEditStatus(this)">
@@ -638,16 +641,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 </a>
                                             </div>
                                         </form>
-                                        <span class="badge rounded-pill w-100 text-center
-        <?= $row['status'] === 'Approved' ? 'bg-success' : '' ?>
-        <?= $row['status'] === 'Need to review' ? 'bg-light text-dark border' : '' ?>
-        <?= $row['status'] === 'In progress' ? 'bg-warning' : '' ?>
-        <?= $row['status'] === 'To be created' ? 'bg-secondary' : '' ?>
-        <?= $row['status'] === 'Pending approval' ? 'bg-primary' : '' ?>
-        <?= $row['status'] === 'Not approved yet' ? 'bg-info' : '' ?>
-        <?= $row['status'] === 'Revision/Creation requested' ? 'bg-danger' : '' ?>">
-                                            <?= htmlspecialchars($row['status']) ?>
-                                        </span>
+                                        <?php
+                                        $status = htmlspecialchars($row['status']);
+                                        $badgeClasses = [
+                                            'Approved' => 'bg-success',
+                                            'Need to review' => 'bg-light text-dark border',
+                                            'In progress' => 'bg-warning',
+                                            'To be created' => 'bg-secondary',
+                                            'Pending approval' => 'bg-primary',
+                                            'Not approved yet' => 'bg-info',
+                                            'Revision/Creation requested' => 'bg-danger'
+                                        ];
+                                        $badgeClass = isset($badgeClasses[$status]) ? $badgeClasses[$status] : '';
+                                        ?>
+
+                                        <?php if ($status === 'N/A'): ?>
+                                            <span><?= $status ?></span>
+                                        <?php else: ?>
+                                            <span class="badge rounded-pill w-100 text-center <?= $badgeClass ?>">
+                                                <?= $status ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
 
                                     <td class="py-2 align-middle text-center approvedBy">
@@ -756,7 +770,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <?php require_once ("../Form/addQADocumentForm.php") ?>
+                    <?php require_once("../Form/addQADocumentForm.php") ?>
                 </div>
             </div>
         </div>
@@ -795,7 +809,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <?php require_once ("../Form/EditQADocumentForm.php") ?>
+                    <?php require_once("../Form/EditQADocumentForm.php") ?>
                 </div>
             </div>
         </div>
@@ -996,7 +1010,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
         </div>
     </div>
 
-    <?php require_once ("../logout.php") ?>
+    <?php require_once("../logout.php") ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

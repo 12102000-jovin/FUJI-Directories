@@ -33,11 +33,11 @@ if ($row = $result->fetch_assoc()) {
     // echo "Group Role: " . $role;
 
     if ($role === "restricted") {
-
         header("Location: http://$serverAddress/$projectName/access_restricted.php");
     }
 } else {
     echo "No role found for this user in the specified folder.";
+    header("Location: http://$serverAddress/$projectName/access_restricted.php");
 }
 
 ?>

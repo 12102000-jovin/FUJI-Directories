@@ -342,19 +342,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
     $employees_result->data_seek(0);
     while ($employee_row = $employees_result->fetch_assoc()) {
         $employee_id = $employee_row['employee_id'];
-        $employee_group_access_sql = $employee_group_access_sql = "SELECT DISTINCT `groups`.group_name, folders.folder_name, `groups`.group_id, folders.folder_id, users_groups.role
-            FROM `groups`
-            JOIN groups_folders ON `groups`.group_id = groups_folders.group_id
-            JOIN folders ON folders.folder_id = groups_folders.folder_id
-            JOIN users_groups ON users_groups.group_id = `groups`.group_id
-            JOIN users ON users.user_id = users_groups.user_id
-            JOIN employees ON employees.employee_id = users.employee_id
-            WHERE employees.employee_id = $employee_id";
+        $employee_group_access_sql = "SELECT DISTINCT `groups`.group_name, folders.folder_name, `groups`.group_id, folders.folder_id, users_groups.role, employees.first_name, employees.last_name, employees.employee_id, users_groups.user_group_id
+        FROM `groups`
+        JOIN groups_folders ON `groups`.group_id = groups_folders.group_id
+        JOIN folders ON folders.folder_id = groups_folders.folder_id
+        JOIN users_groups ON users_groups.group_id = `groups`.group_id
+        JOIN users ON users.user_id = users_groups.user_id
+        JOIN employees ON employees.employee_id = users.employee_id
+        WHERE employees.employee_id = $employee_id";
         $employee_group_access_result = $conn->query($employee_group_access_sql);
         ?>
         <!-- User Access Modal -->
         <div class="modal fade" id="showAccessModal<?= $employee_id ?>" tabindex="-1" role="dialog"
-            aria-labelledby="userAccessModalLabel<?= $employeeId ?>" aria-hidden="true">
+            aria-labelledby="userAccessModalLabel<?= $employee_id ?>" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -370,14 +370,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             // Initialize arrays to store unique group names and folder names
                             $unique_groups = [];
                             $unique_folders = [];
-
+                            $userGroupIds = []; // Store user group IDs
+                    
                             // Fetch all rows from the result set
                             while ($row = $employee_group_access_result->fetch_assoc()) {
                                 $group_id = $row['group_id'];
                                 $group_name = htmlspecialchars($row['group_name']);
-                                $folder_id = htmlspecialchars($row['folder_id']);
+                                $folder_id = $row['folder_id'];
                                 $folder_name = htmlspecialchars($row['folder_name']);
                                 $role = htmlspecialchars($row['role']);
+                                $firstName = htmlspecialchars($row['first_name']);
+                                $lastName = htmlspecialchars($row['last_name']);
+                                $userAccessEmployeeId = htmlspecialchars($row['employee_id']);
+                                $userGroupId = htmlspecialchars($row['user_group_id']);
 
                                 // Collect unique group names and associated roles
                                 if (!isset($unique_groups[$group_id])) {
@@ -391,29 +396,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 if (!isset($unique_folders[$folder_id])) {
                                     $unique_folders[$folder_id] = $folder_name;
                                 }
+
+                                // Collect user group IDs
+                                $userGroupIds[$group_id] = $userGroupId;
                             }
 
                             // Output unique group names and their roles
                             if (!empty($unique_groups)) {
+                                echo "<h4 class='mt-4 mb-4 fw-bold signature-color text-center signature-bg-color text-white py-2 rounded-3'>$firstName $lastName - $userAccessEmployeeId</h4>";
                                 echo "<strong class='signature-color'>Groups:</strong>";
                                 echo "<div class='mb-3'>";
                                 echo "<div class='table-responsive rounded-3 shadow-lg bg-light m-0'>";
                                 echo "<table class='table table-hover mb-0 pb-0'>";
                                 echo "<thead>
-                                        <tr> 
-                                            <th class='col-6 text-center'>Group</th>
-                                            <th class='col-6 text-center'>Role</th>
-                                        </tr>
-                                    </thead>";
+                                    <tr> 
+                                        <th class='col-6 text-center'>Group</th>
+                                        <th class='col-6 text-center'>Role</th>
+                                    </tr>
+                                </thead>";
                                 // Table body
                                 echo "<tbody>";
+
                                 foreach ($unique_groups as $group_id => $group_data) {
+                                    // Determine badge class based on role
+                                    $badgeClass = match ($group_data['role']) {
+                                        'admin' => 'text-bg-danger',
+                                        'general' => 'text-bg-success',
+                                        'restricted' => 'text-bg-dark',
+                                    };
+
+                                    $editSelect = "<select class='form-select edit-mode d-none' aria-label='editRole' name='editRole' id='editRole' style='min-width: 120px;' required>
+                                    <option value='general'" . ($group_data['role'] === 'general' ? " selected" : "") . ">General</option>
+                                    <option value='admin'" . ($group_data['role'] === 'admin' ? " selected" : "") . ">Admin</option>
+                                    <option value='restricted'" . ($group_data['role'] === 'restricted' ? " selected" : "") . ">Restricted</option>
+                                </select>";
                                     echo "<tr>
-                                        <td class='py-2'>{$group_data['name']}</td>
-                                        <td class='text-center py-2'>
-                                            <span class='badge rounded-pill text-bg-danger'>{$group_data['role']}</span>
-                                        </td>
-                                    </tr>";
+                                    <td class='align-middle'>{$group_data['name']}</td>
+                                    <td class='align-middle text-center'>  
+                                    <form class='editGroupRoleForm'><div class='d-flex align-items-center justify-content-center'>
+                                        $editSelect
+                                        <span class='badge rounded-pill $badgeClass view-mode'>{$group_data['role']}</span>
+                                        <i class='fa-regular fa-pen-to-square ms-2 signature-color tooltips editRoleBtn view-mode'
+                                        data-bs-toggle='tooltip' data-bs-placement='top' title='Edit Role' role='button'></i>
+                                            <div class='edit-mode d-none d-flex justify-content-center'>
+                                                <input type='hidden' name='userGroupIdToEdit' value='{$userGroupIds[$group_id]}'>
+                                                <button type='submit' class='btn btn-sm px-2 btn-success mx-1'>
+                                                    <div class='d-flex justify-content-center'>
+                                                        <i role='button' class='fa-solid fa-check text-white m-1'></i> Edit
+                                                    </div>
+                                                </button>
+                                                <button type='button' class='btn btn-sm px-2 btn-danger mx-1 editRoleBtn'>
+                                                    <div class='d-flex justify-content-center'>
+                                                        <i role='button' class='fa-solid fa-xmark text-white m-1'></i> Cancel
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>     
+                                    </td>
+                                </tr>";
                                 }
                                 echo "</tbody>";
                                 echo "</table>";
@@ -431,8 +472,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 echo "<div class='list-group'>";
                                 foreach ($unique_folders as $folder_id => $folder_name) {
                                     echo "<a href='#' class='list-group-item list-group-item-action'>
-                                            $folder_name
-                                        </a>";
+                                        $folder_name
+                                    </a>";
                                 }
                                 echo "</div>";
                                 echo "</div>";
@@ -441,7 +482,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                         } else {
                             echo '<p>No group or folder access found.</p>';
                         }
-
                         ?>
                     </div>
                 </div>
@@ -477,7 +517,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 </div>
                             </div>
                             <div class="form-group col-md-6 mt-2 mt-md-0">
-                                <label for="role" class="fw-bold">System Role</label>
+                                <label for="role" class="fw-bold">System Role <i
+                                        class="fa-solid fa-circle-info tooltips" data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="Defines the user's access across the system. 'Admin' can manage users and roles."></i></label>
                                 <select name="role" aria-label="role" class="form-select" id="role" required>
                                     <option disabled selected hidden></option>
                                     <option value="general"> General</option>
@@ -547,7 +590,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             </div>
                         </div>
                         <div class="form-group mt-4">
-                            <label for="editRole" class="fw-bold">Role</label>
+                            <label for="editRole" class="fw-bold">System Role <i
+                                    class="fa-solid fa-circle-info tooltips" data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Defines the user's access across the system. 'Admin' can manage users and roles."></i></label>
                             <select class="form-select" aria-label="editRole" name="editRole" id="editRole" required>
                                 <option disabled selected hidden>Select Role</option>
                                 <option value="general">General</option>
@@ -653,12 +699,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
 
                     console.log(role);
 
-                    document.getElementById('editRole').value = role;
+                    document.querySelector('#editUserModal #editRole').value = role;
+
                     // Show the modal
                     editUserModal.show();
                 });
             });
-
         });
     </script>
 
@@ -675,6 +721,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
             const employeeIdInput = document.getElementById("employeeId");
             const usernameInput = document.getElementById("username");
             const passwordInput = document.getElementById("password")
+            const systemRole = document.getElementById("role");
 
             employeeIdInput.addEventListener('change', function () {
                 const selectedEmployee = employeeIdInput.options[employeeIdInput.selectedIndex].text;
@@ -727,6 +774,93 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
         });
     </script>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Edit button click event handler
+            document.querySelectorAll('.editRoleBtn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+
+                    // Get parent row
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode, .edit-mode').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+            })
+        })
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.editGroupRoleForm').forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Prevent the default form submission
+
+                    // Create a FormData object from the form
+                    var formData = new FormData(this);
+
+                    // Log form data for debugging
+                    for (var pair of formData.entries()) {
+                        console.log(pair[0] + ': ' + pair[1]);
+                    }
+
+                    // Send the data using fetch
+                    fetch('../AJAXphp/edit-group-role.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Success:', data);
+
+                            // Find the closest table row from the form
+                            var row = this.closest('tr');
+
+                            // Update the badge text with the new role
+                            var newRole = formData.get('editRole');
+                            var badge = row.querySelector('.badge');
+                            // Toggle visibility of view and edit elements
+                            row.querySelectorAll('.view-mode, .edit-mode').forEach(function (elem) {
+                                elem.classList.toggle('d-none');
+                            });
+
+                            // Determine badge class based on new role
+                            var badgeClass = '';
+                            switch (newRole) {
+                                case 'admin':
+                                    badgeClass = 'text-bg-danger';
+                                    break;
+                                case 'general':
+                                    badgeClass = 'text-bg-success';
+                                    break;
+                                case 'restricted':
+                                    badgeClass = 'text-bg-dark';
+                                    break;
+                            }
+
+                            // Update the badge text and class
+                            if (badge) {
+                                badge.textContent = newRole;
+                                badge.className = 'badge rounded-pill ' + badgeClass + ' view-mode';
+                            }
+
+                            // Toggle edit mode
+                            row.classList.toggle('editing');
+
+
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        });
+                });
+            });
+        });
+    </script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 

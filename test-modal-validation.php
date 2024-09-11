@@ -50,8 +50,58 @@
         </div>
     </div>
 
+    <div class="background-color">
+        <div class="container">
+            <div class="d-flex justify-content-center align-itmes-center min-vh-100">
+                <div class="card rounded p-5 border-0 shadow-lg">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const employeeIdInput = document.getElementById("employeeId");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const systemRole = document.getElementById("role");
+
+        employeeIdInput.addEventListener('change', function () {
+            const selectedEmployee = employeeIdInput.options[employeeIdInput.selectedIndex].text;
+            console.log(selectedEmployee);
+
+            // Regular expression to match the pattern "Name (ID)"
+            const regex = /^(.+?)\s*\((\d+)\)$/;
+            const match = selectedEmployee.match(regex);
+
+            if (match) {
+                const fullName = match[1];
+                const id = match[2];
+
+                const nameParts =fullName.split(' ');
+                console.log(fullName);
+                console.log(nameParts[0]);
+
+                // Set the value of the username input field
+                usernameInput.value =nameParts[0].toLowerCase() + nameParts[1].toLowerCase();
+                passwordInput.value =nameParts[0].toLowerCase() + "_" + id;
+            }
+        })
+    })
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Edit button click event handler
+        document.querySelectorAll('.editRoleBtn').forEach(function (btn) {
+            btn.addEventListener('click',function 
+        })
+    })
+</script>
 
 </html>

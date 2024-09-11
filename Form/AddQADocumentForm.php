@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             </div>
             <input type="text" name="qaDocument" class="form-control" id="fullyConstructedDocumentName" readonly>
         </div>
-        <div class="form-group col-md-6">
+        <div class="form-group col-md-6 mt-md-0 mt-3">
             <label for="documentName" class="fw-bold">Document Name</label>
             <input type="text" name="documentName" class="form-control" id="documentName" required>
             <div class="invalid-feedback">
@@ -168,10 +168,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="owner" class="fw-bold">Owner</label>
-            <select class="form-select" aria-label="owner" name="owner" required>
+            <select class="form-select" aria-label="owner" name="owner" id="owner" required>
                 <option disabled selected hidden></option>
+                <option value="Accounts Manager">Accounts Manager</option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Engineering Department Manager">Engineering Department Manager</option>
                 <option value="Electrical Department Manager">Electrical Department Manager</option>
                 <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
                 </option>
@@ -197,6 +198,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 <option value="Pending approval">Pending approval</option>
                 <option value="To be created">To be created</option>
                 <option value="Revision/Creation requested">Revision/Creation requested</option>
+                <option value="N/A">N/A</option>
             </select>
             <div class="invalid-feedback">
                 Please provide a status.
@@ -207,7 +209,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <select class="form-select" aria-label="approvedBy" name="approvedBy" required>
                 <option disabled selected hidden></option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Engineering Department Manager">Engineering Department Manager</option>
                 <option value="Electrical Department Manager">Electrical Department Manager</option>
                 <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
                 </option>
@@ -280,6 +282,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <option value="Quality Assurance">Quality Assurance</option>
             <option value="Quality Control">Quality Control</option>
             <option value="Research & Development">Research & Development</option>
+            <option value="Sheet Metal"> Sheet Metal</option>
             <option value="Special Projects">Special Projects</option>
             <option value="Work, Health and Safety">Work, Health and Safety</option>
         </select>
@@ -302,7 +305,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <option value="Quiz">Quiz</option>
             <option value="Risk Assessment">Risk Assessment</option>
             <option value="Work Instruction">Work Instruction</option>
-            <option value="N/A">N/A</option>
         </select>
     </div>
 
@@ -337,6 +339,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         const iso9001Yes = document.getElementById("iso9001Yes");
         const iso9001No = document.getElementById("iso9001No");
         const iso9001InvalidFeedback = document.getElementById("iso9001InvalidFeedback");
+        const ownerSelect = document.getElementById("owner");
 
         const departmentMap = {
             "Quality Assurance": "00-QA",
@@ -379,6 +382,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             typeToSubmit.value = type.options[type.selectedIndex].text;
         }
 
+        function updateOwnerField() {
+            const selectedDepartment = department.options[department.selectedIndex].text;
+            if (selectedDepartment === "Accounts") {
+                ownerSelect.value = "Accounts Manager";
+            } else if (selectedDepartment === "Operations Support" || selectedDepartment === "Human Resources") {
+                ownerSelect.value = "Operations Support Manager";
+            } else if (selectedDepartment === "Sheet Metal") {
+                ownerSelect.value = "Sheet Metal Department Manager";
+            } else if (selectedDepartment === "Electrical") {
+                ownerSelect.value = "Electrical Department Manager";
+            } else if (selectedDepartment === "Work, Health and Safety") { 
+                ownerSelect.value = "WHS Committee";
+            } else if (selectedDepartment === "Engineering" ) {
+                ownerSelect.value = "Engineering Department Manager";
+            } else {
+                ownerSelect.value = "General Manager";
+            }
+        }
+
 
         department.addEventListener('change', function () {
             const selectedDepartment = department.options[department.selectedIndex].text;
@@ -387,6 +409,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             selectTypeFormGroup.classList.remove("d-none");
             selectTypeFormGroup.classList.add("d-block");
             updateFullyConstructedDocumentName();
+            updateOwnerField() 
         });
 
         type.addEventListener('change', function () {
@@ -394,7 +417,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             constructedType.textContent = typeMap[selectedType] || "";
             documentCodeFormGroup.classList.remove("d-none");
             documentCodeFormGroup.classList.add("d-block");
-            updateFullyConstructedDocumentName();xww
+            updateFullyConstructedDocumentName(); xww
         });
 
         documentCode.addEventListener('input', function () {
@@ -487,6 +510,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         }, false);
     });
 </script>
+
 <script>
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {

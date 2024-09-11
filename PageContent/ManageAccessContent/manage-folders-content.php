@@ -218,13 +218,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupFolderIdToRemove
                 </div>
                 <div class="col-12 d-lg-none bg-white rounded-3 p-4 mb-4 shadow-lg">
                     <div class="row">
-                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                        <!-- <div class="col-12 col-md-4 mb-3 mb-md-0">
                             <button class="btn signature-btn p-3 w-100" id="addFolderModalBtnMobile"
                                 data-bs-toggle="modal" data-bs-target="#addFolderModal">
                                 <i class="fa-solid fa-folder-plus me-1 fa-lg text-warning"></i>
                                 <span class="text-warning fw-bold">Add New Folder</span>
                             </button>
-                        </div>
+                        </div> -->
                         <div class="col-12 col-md-4 mb-3 mb-md-0">
                             <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-users.php" class="btn signature-btn p-3 w-100">
                                 <i class="fa-solid fa-user me-1 fa-lg signature-color"></i>

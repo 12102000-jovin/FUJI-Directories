@@ -338,8 +338,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $encodedImage = ''; // Default empty image if no profile image is uploaded
     }
 
-    // echo '<script>alert("Test ' . $payrollType . '")</script>';
-
     // Set visa_expiry_date to null if the visaStatus is "Citizen" or "Permanent Resident"
     if ($visaStatus === "Citizen" || $visaStatus === "Permanent Resident") {
         $visaExpiryDate = null;

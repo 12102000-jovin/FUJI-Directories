@@ -121,6 +121,10 @@ $folders_result->free();
         <div class="d-flex align-items-center me-3">
             <a class="d-flex align-items-center justify-content-center text-decoration-none text-dark" href="#"
                 role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="d-md-flex d-none align-items-center">
+                    <span class="me-1 fw-bold d-flex"><?= htmlspecialchars($firstName) ?></span>
+                    <span class="me-2 fw-bold d-flex"><?= htmlspecialchars($lastName) ?></span>
+                </div>
                 <?php if (!empty($profileImage)): ?>
                     <img src="data:image/jpeg;base64,<?= htmlspecialchars($profileImage) ?>" alt="Profile Image"
                         class="profile-pic img-fluid rounded-circle me-2"

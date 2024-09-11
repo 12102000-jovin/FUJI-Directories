@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card rounded-3 p-5 border-0 shadow-lg">
                 <div class="row">
                     <div class="col-md-6 d-flex flex-column justify-content-start p-5">
-                        <img src="Images/FE-logo.png" alt="Logo" class="img-fluid" ;>
+                        <img src="Images/FE-logo.png" alt="Logo" class="img-fluid">
                         <h2 class="fw-bold">Directories</h2>
                     </div>
 

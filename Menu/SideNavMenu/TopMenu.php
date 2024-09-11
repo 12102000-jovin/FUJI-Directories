@@ -18,7 +18,7 @@ $username = $_SESSION['username'] ?? '';
 // Prepare the SQL query to avoid SQL injection
 $user_details_query = "
     SELECT e.*
-    FROM employees e
+    FROM employees e 
     JOIN users u ON e.employee_id = u.employee_id
     WHERE u.username = ?
 ";
