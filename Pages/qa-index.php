@@ -36,6 +36,9 @@ $statusFilter = isset($_GET['statusFilter']) ? $conn->real_escape_string($_GET['
 // Get revision status filter
 $revisionStatusFilter = isset($_GET['revisionStatusFilter']) ? $conn->real_escape_string($_GET['revisionStatusFilter']) : '';
 
+// Get department filter
+$departmentFilter = isset($_GET['department']) ? $conn->real_escape_string($_GET['department']) : '';
+
 // Build base SQL query with role-based filtering
 $whereClause = "(qa_document LIKE '%$searchTerm%' OR
     document_name LIKE '%$searchTerm%' OR
@@ -49,6 +52,7 @@ if ($role !== "admin") {
 // Add filters for status and revision status
 $whereClause .= " AND (status = '$statusFilter' OR '$statusFilter' = '')";
 $whereClause .= " AND (revision_status = '$revisionStatusFilter' OR '$revisionStatusFilter' = '')";
+$whereClause .= " AND (department = '$departmentFilter' OR '$departmentFilter' = '')";
 
 // SQL Query to retrieve QA details with LIMIT for pagination
 $qa_sql = "SELECT * FROM quality_assurance WHERE $whereClause
@@ -275,7 +279,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
         <div class="row mb-3">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="col-8 col-lg-5">
-                    <form method="GET">
+                    <form method="GET" id="searchForm">
                         <div class="d-flex align-items-center">
                             <div class="input-group me-2">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -287,57 +291,54 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                             </button>
                             <button class="btn btn-danger ms-2"><a class="dropdown-item" href="#"
                                     onclick="clearURLParameters()">Clear</a></button>
+
+                            <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
+                                id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                <?php echo $departmentFilter ? $departmentFilter : "All Departments" ?>
+                            </button>
                             <div class="dropdown">
-                                <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
-                                    id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Department
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="departmentDropdownMenuButton">
-                                    <li><a class="dropdown-item" href="#" onclick="updateSearchQuery('')">All
-                                            Departments</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Accounts')">Accounts</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Engineering')">Engineering</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Estimating')">Estimating</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Electrical')">Electrical</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Human Resources')">Human Resources</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Management')">Management</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Operations Support')">Operations Support</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Quality Assurance')">Quality Assurance</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Quality Control')">Quality Control</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Research & Development')">Research &
-                                            Development</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Sheet Metal')">Sheet Metal</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Special Projects')">Special Projects</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="updateSearchQuery('Work, Health and Safety')">Work, Health and
-                                            Safety</a>
-                                    </li>
-                                </ul>
+                                <form method="GET" action="">
+                                    <input type="hidden" id="selectedDepartmentFilter" name="department" value="">
+                                    <ul class="dropdown-menu" aria-labelledby="departmentDropdownMenuButton">
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="All Departments">All
+                                                Departments</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Accounts">Accounts</a>
+                                        </li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Engineering">Engineering</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Estimating">Estimating</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Electrical">Electrical</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Human Resources">Human
+                                                Resources</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Management">Management</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Operations Support">Operations Support</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Quality Assurance">Quality Assurance</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Quality Control">Quality
+                                                Control</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Research & Development">Research &
+                                                Development</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Sheet Metal">Sheet
+                                                Metal</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Special Projects">Special
+                                                Projects</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Work, Health and Safety">Work, Health and
+                                                Safety</a>
+                                        </li>
+                                    </ul>
+                                </form>
                             </div>
                         </div>
                     </form>
@@ -410,12 +411,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     Revision Status <i class="fa-solid fa-sort fa-md ms-1"></i>
                                 </a> -->
                             </th>
-                            <!-- <th class="py-4 align-middle wipDocLink" style="min-width:200px">
+                            <th class="py-4 align-middle text-center wipDocLink" style="min-width:200px">
                                 <a onclick="updateSort('wip_doc_link', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor: pointer;">
                                     WIP Doc Link <i class="fa-solid fa-sort fa-md ms-1"></i>
                                 </a>
-                            </th> -->
+                            </th>
                             </td>
                         <?php } ?>
                         <th class="py-4 align-middle text-center department" style="min-width:200px">
@@ -591,14 +592,71 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 <?= $row["revision_status"] ?></span>
                                         </div>
                                     </td>
-                                    <!-- <td class="py-2 align-middle text-center wipDocLink">
+                                    <td class="py-2 align-middle text-center wipDocLink">
                                         <form class="wip_document" method="POST">
-                                            <input type="hidden" value="<?= $row['wip_doc_link'] ?>" name="wip_document">
-                                            <button type="submit"
-                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><?= $row["wip_doc_link"] ?>
-                                            </button>
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                
+                                                <?php
+                                                $departmentFolder = ''; // Initialize the departmentFolder variable
+                                    
+                                                // Check the start of the wip_doc_link
+                                                if (strpos($row['wip_doc_link'], '00-QA') === 0) {
+                                                    $departmentFolder = '00 - QA';
+                                                } elseif (strpos($row['wip_doc_link'], '01-MN') === 0) {
+                                                    $departmentFolder = '01 - MN';
+                                                } elseif (strpos($row['wip_doc_link'], '02-ES') === 0) {
+                                                    $departmentFolder = '02 - ES';
+                                                } elseif (strpos($row['wip_doc_link'], '03-AC') === 0) {
+                                                    $departmentFolder = '03 - AC';
+                                                } elseif (strpos($row['wip_doc_link'], '04-PJ') === 0) {
+                                                    $departmentFolder = '04 - PJ';
+                                                } elseif (strpos($row['wip_doc_link'], '05-EN') === 0) {
+                                                    $departmentFolder = '05 - EN';
+                                                } elseif (strpos($row['wip_doc_link'], '06-EL') === 0) {
+                                                    $departmentFolder = '06 - EL';
+                                                } elseif (strpos($row['wip_doc_link'], '07-SM') === 0) {
+                                                    $departmentFolder = '07 - SM';
+                                                } elseif (strpos($row['wip_doc_link'], '08-OS') === 0) {
+                                                    $departmentFolder = '08 - OS';
+                                                } elseif (strpos($row['wip_doc_link'], '09-HR') === 0) {
+                                                    $departmentFolder = '09 - HR';
+                                                } elseif (strpos($row['wip_doc_link'], '10-RD') === 0) {
+                                                    $departmentFolder = '10 - RD';
+                                                } elseif (strpos($row['wip_doc_link'], '11-WH') === 0) {
+                                                    $departmentFolder = '11 - WH';
+                                                } elseif (strpos($row['wip_doc_link'], '12-QC') === 0) {
+                                                    $departmentFolder = '12 - QC';
+                                                } elseif (strpos($row['wip_doc_link'], '13-SD') === 0) {
+                                                    $departmentFolder = '13 - SD';
+                                                } elseif (strpos($row['wip_doc_link'], '14-IF') === 0) {
+                                                    $departmentFolder = '14 - IF';
+                                                } elseif (strpos($row['wip_doc_link'], '15-SP') === 0) {
+                                                    $departmentFolder = '15 - SP';
+                                                } elseif (strpos($row['wip_doc_link'], '16-CC') === 0) {
+                                                    $departmentFolder = '16 - CC';
+                                                } else {
+                                                    // Default departmentFolder if neither condition is met
+                                                    $departmentFolder = 'Unknown Document'; // or any default value you want
+                                                }
+                                                ?>
+
+                                                <input type="hidden"
+                                                    value="D:\FSMBEH-Data\<?= $departmentFolder ?>\00 - Documents\01 - WIP Documents\<?= $row['wip_doc_link'] ?>.docx"
+                                                    name="wip_document">
+                                                <!-- <button type="submit"
+                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><?= $row["wip_doc_link"] ?>
+                                                </button> -->
+
+                                                <a href="doc.php?file=<?= urlencode(string: $row["wip_doc_link"]) ?>.docx" target="_blank" 
+                                                    class="btn btn-link p-0 m-0 text-decoration_underline fw-bold">
+                                                    <?= htmlspecialchars(string: $row["wip_doc_link"], flags: ENT_QUOTES, encoding: 'UTF-8') ?>
+                                                </a>
+
+                                                <i class="fa-solid fa-copy tooltips text-primary ms-2"
+                                                    onclick="copyDirectoryPath(this)" role="button"></i>
+                                            </div>
                                         </form>
-                                    </td> -->
+                                    </td>
 
                                 <?php } ?>
 
@@ -629,8 +687,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                     <option value="Revision/Creation requested"
                                                         <?= $row['status'] === 'Revision/Creation requested' ? 'selected' : '' ?>>
                                                         Revision/Creation requested</option>
-                                                    <option value="N/A"
-                                                        <?= $row['status'] === 'N/A' ? 'selected' : '' ?>>
+                                                    <option value="N/A" <?= $row['status'] === 'N/A' ? 'selected' : '' ?>>
                                                         N/A</option>
                                                 </select>
                                                 <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
@@ -946,7 +1003,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                         <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
                         <input type="hidden" name="order" value="<?= htmlspecialchars($order) ?>">
                         <input type="hidden" name="recordsPerPage" value="<?= htmlspecialchars($records_per_page) ?>">
-                        <input type="hidden" name="page" value="<?= htmlspecialchars($page) ?>">
                         <input type="hidden" name="search" value="<?= htmlspecialchars($searchTerm) ?>">
 
                         <div class="mb-3">
@@ -974,7 +1030,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             </div>
         </div>
     </div>
-    <!-- ==================  Filter by Revision Status Modal ==================  -->
+    <!-- ================== Filter by Revision Status Modal ==================  -->
     <div class="modal fade" id="filterRevisionStatusModal" tabindex="-1"
         aria-labelledby="filterRevisionStatusModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -988,7 +1044,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                         <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
                         <input type="hidden" name="order" value="<?= htmlspecialchars($order) ?>">
                         <input type="hidden" name="recordsPerPage" value="<?= htmlspecialchars($records_per_page) ?>">
-                        <input type="hidden" name="page" value="<?= htmlspecialchars($page) ?>">
                         <input type="hidden" name="search" value="<?= htmlspecialchars($searchTerm) ?>">
 
                         <div class="mb-3">
@@ -1345,12 +1400,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             const url = new URL(window.location.href);
             url.search = ''; // Clear the query string
 
-            // Update the URL without reloading the page
-            window.history.pushState({}, '', url);
-
-            // Reload the page with the updated URL
-            window.location.href = url.href; // This will reload the page with the cleared URL parameters
+            // Reload the page with the updated URL (no need for pushState)
+            window.location.href = url.href;
         }
+
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -1362,6 +1415,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             const topMenuTitleSmall = document.getElementById("top-menu-title-small");
             topMenuTitleSmall.textContent = documentTitle;
         })
+    </script>
+    <script>
+        function copyDirectoryPath(i) {
+            var wipDocLink = i.closest('td').querySelector('input').value;
+            var icon = i;
+
+            // Create a temporary input element to copy the content from
+            var tempInput = document.createElement('input');
+            tempInput.value = wipDocLink;
+            document.body.appendChild(tempInput);
+
+            // Select the content of the temporary input
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);  // For mobile devices
+
+            try {
+                // Execute the copy command
+                document.execCommand('copy');
+                console.log('Text copied successfully');
+
+                // Update the icon to show success and hide it
+                icon.style.visibility = 'hidden';
+                icon.insertAdjacentHTML('afterend', '<small class="text-success m-0 p-0 fw-bold">Copied</small>');
+
+                // After 2 seconds, remove the "Copied" text and show the icon again
+                setTimeout(function () {
+                    icon.style.visibility = 'visible';
+                    icon.nextElementSibling.remove();  // Remove the "Copied" text
+                }, 800); // 800 milliseconds = 0.8 seconds
+            } catch (err) {
+                console.error('Unable to copy text', err);
+            }
+
+            // Remove the temporary input from the document
+            document.body.removeChild(tempInput);
+        }
+    </script>
+    <script>
+        document.querySelectorAll('.dropdown-menu .dropdown-department-item').forEach(item => {
+            item.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent default anchor click behavior
+                let department = this.getAttribute('data-department-filter');
+                if (department === "All Departments") {
+                    document.getElementById('selectedDepartmentFilter').value = "";
+                } else {
+                    document.getElementById('selectedDepartmentFilter').value = department;
+                }
+                this.closest('form').submit(); // Submit the form
+            });
+        });
+    </script>
+    <script>
+        // Add an event listener to the search input to detect the "Enter" key
+        document.getElementById('searchDocuments').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                // Prevent default form submission (if needed) and manually trigger the form submit
+                event.preventDefault();
+                document.getElementById('searchForm').submit();
+            }
+        });
     </script>
 </body>
 

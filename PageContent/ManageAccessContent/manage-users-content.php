@@ -189,7 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                 <!-- Display user details in cards on small screens -->
                 <div class="d-md-none">
                     <?php while ($row = $user_details_result->fetch_assoc()): ?>
-                        <div class="card mb-3 border-0">
+                        <div class="card mb-3 border-0 userCard">
                             <div
                                 class="card-body d-flex flex-column justify-content-center align-items-center position-relative">
                                 <div class="bg-gradient shadow-lg rounded-circle mb-3"
@@ -207,8 +207,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                         </div>
                                     <?php endif; ?>
                                 </div>
-                                <h5 class="card-title fw-bold"><?= $row['first_name'] . ' ' . $row['last_name'] ?></h5>
-                                <h6 class="card-subtitle mb-3 text-muted">Employee ID: <?= $row['employee_id'] ?></h6>
+                                <h5 class="card-title fw-bold usernameCard">
+                                    <?= $row['first_name'] . ' ' . $row['last_name'] ?></h5>
+                                <h6 class="card-subtitle mb-3 text-muted userIdCard">Employee ID: <?= $row['employee_id'] ?></h6>
                                 <div class="d-flex flex-wrap justify-content-center">
                                     <div class="col-md-4 mb-2 m-1">
                                         <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?= $row['employee_id'] ?>"
@@ -235,6 +236,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     <?php endwhile; ?>
                 </div>
                 <div class="d-none d-md-block">
+                    <div class="input-group mb-3 me-2">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="search" class="form-control" id="searchUser" name="searchUser"
+                            placeholder="Search User" oninput="filterUsers(this.value)">
+                    </div>
                     <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
                         <table class="table table-hover mb-0 pb-0">
                             <thead class="table-primary">
@@ -247,10 +253,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             <tbody>
                                 <?php $user_details_result->data_seek(0); ?>
                                 <?php while ($row = $user_details_result->fetch_assoc()): ?>
-                                    <tr class="text-center">
-                                        <td class="py-4 align-middle"><?= $row['first_name'] . ' ' . $row['last_name'] ?>
+                                    <tr class="text-center userData">
+                                        <td class="py-4 align-middle userName">
+                                            <?= $row['first_name'] . ' ' . $row['last_name'] ?>
                                         </td>
-                                        <td class="py-4 align-middle"><?= $row['employee_id'] ?></td>
+                                        <td class="py-4 align-middle userId"><?= $row['employee_id'] ?></td>
                                         <td class="py-4 align-middle">
                                             <button class="btn text-warning" type="button" data-bs-toggle="modal"
                                                 data-bs-target="#showAccessModal<?= $row['employee_id'] ?>">
@@ -280,7 +287,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                                     data-bs-toggle="tooltip" data-bs-placement="top"
                                                     title="Delete User"></i>
                                             </button>
-
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -331,6 +337,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 <span class="text-warning fw-bold">Manage Folders</span>
                             </a>
                         </div>
+                    </div>
+                </div>
+                <div class="d-md-none">
+                    <div class="input-group mb-3 me-2">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="search" class="form-control" id="searchUser" name="searchUser"
+                            placeholder="Search User" oninput="filterUsersSmallScreen(this.value)">
                     </div>
                 </div>
             </div>
@@ -862,6 +875,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
         });
     </script>
 
+    <script>
+        function filterUsers(searchValue) {
+            const rows = document.querySelectorAll('.userData');
+            rows.forEach(row => {
+                const userName = row.querySelector('.userName').textContent.toLowerCase();
+                const userId = row.querySelector('.userId').textContent.toLowerCase();
+                if (userName.includes(searchValue.toLowerCase()) || userId.includes(searchValue.toLowerCase())) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function filterUsersSmallScreen(searchValue) {
+            const cards = document.querySelectorAll('.userCard');
+            cards.forEach(card => {
+                const userName = card.querySelector('.usernameCard').textContent.toLowerCase();
+                const userId = card.querySelector('.userIdCard').textContent.toLowerCase();
+                if (userName.includes(searchValue.toLowerCase()) || userId.includes(searchValue.toLowerCase())) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            })
+        }
+    </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 </body>

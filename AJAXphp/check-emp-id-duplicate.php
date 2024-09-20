@@ -28,6 +28,6 @@ $check_employee_stmt->fetch();
 $check_employee_stmt->close();
 
 // Output debugging information
-echo $employee_count > 0 ? "Duplicate employee found. " : "No duplicate found.";
+echo $employee_count > 0 ? "Duplicate employee ID found. " : "No duplicate found.";
 
 $conn->close();

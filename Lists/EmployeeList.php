@@ -96,11 +96,13 @@ if ($employee_list_result->num_rows > 0) {
                     </ol>
                 </nav>
             </div>
-            <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
-                <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
-                    <i class="fa-solid fa-user-plus"></i> Add Employee
-                </a>
-            </div>
+            <?php if ($role == "admin") { ?>
+                <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
+                    <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                        <i class="fa-solid fa-user-plus"></i> Add Employee
+                    </a>
+                </div>
+            <?php } ?>
         </div>
 
         <hr />

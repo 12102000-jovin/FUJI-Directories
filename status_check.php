@@ -24,7 +24,7 @@ if (isset($_SESSION['username']) && isset($_SESSION['logged_in'])) {
     // Check if the last activity timestamp is set
     if (isset($_SESSION['last_activity'])) {
         // Set the inactivity threshold (in seconds)
-        $inactivityThreshold = 7200; // (adjust as needed)
+        $inactivityThreshold = 18000; // (adjust as needed)
 
         // Calculate the time difference between the current time and the last activity
         $lastActivityTime = strtotime($_SESSION['last_activity']);

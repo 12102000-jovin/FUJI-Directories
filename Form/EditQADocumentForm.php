@@ -188,9 +188,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 <option disabled selected hidden></option>
                 <option value="Accounts Manager">Accounts Manager</option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Department Manager">Engineering Department Manager</option>
-                <option value="Electrical Department Manager">Electrical Department Manager</option>
-                <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Electrical Manager">Electrical Manager</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="QA Officer">QA Officer</option>
@@ -226,9 +226,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 required>
                 <option disabled selected hidden></option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Department Manager">Engineering Department Manager</option>
-                <option value="Electrical Department Manager">Electrical Department Manager</option>
-                <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Electrical Manager">Electrical Manager</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="N/A">N/A</option>

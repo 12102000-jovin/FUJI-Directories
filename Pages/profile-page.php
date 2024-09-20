@@ -24,7 +24,10 @@ $get_payroll_type_stmt->bind_result($employee_payroll_type);
 $get_payroll_type_stmt->fetch();
 $get_payroll_type_stmt->close();
 
-if ($role === "general" && $employee_payroll_type === "salary") {
+// Get login employee id from SESSION
+$loginEmployeeId = $_SESSION["employee_id"];
+
+if ($role === "general" && $employee_payroll_type === "salary" && $employeeId != $loginEmployeeId) {
     echo "<script>
     window.location.href = 'http://$serverAddress/$projectName/access_restricted.php';
   </script>";
@@ -34,8 +37,6 @@ $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// Get login employee id from SESSION
-$loginEmployeeId = $_SESSION["employee_id"];
 
 // SQL to get login employee details
 $login_employee_details_sql = "SELECT * FROM employees WHERE employee_id = $loginEmployeeId";
@@ -313,7 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Process the uploaded file
         $imageExtension = pathinfo($profileImage["name"], PATHINFO_EXTENSION);
         $newFileName = $profileImageToDeleteEmpId . '_profiles.' . $imageExtension;
-        $imagePath = "../Images/ProfilePhotos/" . $newFileName;
+        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\00 - Employee Documents\\01 - Employment Documents\\" . $newFileName;
 
         if (move_uploaded_file($profileImage["tmp_name"], $imagePath)) {
             // Encode the image before insertion
@@ -485,6 +486,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdSix
 //  ========================= P E R F O R M A N C E  R E V I E W (9th Month Review) ========================= 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNinthMonthReview"])) {
     $revieweeEmployeeId = $_POST["revieweeEmployeeIdNinthMonthReview"];
+    $reviewerEmployeeId = $_POST["reviewerEmployeeId"];
+    $reviewType = $_POST["reviewType"];
+    $reviewNotes = $_POST["reviewNotes"];
+    $reviewDate = $_POST["reviewDate"];
+
+    $submit_performance_review_sql = "INSERT INTO performance_review (review_type, reviewer_employee_id, reviewee_employee_id, review_notes, review_date) VALUES (?, ?, ? ,? ,?)";
+    $submit_performance_review_result = $conn->prepare($submit_performance_review_sql);
+
+    if (!$submit_performance_review_result) {
+        echo "Prepare failed: (" . $conn->errno . ") " . $conn->error;
+    } else {
+        $submit_performance_review_result->bind_param("siiss", $reviewType, $reviewerEmployeeId, $revieweeEmployeeId, $reviewNotes, $reviewDate);
+
+        // Execute the prepared statement
+        if ($submit_performance_review_result->execute()) {
+            header("Location: " . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId);
+            exit();
+        } else {
+            echo "Error: " . $submit_performance_review_result->error;
+        }
+        // Close statement 
+        $submit_performance_review_result->close();
+    }
+}
+
+//  ========================= P E R F O R M A N C E  R E V I E W (12th Month Review) ========================= 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwelfthMonthReview"])) {
+    $revieweeEmployeeId = $_POST["revieweeEmployeeIdTwelfthMonthReview"];
     $reviewerEmployeeId = $_POST["reviewerEmployeeId"];
     $reviewType = $_POST["reviewType"];
     $reviewNotes = $_POST["reviewNotes"];
@@ -842,13 +871,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                             </div>
                             <div class="hide-print">
                                 <div class="d-flex flex-sm-row align-items-center mt-4 mt-sm-0">
-                                    <button class="btn btn-secondary  me-2" onclick="window.print()">
+                                    <button class="btn btn-secondary me-2" onclick="window.print()">
                                         <i class="fa-solid fa-print"></i>
                                     </button>
-                                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
-                                        id="editProfileBtn">
-                                        Edit Profile <i class="fa-regular fa-pen-to-square"></i>
-                                    </button>
+
+                                    <?php if ($role === "admin") { ?>
+                                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
+                                            id="editProfileBtn">
+                                            Edit Profile <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    <?php } ?>
                                 </div>
                             </div>
                         </div>
@@ -1084,9 +1116,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                             <div class="d-flex justify-content-between align-items-center">
                                 <p class="fw-bold signature-color mb-0">Pay Raise History <span
                                         class="badge rounded-pill signature-btn">Wage</span></p>
-                                <i id="payRaiseEditIconWage" role="button"
-                                    class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                    data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                <?php if ($role === "admin") { ?>
+                                    <i id="payRaiseEditIconWage" role="button"
+                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
+                                        data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                <?php } ?>
                             </div>
                             <div class="px-4 py-2">
                                 <div id="chartContainer" style="height: 300px; width: 100%;"></div>
@@ -1099,9 +1133,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                             <div class="d-flex justify-content-between align-items-center">
                                 <p class="fw-bold signature-color mb-0">Pay Raise History <span
                                         class="badge rounded-pill signature-btn">Salary</span></p>
-                                <i id="payRaiseEditIconSalary" role="button"
-                                    class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                    data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                <?php if ($role === "admin") { ?>
+                                    <i id="payRaiseEditIconSalary" role="button"
+                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
+                                        data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                <?php } ?>
                             </div>
                             <div class="px-4 py-2">
                                 <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
@@ -1115,6 +1151,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                         $thirdMonthDueDate = date('Y-m-d', strtotime($startDate . ' +3 month'));
                         $sixthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +6 month'));
                         $ninthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +9 month'));
+                        $twelfthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +12 month'));
 
                         // $reviewType = isset($reviewType) ? $reviewType : null;
                         $revieweeEmployeeId = isset($revieweeEmployeeId) ? $revieweeEmployeeId : null;
@@ -1308,6 +1345,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     <?php } ?>
                                 </div>
 
+                                <!-- Twelfth Month Review -->
+                                <hr />
+                                <div class="d-flex align-items-center">
+                                    <?php $hasTwelfthMonthReview = false;
+                                    foreach ($performance_review_result as $row) {
+                                        if ($row['review_type'] === "Twelfth Month Review") {
+                                            $hasTwelfthMonthReview = true;
+                                            break;
+                                        }
+                                    } ?>
+                                    <?php
+                                    $twelfthMonthDueDateFormat = new DateTime($twelfthMonthDueDate);
+                                    $twelfthMonthInterval = $today->diff($twelfthMonthDueDateFormat);
+                                    $twelfthMonthDaysDifference = $twelfthMonthInterval->format('%r%a');
+                                    ?>
+                                    <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                    <?php } else { ?>
+                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                    <?php } ?>
+                                    <div class="ms-3">
+                                        <div class="d-flex flex-column">
+                                            <div class="fw-bold">12<sup>th</sup> Month Review
+                                                <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                    <span class="badge rounded-pill bg-success">Done</span>
+                                                <?php } else if (!$hasTwelfthMonthReview && $revieweeEmployeeId != $employeeId && $twelfthMonthDaysDifference < 7 && $twelfthMonthDaysDifference >= 0) { ?>
+                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                <?php } else if (!$hasTwelfthMonthReview && $twelfthMonthDaysDifference < 0) { ?>
+                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                <?php } else {
+                                                    } ?>
+                                            </div>
+                                            <div>
+                                                <small class="text-secondary">Due: <?php echo $twelfthMonthDueDate ?></small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                        <button class="btn ms-auto" data-bs-toggle="modal"
+                                            data-bs-target="#twelfthMonthPerformanceReviewModal">
+                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                        </button>
+                                    <?php } ?>
+                                </div>
+
                                 <!-- <?php echo $firstMonthDueDate . " " . $thirdMonthDueDate . " " . $sixthMonthDueDate . " " . $ninthMonthDueDate ?> -->
 
                             </div>
@@ -1349,6 +1432,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="pay-review-directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\00 - Employee Documents"; ?>">
                                                         <button id="copy-button" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1393,6 +1478,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="pay-review-directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
                                                         <button id="copy-button" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1405,7 +1492,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     </div>
                                 </div>
                             </div>
-                            <!-- 02 - Resume, ID, and Qualification -->
+                            <!-- 02 - Resume, ID, and Qualifications -->
                             <div class="d-flex justify-content-center mt-3">
                                 <div class="row col-12 p-2 background-color rounded shadow-sm">
                                     <div class="col-auto d-flex align-items-center">
@@ -1415,7 +1502,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                 <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                 <form method="POST">
                                                     <input type="hidden" name="annualLeaveFolder">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualification"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1428,16 +1515,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                         <div class="d-flex align-items-center">
                                             <div class="d-flex flex-column">
                                                 <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualification"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        02 - Resume, ID and Qualification
+                                                        02 - Resume, ID and Qualifications
                                                     </a>
                                                 </div>
                                                 <span>
                                                     <div class="d-flex align-items-center">
                                                         <small id="annual-leaves-directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualification" ?></small>
+                                                            style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
                                                         <button id="copy-button-annual" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1483,6 +1572,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="annual-leaves-directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
                                                         <button id="copy-button-annual" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1525,6 +1616,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\04 - Leave" ?>">
                                                         <button id="copy-button-policies" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1567,6 +1660,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\05 - HR Actions" ?>">
                                                         <button id="copy-button-policies" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -1609,6 +1704,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                     <div class="d-flex align-items-center">
                                                         <small id="directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
+                                                        <input type="hidden"
+                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\06 - Work Compensation" ?>">
                                                         <button id="copy-button-policies" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
@@ -2047,6 +2144,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                         if ($row['review_type'] === "First Month Review") {
                                             $hasFirstMonthReview = true;
                                             $firstMonthReviewDate = $row['review_date'];
+                                            $firstMonthReviewNotes = $row['review_notes'];
                                             $firstMonthReviewerEmployeeId = $row['reviewer_employee_id'];
                                             break;
                                         }
@@ -2063,7 +2161,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     ?>
                                     <div class="modal-body">
                                         <p><strong>Reviewer: </strong><span
-                                                class="signature-color fw-bold"><?php echo $firstMonthFirstName . " " . $firstMonthLastName ?>
+                                                class="signature-color fw-bold"><?php echo $loginEmployeeFirstName . " " . $loginEmployeeLastName ?>
                                             </span></p>
                                         <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
                                                 <?php echo $firstName . " " . $lastName ?> </span></p>
@@ -2074,8 +2172,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                                 </p>
                                                 <p><strong>Reviewee Employee ID:</strong>
                                                     <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
+
                                                 <p><strong>Review Notes:</strong>
-                                                    <?php echo htmlspecialchars($reviewNotes); ?></p>
+                                                    <?php echo htmlspecialchars($firstMonthReviewNotes); ?></p>
                                             </div>
                                         <?php } else { ?>
                                             <input type="hidden" name="revieweeEmployeeIdFirstMonthReview"
@@ -2086,7 +2185,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
                                                 <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
-                                                    name="reviewDate">
+                                                    name="reviewDate" value="<?php echo date('Y-m-d'); ?>">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2101,7 +2200,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php if (!$hasFirstMonthReview) { ?>
+                                            <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php } ?>
                                     </div>
                                 </form>
                             </div>
@@ -2113,7 +2214,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="thirdMonthPerformanceReviewModalLabel">1st Month Review</h5>
+                                    <h5 class="modal-title" id="thirdMonthPerformanceReviewModalLabel">3rd Month Review</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Close"></button>
                                 </div>
@@ -2122,23 +2223,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     foreach ($performance_review_result as $row) {
                                         if ($row['review_type'] === "Third Month Review") {
                                             $hasThirdMonthReview = true;
+                                            $thirdMonthReviewDate = $row['review_date'];
+                                            $thirdMonthReviewNotes = $row['review_notes'];
+                                            $thirdMonthReviewerEmployeeId = $row['reviewer_employee_id'];
                                             break;
                                         }
                                     } ?>
+                                    <?php
+                                    $query = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+                                    $stmt = $conn->prepare($query);
+                                    $stmt->bind_param("s", $thirdMonthReviewerEmployeeId);
+                                    $stmt->execute();
+                                    $stmt->bind_result($thirdMonthFirstName, $thirdMonthLastName);
+                                    $stmt->fetch();
+                                    $stmt->close();
+                                    ?>
                                     <div class="modal-body">
                                         <p><strong>Reviewer: </strong><span
                                                 class="signature-color fw-bold"><?php echo $loginEmployeeFirstName . " " . $loginEmployeeLastName ?>
                                             </span></p>
                                         <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
                                                 <?php echo $firstName . " " . $lastName ?> </span></p>
-                                        <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId && $reviewerEmployeeId == $loginEmployeeId) { ?>
+                                        <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId) { ?>
                                             <div class="review-details">
-                                                <p><strong>Review Date:</strong> <?php echo htmlspecialchars($reviewDate); ?>
+                                                <p><strong>Review Date:</strong>
+                                                    <?php echo htmlspecialchars($thirdMonthReviewDate); ?>
                                                 </p>
                                                 <p><strong>Reviewee Employee ID:</strong>
                                                     <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
                                                 <p><strong>Review Notes:</strong>
-                                                    <?php echo htmlspecialchars($reviewNotes); ?></p>
+                                                    <?php echo htmlspecialchars($thirdMonthReviewNotes); ?></p>
                                             </div>
                                         <?php } else { ?>
                                             <input type="hidden" name="revieweeEmployeeIdThirdMonthReview"
@@ -2149,7 +2263,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
                                                 <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
-                                                    name="reviewDate">
+                                                    name="reviewDate" value="<?php echo date('Y-m-d'); ?>">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2164,7 +2278,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php if (!$hasThirdMonthReview) { ?>
+                                            <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php } ?>
                                     </div>
                                 </form>
                             </div>
@@ -2185,48 +2301,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     foreach ($performance_review_result as $row) {
                                         if ($row['review_type'] === "Sixth Month Review") {
                                             $hasSixthMonthReview = true;
+                                            $sixthMonthReviewDate = $row['review_date'];
+                                            $sixthMonthReviewNotes = $row['review_notes'];
+                                            $sixthMonthReviewerEmployeeId = $row['reviewer_employee_id'];
                                             break;
                                         }
                                     } ?>
+                                    <?php
+                                    $query = "SELECT first_name, last_name FROm employees WHERE employee_id = ?";
+                                    $stmt = $conn->prepare($query);
+                                    $stmt->bind_param("s", $sixthMonthReviewerEmployeeId);
+                                    $stmt->execute();
+                                    $stmt->bind_result($sixthMonthFirstName, $sixthMonthLastName);
+                                    $stmt->fetch();
+                                    $stmt->close();
+                                    ?>
                                     <div class="modal-body">
                                         <p><strong>Reviewer: </strong><span
                                                 class="signature-color fw-bold"><?php echo $loginEmployeeFirstName . " " . $loginEmployeeLastName ?>
-                                            </span></p>
-                                        <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
-                                                <?php echo $firstName . " " . $lastName ?> </span></p>
-                                        <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId && $reviewerEmployeeId == $loginEmployeeId) { ?>
-                                            <div class="review-details">
-                                                <p><strong>Review Date:</strong> <?php echo htmlspecialchars($reviewDate); ?>
-                                                </p>
-                                                <p><strong>Reviewee Employee ID:</strong>
-                                                    <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
-                                                <p><strong>Review Notes:</strong>
-                                                    <?php echo htmlspecialchars($reviewNotes); ?></p>
-                                            </div>
-                                        <?php } else { ?>
-                                            <input type="hidden" name="revieweeEmployeeIdSixthMonthReview"
-                                                value="<?php echo htmlspecialchars($employeeId); ?>" />
-                                            <input type="hidden" name="reviewerEmployeeId"
-                                                value="<?php echo htmlspecialchars($loginEmployeeId); ?>" />
-                                            <input type="hidden" name="reviewType" value="Sixth Month Review" />
-                                            <div class="mb-3">
-                                                <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
-                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
-                                                    name="reviewDate">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="reviewNotes" class="form-label"><strong>Review
-                                                        Notes:</strong></label>
-                                                <textarea class="form-control" id="reviewNotes" name="reviewNotes"
-                                                    rows="4"></textarea>
-                                            </div>
-                                        <?php } ?>
+                                                <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
+                                                        <?php echo $firstName . " " . $lastName ?> </span></p>
+                                                <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                    <div class="review-details">
+                                                        <p><strong>Review Date:</strong>
+                                                            <?php echo htmlspecialchars($sixthMonthReviewDate); ?>
+                                                        </p>
+                                                        <p><strong>Reviewee Employee ID:</strong>
+                                                            <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
+                                                        <p><strong>Review Notes:</strong>
+                                                            <?php echo htmlspecialchars($sixthMonthReviewNotes); ?></p>
+                                                    </div>
+                                                <?php } else { ?>
+                                                    <input type="hidden" name="revieweeEmployeeIdSixthMonthReview"
+                                                        value="<?php echo htmlspecialchars($employeeId); ?>" />
+                                                    <input type="hidden" name="reviewerEmployeeId"
+                                                        value="<?php echo htmlspecialchars($loginEmployeeId); ?>" />
+                                                    <input type="hidden" name="reviewType" value="Sixth Month Review" />
+                                                    <div class="mb-3">
+                                                        <label for="reviewDate" class="form-label"><strong>Review
+                                                                Date:</strong></label>
+                                                        <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                            name="reviewDate" value="<?php echo date('Y-m-d'); ?>">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="reviewNotes" class="form-label"><strong>Review
+                                                                Notes:</strong></label>
+                                                        <textarea class="form-control" id="reviewNotes" name="reviewNotes"
+                                                            rows="4"></textarea>
+                                                    </div>
+                                                <?php } ?>
                                     </div>
                                     <!-- Additional Modal Actions -->
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php if (!$hasSixthMonthReview) { ?>
+                                            <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php } ?>
                                     </div>
                                 </form>
                             </div>
@@ -2238,7 +2369,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="ninthMonthPerformanceReviewModalLabel">6th Month Review</h5>
+                                    <h5 class="modal-title" id="ninthMonthPerformanceReviewModalLabel">9th Month Review</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Close"></button>
                                 </div>
@@ -2247,23 +2378,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     foreach ($performance_review_result as $row) {
                                         if ($row['review_type'] === "Ninth Month Review") {
                                             $hasNinthMonthReview = true;
+                                            $ninthMonthReviewDate = $row['review_date'];
+                                            $ninthMonthReviewNotes = $row['review_notes'];
+                                            $ninthMonthReviewerEmployeeId = $row['reviewer_employee_id'];
                                             break;
                                         }
                                     } ?>
+
+                                    <?php
+                                    $query = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+                                    $stmt = $conn->prepare($query);
+                                    $stmt->bind_param("s", $ninthMonthReviewerEmployeeId);
+                                    $stmt->execute();
+                                    $stmt->bind_result($ninthMonthFirstName, $ninthMonthLastName);
+                                    $stmt->close();
+                                    ?>
                                     <div class="modal-body">
                                         <p><strong>Reviewer: </strong><span
                                                 class="signature-color fw-bold"><?php echo $loginEmployeeFirstName . " " . $loginEmployeeLastName ?>
                                             </span></p>
                                         <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
                                                 <?php echo $firstName . " " . $lastName ?> </span></p>
-                                        <?php if ($hasNinthMonthReview && $revieweeEmployeeId == $employeeId && $reviewerEmployeeId == $loginEmployeeId) { ?>
+                                        <?php if ($hasNinthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
                                             <div class="review-details">
-                                                <p><strong>Review Date:</strong> <?php echo htmlspecialchars($reviewDate); ?>
+                                                <p><strong>Review Date:</strong>
+                                                    <?php echo htmlspecialchars($ninthMonthReviewDate); ?>
                                                 </p>
                                                 <p><strong>Reviewee Employee ID:</strong>
                                                     <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
                                                 <p><strong>Review Notes:</strong>
-                                                    <?php echo htmlspecialchars($reviewNotes); ?></p>
+                                                    <?php echo htmlspecialchars($ninthMonthReviewNotes); ?></p>
                                             </div>
                                         <?php } else { ?>
                                             <input type="hidden" name="revieweeEmployeeIdNinthMonthReview"
@@ -2274,7 +2418,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                             <div class="mb-3">
                                                 <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
                                                 <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
-                                                    name="reviewDate">
+                                                    name="reviewDate" value="<?php echo date('Y-m-d'); ?>">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="reviewNotes" class="form-label"><strong>Review
@@ -2289,14 +2433,94 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php if (!$hasNinthMonthReview) { ?>
+                                            <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php } ?>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ================== Performance Review Modal (Twelfth Month)================== -->
+                    <div class="modal fade" id="twelfthMonthPerformanceReviewModal" tabindex="-1"
+                        aria-labelledby="twelfthMonthPerformanceReviewModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="twelfthMonthPerformanceReviewModalLabel">12th Month Review
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <form method="POST">
+                                    <?php $hasTwelfthMonthReview = false;
+                                    foreach ($performance_review_result as $row) {
+                                        if ($row['review_type'] === "Twelfth Month Review") {
+                                            $hasTwelfthMonthReview = true;
+                                            $twelfthMonthReviewDate = $row['review_date'];
+                                            $twelfthMonthReviewNotes = $row['review_notes'];
+                                            $twelfthMonthReviewerEmployeeId = $row['reviewer_employee_id'];
+                                            break;
+                                        }
+                                    } ?>
+
+                                    <?php
+                                    $query = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+                                    $stmt = $conn->prepare($query);
+                                    $stmt->bind_param("s", $twelfthMonthReviewerEmployeeId);
+                                    $stmt->execute();
+                                    $stmt->bind_result($twelfthMonthFirstName, $twelfthMonthLastName);
+                                    $stmt->fetch();
+                                    $stmt->close();
+                                    ?>
+                                    <div class="modal-body">
+                                        <p><strong>Reviewer: </strong><span
+                                                class="signature-color fw-bold"><?php echo $loginEmployeeFirstName . " " . $loginEmployeeLastName ?>
+                                            </span></p>
+                                        <p><strong>Reviewee: </strong><span class="signature-color fw-bold">
+                                                <?php echo $firstName . " " . $lastName ?> </span></p>
+                                        <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                            <div class="review-details">
+                                                <p><strong>Review Date:</strong> <?php echo htmlspecialchars($reviewDate); ?>
+                                                </p>
+                                                <p><strong>Reviewee Employee ID:</strong>
+                                                    <?php echo htmlspecialchars($revieweeEmployeeId); ?></p>
+                                                <p><strong>Review Notes:</strong>
+                                                    <?php echo htmlspecialchars($reviewNotes); ?></p>
+                                            </div>
+                                        <?php } else { ?>
+                                            <input type="hidden" name="revieweeEmployeeIdTwelfthMonthReview"
+                                                value="<?php echo htmlspecialchars($employeeId); ?>" />
+                                            <input type="hidden" name="reviewerEmployeeId"
+                                                value="<?php echo htmlspecialchars($loginEmployeeId); ?>" />
+                                            <input type="hidden" name="reviewType" value="Twelfth Month Review" />
+                                            <div class="mb-3">
+                                                <label for="reviewDate" class="form-label"><strong>Review Date:</strong></label>
+                                                <input type="date" max="9999-12-31" class="form-control" id="reviewDate"
+                                                    name="reviewDate" value="<?php echo date('Y-m-d'); ?>">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="reviewNotes" class="form-label"><strong>Review
+                                                        Notes:</strong></label>
+                                                <textarea class="form-control" id="reviewNotes" name="reviewNotes"
+                                                    rows="4"></textarea>
+                                            </div>
+
+                                        <?php } ?>
+                                    </div>
+                                    <!-- Additional Modal Actions -->
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Close</button>
+                                        <?php if (!$hasTwelfthMonthReview) { ?>
+                                            <button type="submit" class="btn btn-dark">Submit Review</button>
+                                        <?php } ?>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <?php require_once("../logout.php") ?>
             </div>
             <?php
@@ -2466,11 +2690,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdNin
 
         <script>
             function copyDirectoryPath(button) {
-                var directoryPathElement = button.parentElement.querySelector('small.text-break');
+                var directoryPathElement = button.parentElement.querySelector('input').value;
+
+                console.log(directoryPathElement);
                 var textArea = document.createElement("textarea");
 
                 // Place the directory path text inside the textarea
-                textArea.textContent = directoryPathElement.textContent;
+                textArea.textContent = directoryPathElement;
+
 
                 // Ensure textarea is non-visible
                 textArea.style.position = "fixed";

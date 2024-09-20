@@ -172,9 +172,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 <option disabled selected hidden></option>
                 <option value="Accounts Manager">Accounts Manager</option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Department Manager">Engineering Department Manager</option>
-                <option value="Electrical Department Manager">Electrical Department Manager</option>
-                <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Electrical Manager">Electrical Manager</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="QA Officer">QA Officer</option>
@@ -209,9 +209,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <select class="form-select" aria-label="approvedBy" name="approvedBy" required>
                 <option disabled selected hidden></option>
                 <option value="General Manager">General Manager</option>
-                <option value="Engineering Department Manager">Engineering Department Manager</option>
-                <option value="Electrical Department Manager">Electrical Department Manager</option>
-                <option value="Sheet Metal Department Manager">Sheet Metal Department Manager
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Electrical Manager">Electrical Manager</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="QA Officer">QA Officer</option>
@@ -389,13 +389,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             } else if (selectedDepartment === "Operations Support" || selectedDepartment === "Human Resources") {
                 ownerSelect.value = "Operations Support Manager";
             } else if (selectedDepartment === "Sheet Metal") {
-                ownerSelect.value = "Sheet Metal Department Manager";
+                ownerSelect.value = "Sheet Metal Manager";
             } else if (selectedDepartment === "Electrical") {
-                ownerSelect.value = "Electrical Department Manager";
+                ownerSelect.value = "Electrical Manager";
             } else if (selectedDepartment === "Work, Health and Safety") { 
                 ownerSelect.value = "WHS Committee";
             } else if (selectedDepartment === "Engineering" ) {
-                ownerSelect.value = "Engineering Department Manager";
+                ownerSelect.value = "Engineering Manager";
             } else {
                 ownerSelect.value = "General Manager";
             }

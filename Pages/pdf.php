@@ -32,6 +32,9 @@ $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
             case '00':
                 $directory = 'D:/FSMBEH-Data/00 - QA/01 - Documents PDF';
                 break;
+            case '01':
+                $directory = 'D:/FSMBEH-Data/01 - MN/01 - Documents PDF';
+                break;
             case '02':
                 $directory = 'D:/FSMBEH-Data/02 - ES/01 - Documents PDF';
                 break;
@@ -59,7 +62,7 @@ $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
             case '11':
                 $directory = 'D:/FSMBEH-Data/11 - WH/01 - Documents PDF';
                 break;
-            case '12s':
+            case '12':
                 $directory = 'D:/FSMBEH-Data/12 - QC/01 - Documents PDF';
                 break;
             default:
