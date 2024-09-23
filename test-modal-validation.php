@@ -252,13 +252,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                     <th class="py-4 align-middle">Action</th>
                                 </tr>
                             </thead>
-                            <thead class="table table-hover mb-0 pb-0">
-                                <tr class="text-center">
-                                    <th class="py-4 align-middle">Name</th>
-                                    <th class="py-4 align-middle">Employee Id</th>
-                                    <th class="py-4 align-middle">Action</th>
-                                </tr>
-                            </thead>
                             <tbody>
                                 <?php $user_details_result->data_seek(0); ?>
                                 <?php while ($row = $user_details_result->fetch_assoc()): ?>
@@ -288,6 +281,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                                 data-last-name="<?= $row['last_name'] ?>" data-role="<?= $row['role'] ?>">
                                                 <i class="fa-regular fa-pen-to-square signature-color m-1 tooltips"
                                                     data-bs-toggle="tooltip" data-bs-placement="top" title="Edit User"></i>
+                                            </button>
+                                            <button class="btn editUserModalBtn">
+
                                             </button>
                                             <button class="deleteUserBtn btn" data-bs-toggle="modal"
                                                 data-bs-target="#deleteConfirmationModal"
@@ -342,6 +338,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                 <div class="d-none d-lg-block">
                     <div
                         class="bg-light d-flex justify-content-center flex-column align-items-center rounded-3 p-4 shadow-lg">
+                        <a href="http://<?php echo $serverAddress ?>/<?php ?>"></a>
+                    </div>
+                </div>
+                <div class="d-none d-lg-block">
+                    <div
+                        class="bg-light d-flex justify-content-center flex-column align-items-center rounded-3 p-4 shadow-lg">
                         <button
                             class="btn signature-btn p-3 col-10 d-flex flex-column justify-content-center align-items-center col-6 col-lg-12"
                             id="addUserModalBtn" data-bs-toggle="modal" data-bs-target="#addUserModal"><i
@@ -372,14 +374,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 <span class="text-dark fw-bold">Manage Groups</span>
                             </a>
                         </div>
-                        <div class="col-12 col-md-4 mb-3 mb-md-0">
 
+                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-groups.php"
+                                class="btn signature-btn p-3 w-100">
+                                <i class="fa-solid fa-user-group me-1 fa-lg text-dark"></i>
+                                <span class="text-dark fw-bold">Manage Groups</span>
+                            </a>
                         </div>
+
                         <div class="col-12 col-md-4">
                             <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-folders.php"
                                 class="btn signature-btn p-3 w-100">
                                 <i class="fa-solid fa-folder me-1 fa-lg text-warning"></i>
                                 <span class="text-warning fw-bold">Manage Folders</span>
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-folders.php"
+                                class="btn signature-btn p-3 w-100">
+                                <i class="fa-solid fa-folder me-1 fa-lg text-warning"></i>
+                                <span class="text-warning fw-bold"> Manager</span>
                             </a>
                         </div>
                         <div class="col-12 col-md-4">
@@ -687,7 +702,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div class=" modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog"
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog"
         aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -705,9 +720,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                         <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </div>
+                <div class="modal-footer">
+                    <form method="POST">
+                        <input type="button" class="employeeIdToDelete" value="">
+                        <button type="submit" class="btn btn-danger">Delete </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog"
+        aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="POST">
+                        <input type="hidden" name="employeeIdToDelete" value="">
+                        <button type="submit" class="bt btn-secondary" data-bs-dismiss="modal"> Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

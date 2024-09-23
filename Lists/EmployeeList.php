@@ -219,7 +219,7 @@ if ($employee_list_result->num_rows > 0) {
         <div class="tab-content" id="employee-list">
 
             <?php if ($role == "admin") { ?>
-                <!-- Tab panes for employees -->
+                <!-- ============================= Tab panes for employees ============================= -->
                 <div class="tab-pane fade show active" id="all-employees" role="tabpanel"
                     aria-labelledby="all-employees-tab">
                     <div class="row row-cols-1 row-cols-md-3 g-4" id="employee-cards">
@@ -263,18 +263,37 @@ if ($employee_list_result->num_rows > 0) {
                                             <?php echo $firstName . " " . $lastName; ?>
                                             <?php if ($visaExpiryDate !== null) { ?>
                                                 <?php
-                                                $today = new DateTime();
-                                                $expiryDate = new DateTime($visaExpiryDate);
+                                                // Set the timezone to Sydney
+                                                $timezone = new DateTimeZone('Australia/Sydney');
+
+                                                // Create DateTime objects with the Sydney timezone
+                                                $today = new DateTime('now', $timezone);
+                                                $today->setTime(0, 0, 0);
+
+                                                $expiryDate = new DateTime($visaExpiryDate, $timezone);
+                                                $expiryDate->setTime(0, 0, 0);
+
+                                                // Calculate the difference in days between today and the visa expiry date
                                                 $interval = $today->diff($expiryDate);
                                                 $daysDifference = $interval->format('%r%a');
 
+                                                if (!function_exists('dayText')) {
+                                                    function dayText($days)
+                                                    {
+                                                        return abs($days) == 1 ? 'day' : 'days';
+                                                    }
+                                                }
+
                                                 // Check if the expiry date is less than 30 days from today
-                                                if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                if ($daysDifference == 0) {
                                                     echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" 
-                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' days "></i>';
+                                                        data-bs-placement="top" title="Visa expired today"></i>';
+                                                } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . '"></i>';
                                                 } else if ($daysDifference < 0) {
                                                     echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" 
-                                                data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' days ago"></i>';
+                                                        data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"></i>';
                                                 }
                                                 ?>
                                             <?php } ?>
@@ -301,7 +320,7 @@ if ($employee_list_result->num_rows > 0) {
                     </div>
                 </div>
 
-                <!-- Tab panes for active-employees -->
+                <!-- ============================= Tab panes for active-employees ============================= -->
                 <div class="tab-pane fade" id="active-employees" role="tabpanel" aria-labelledby="active-employees-tab">
                     <div class="row row-cols-1 row-cols-md-3 g-4" id="active-employee-cards">
                         <?php foreach ($employees as $employee) {
@@ -309,9 +328,11 @@ if ($employee_list_result->num_rows > 0) {
                                 $profileImage = $employee['profile_image'];
                                 $firstName = $employee['first_name'];
                                 $lastName = $employee['last_name'];
-                                $employeeId = $employee['employee_id'];
-                                $isActive = $employee['is_active'];
                                 $nickname = $employee['nickname'];
+                                $employeeId = $employee['employee_id'];
+                                $visaExpiryDate = $employee['visa_expiry_date'];
+                                $isActive = $employee['is_active'];
+                                $payrollType = $employee['payroll_type'];
                                 ?>
                                 <div class="col-12 col-sm-6 col-md-3 employee-card">
                                     <div class="card">
@@ -341,6 +362,43 @@ if ($employee_list_result->num_rows > 0) {
                                             <!-- Employee details -->
                                             <h5 class="card-title fw-bold mt-2 employee-name">
                                                 <?php echo $firstName . " " . $lastName; ?>
+                                                <?php if ($visaExpiryDate !== null) { ?>
+                                                    <?php if ($visaExpiryDate !== null) { ?>
+                                                        <?php
+                                                        // Set the timezone to Sydney
+                                                        $timezone = new DateTimeZone('Australia/Sydney');
+
+                                                        // Create DateTime objects with the Sydney timezone
+                                                        $today = new DateTime('now', $timezone);
+                                                        $today->setTime(0, 0, 0);
+
+                                                        $expiryDate = new DateTime($visaExpiryDate, $timezone);
+                                                        $expiryDate->setTime(0, 0, 0);
+
+                                                        $interval = $today->diff($expiryDate);
+                                                        $daysDifference = $interval->format('%r%a');
+
+                                                        if (!function_exists('dayText')) {
+                                                            function dayText($days)
+                                                            {
+                                                                return abs($days) == 1 ? 'day' : 'days';
+                                                            }
+                                                        }
+
+                                                        // Check if the expiry date is less than 30 days from today
+                                                        if ($daysDifference == 0) {
+                                                            echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                                data-bs-placement="top" title="Visa expired today"> </i>';
+                                                        } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                            echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                                data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . '"> </i>';
+                                                        } else if ($daysDifference < 0) {
+                                                            echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                                data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"> </i>';
+                                                        }
+                                                        ?>
+                                                    <?php } ?>
+                                                <?php } ?>
                                             </h5>
                                             <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
                                             <p class="nickname"><?php echo $nickname ?></p>
@@ -364,7 +422,7 @@ if ($employee_list_result->num_rows > 0) {
                     </div>
                 </div>
 
-                <!-- Tab panes for inactive-employees -->
+                <!-- ============================= Tab panes for inactive-employees ============================= -->
                 <div class="tab-pane fade" id="inactive-employees" role="tabpanel" aria-labelledby="inactive-employees-tab">
                     <div class="row row-cols-1 row-cols-md-3 g-4" id="inactive-employee-cards">
                         <?php foreach ($employees as $employee) {
@@ -372,9 +430,11 @@ if ($employee_list_result->num_rows > 0) {
                                 $profileImage = $employee['profile_image'];
                                 $firstName = $employee['first_name'];
                                 $lastName = $employee['last_name'];
-                                $employeeId = $employee['employee_id'];
-                                $isActive = $employee['is_active'];
                                 $nickname = $employee['nickname'];
+                                $employeeId = $employee['employee_id'];
+                                $visaExpiryDate = $employee['visa_expiry_date'];
+                                $isActive = $employee['is_active'];
+                                $payrollType = $employee['payroll_type'];
                                 ?>
                                 <div class="col-12 col-sm-6 col-md-3 employee-card">
                                     <div class="card position-relative">
@@ -404,11 +464,47 @@ if ($employee_list_result->num_rows > 0) {
                                             <!-- Employee details -->
                                             <h5 class="card-title fw-bold mt-2 employee-name">
                                                 <?php echo $firstName . " " . $lastName; ?>
+                                                <?php if ($visaExpiryDate !== null) { ?>
+                                                    <?php
+                                                    // Set the timezone to Sydney
+                                                    $timezone = new DateTimeZone('Australia/Sydney');
+
+                                                    // Create DateTime objects with the Sydney timezone
+                                                    $today = new DateTime();
+                                                    $today->setTime(0, 0, 0);
+
+                                                    $expiryDate = new DateTime($visaExpiryDate);
+                                                    $expiryDate->setTime(0, 0, 0);
+
+                                                    // Calculate the difference in days between today and the visa expiry date
+                                                    $interval = $today->diff($expiryDate);
+                                                    $daysDifference = $interval->format('%r%a');
+
+                                                    if (!function_exists('dayText')) {
+                                                        function dayText($days)
+                                                        {
+                                                            return abs($days) == 1 ? 'day' : 'days';
+                                                        }
+                                                    }
+
+                                                    // Check if the expiry date is less than 30 days from today
+                                                    if ($daysDifference == 0) {
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired today"></i>';
+                                                    } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . ' "> </i>';
+                                                    } else if ($daysDifference < 0) {
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . '> </i>';
+                                                    }
+                                                    ?>
+                                                <?php } ?>
                                             </h5>
                                             <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
                                             <p class="d-none nickname"><?php echo $nickname ?></p>
                                             <a
-                                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">
+                                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo htmlspecialchars($employeeId) ?>">
                                                 <button class="btn btn-dark btn-sm"><small>Profile <i
                                                             class="fa-solid fa-up-right-from-square fa-sm"></i></small></button>
                                             </a>
@@ -431,7 +527,7 @@ if ($employee_list_result->num_rows > 0) {
 
             <?php } ?>
 
-            <!-- Tab panes for wages-employees -->
+            <!-- ============================= Tab panes for wages-employees ============================= -->
             <div class="tab-pane fade <?php echo $role === "general" ? "show active" : "" ?>" id="wages-employees"
                 role="tabpanel" aria-labelledby="wages-employees-tab">
                 <div class="row row-cols-1 row-cols-md-3 g-4" id="wages-employee-cards">
@@ -469,17 +565,42 @@ if ($employee_list_result->num_rows > 0) {
                                         <!-- Employee details -->
                                         <h5 class="card-title fw-bold mt-2 employee-name">
                                             <?php echo $firstName . " " . $lastName; ?>
-                                            <?php if ($visaExpiryDate !== null) {
+                                            <?php if ($visaExpiryDate !== null) { ?>
+                                                <?php
+                                                // Set the timezone to Sydney
+                                                $timezone = new DateTimeZone('Australia/Sydney');
+
+                                                // Create DateTime objects with the Sydney timezone
                                                 $today = new DateTime();
+                                                $today->setTime(0, 0, 0);
+
                                                 $expiryDate = new DateTime($visaExpiryDate);
+                                                $expiryDate->setTime(0, 0, 0);
+
+                                                // Calculate the difference in days between today and the visa expiry date
                                                 $interval = $today->diff($expiryDate);
                                                 $daysDifference = $interval->format('%r%a');
-                                                if ($daysDifference < 30 && $daysDifference >= 0) {
-                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" data-bs-placement="top" title="Visa expires in ' . $daysDifference . ' days"></i>';
-                                                } elseif ($daysDifference < 0) {
-                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' days ago"></i>';
+
+                                                if (!function_exists('dayText')) {
+                                                    function dayText($days)
+                                                    {
+                                                        return abs($days) == 1 ? 'day' : 'days';
+                                                    }
                                                 }
-                                            } ?>
+
+                                                // Check if the expiry date is less than 30 days from today
+                                                if ($daysDifference == 0) {
+                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Visa expired today"></i>';
+                                                } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' .  dayText($daysDifference) . '"> </i>';
+                                                } else if ($daysDifference < 0) {
+                                                    echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' .  dayText($daysDifference) . ' ago"> </i>';
+                                                }
+                                                ?>
+                                            <?php } ?>
                                         </h5>
                                         <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
                                         <p class="d-none nickname"><?php echo $nickname; ?></p>
@@ -504,8 +625,8 @@ if ($employee_list_result->num_rows > 0) {
                 </div>
             </div>
 
+            <!-- ============================= Tab panes for salary-employees ============================= -->
             <?php if ($role == "admin") { ?>
-                <!-- Tab panes for salary-employees -->
                 <div class="tab-pane fade" id="salary-employees" role="tabpanel" aria-labelledby="salary-employees-tab">
                     <div class="row row-cols-1 row-cols-md-3 g-4" id="salary-employee-cards">
                         <?php foreach ($employees as $employee) {
@@ -544,18 +665,37 @@ if ($employee_list_result->num_rows > 0) {
                                                 <?php echo $firstName . " " . $lastName; ?>
                                                 <?php if ($visaExpiryDate !== null) { ?>
                                                     <?php
+                                                    // Set the timezone to Sydney
+                                                    $timezone = new DateTimeZone('Australia/Sydney');
+
+                                                    // Create DateTime objects with the Sydney timezone 
                                                     $today = new DateTime();
+                                                    $today->setTime(0, 0 , 0);
+
                                                     $expiryDate = new DateTime($visaExpiryDate);
+                                                    $expiryDate->setTime(0, 0, 0);
+
+                                                    // Caculate the difference in days between today and the visa expiry date
                                                     $interval = $today->diff($expiryDate);
                                                     $daysDifference = $interval->format('%r%a');
 
+                                                    if (!function_exists('dayText')) {
+                                                        function dayText($days)
+                                                        {
+                                                            return abs($days) == 1 ? 'day' : 'days';
+                                                        }
+                                                    }
+
                                                     // Check if the expiry date is less than 30 days from today
-                                                    if ($daysDifference < 30 && $daysDifference >= 0) {
-                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" 
-                                data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' days "></i>';
+                                                    if ($daysDifference == 0) {
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired today"></i>';
+                                                    } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . '"> </i>';
                                                     } else if ($daysDifference < 0) {
-                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip" 
-                                    data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' days ago"></i>';
+                                                        echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' " > </i>';
                                                     }
                                                     ?>
                                                 <?php } ?>

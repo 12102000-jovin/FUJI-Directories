@@ -144,8 +144,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     if (empty($_POST["employeeId"])) {
         $errors['employeeId'] = "Employee ID is required";
     } else {
-        $employeeId = $_POST["employeeId"];
-    }
+        $employeeId = str_pad($_POST["employeeId"], 3, "0", STR_PAD_LEFT); // Ensures 3 digits
+    }    
 
     if (empty($_POST["startDate"])) {
         $errors['startDate'] = "Start Date is required";
@@ -362,7 +362,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssississsssssssiiss", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType);
+        $stmt->bind_param("sssssssssssssssssisssssssssiiss", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -380,7 +380,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         // Prepare and execute SQL statement to insert data into 'wages' table
         $insert_wages_sql = "INSERT INTO wages(employee_id, amount, date)  VALUES (?, ?, ?)";
         $insert_wages_result = $conn->prepare($insert_wages_sql);
-        $insert_wages_result->bind_param("ids", $employeeId, $payRate, $currentDate);
+        $insert_wages_result->bind_param("sds", $employeeId, $payRate, $currentDate);
 
         // Execute the prepared statement for inserting into the 'wages' table
         if ($insert_wages_result->execute()) {
@@ -394,7 +394,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         // Prepare and execute SQL statement to insert data into 'salary' table
         $insert_salaries_sql = "INSERT INTO salaries(employee_id, amount, date) VALUES (?, ?, ?)";
         $insert_salaries_result = $conn->prepare($insert_salaries_sql);
-        $insert_salaries_result->bind_param("ids", $employeeId, $annualSalary, $currentDate);
+        $insert_salaries_result->bind_param("sds", $employeeId, $annualSalary, $currentDate);
 
         // Execute the prepared statement for inserting into the 'wages' table
         if ($insert_salaries_result->execute()) {
@@ -641,7 +641,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                         <p class="signature-color fw-bold">Employment Details</p>
                         <div class="form-group col-md-3">
                             <label for="employeeId" class="fw-bold"><small>Employee Id</small></label>
-                            <input type="number" min="0" class="form-control" id="employeeId" name="employeeId"
+                            <input type="text" pattern="^\d{3}$" class="form-control" id="employeeId" name="employeeId"
                                 required>
                             <div class="invalid-feedback">
                                 Please provide an employee ID.

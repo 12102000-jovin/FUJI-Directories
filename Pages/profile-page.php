@@ -229,8 +229,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newSalary'])) {
 
     $add_salary_sql = "INSERT INTO salaries (amount, date, employee_id) VALUES (?, ?, ?)";
     $add_salary_stmt = $conn->prepare($add_salary_sql);
-    $add_salary_stmt->bind_param("sss", $newSalary, $updateSalaryDate, $employeeId);
+    $add_salary_stmt->bind_param("iss", $newSalary, $updateSalaryDate, $employeeId);
 
+    echo $newSalary;
     // Execute the prepared statement
     if ($add_salary_stmt->execute()) {
         echo "New salary record inserted successfully.";
@@ -922,20 +923,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <small>Visa Expiry Date</small>
                                     <?php
                                     if ($visaExpiryDate != null) {
-                                        $today = new DateTime();
-                                        $expiryDate = new DateTime($visaExpiryDate);
+                                        // Set the timezone to Sydney
+                                        $timezone = new DateTimeZone('Australia/Sydney');
+
+                                        // Create DateTime objects with the Sydney timezone
+                                        $today = new DateTime('now', $timezone);
+                                        $today->setTime(0, 0, 0);
+
+                                        $expiryDate = new DateTime($visaExpiryDate, $timezone);
+                                        $expiryDate->setTime(0, 0, 0);
+
+                                        // Calculate the difference in days between today and the visa expiry date
                                         $interval = $today->diff($expiryDate);
                                         $daysDifference = $interval->format('%r%a');
+
+                                        // Function to determine singular or plural "day"
+                                        function dayText($days)
+                                        {
+                                            return abs($days) == 1 ? 'day' : 'days';
+                                        }
 
                                         $visaExpiryDate = isset($visaExpiryDate) ? $visaExpiryDate : "N/A";
 
                                         // Check if the expiry date is less than 30 days from today
-                                        if ($daysDifference < 30 && $daysDifference >= 0) {
+                                        if ($daysDifference == 0) {
                                             echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
-                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' days "></i> </h5>';
+                                            data-bs-placement="top" title="Visa expired today"></i> </h5>';
+                                        } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                            echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                            data-bs-placement="top" title="Visa expires in ' . $daysDifference . ' ' . dayText($daysDifference) . '"></i> </h5>';
                                         } else if ($daysDifference < 0) {
                                             echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
-                                        data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' days ago"></i> </h5>';
+                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"></i> </h5>';
                                         } else {
                                             echo '<h5 class="fw-bold">' . $visaExpiryDate . '</h5>';
                                         }
