@@ -174,6 +174,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="shortcut icon" type="image/x-icon" href="../Images/FE-logo-icon.ico" />
     <style>
+        .table-responsive {
+            transform: scale(0.75);
+            transform-origin: top left;
+            width: 133.3%;
+        }
+
         .canvasjs-chart-credit {
             display: none !important;
         }
@@ -237,7 +243,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             height: 100%;
         }
 
-        .modal-backdrop.show {
+       .modal-backdrop.show {
             position: fixed;
             top: 0;
             left: 0;
@@ -245,6 +251,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 1040;
+            transform: scale(1.333);
+            /* Scale to counteract the body's scale */
+            transform-origin: top left;
         }
     </style>
 </head>
@@ -258,7 +267,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">QA</li>
+                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Quality
+                        Assurances</li>
                 </ol>
             </nav>
             <div class="d-flex justify-content-end mb-3">
@@ -595,7 +605,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     <td class="py-2 align-middle text-center wipDocLink">
                                         <form class="wip_document" method="POST">
                                             <div class="d-flex align-items-center justify-content-center">
-                                                
+
                                                 <?php
                                                 $departmentFolder = ''; // Initialize the departmentFolder variable
                                     
@@ -647,8 +657,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                     class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><?= $row["wip_doc_link"] ?>
                                                 </button> -->
 
-                                                <a href="doc.php?file=<?= urlencode(string: $row["wip_doc_link"]) ?>.docx" target="_blank" 
-                                                    class="btn btn-link p-0 m-0 text-decoration_underline fw-bold">
+                                                <a href="doc.php?file=<?= urlencode(string: $row["wip_doc_link"]) ?>.docx"
+                                                    target="_blank" class="btn btn-link p-0 m-0 text-decoration_underline fw-bold">
                                                     <?= htmlspecialchars(string: $row["wip_doc_link"], flags: ENT_QUOTES, encoding: 'UTF-8') ?>
                                                 </a>
 
@@ -746,7 +756,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     <?php } ?>
             </table>
             <div class="d-flex justify-content-end mt-3 pe-2">
-                <div class="d-flex align-items-center  me-2">
+                <div class="d-flex align-items-center me-2">
                     <p>Rows Per Page: </p>
                 </div>
 
@@ -1400,7 +1410,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             const url = new URL(window.location.href);
             url.search = ''; // Clear the query string
 
-            // Reload the page with the updated URL (no need for pushState)
+            // Reload the page with the updated URL 
             window.location.href = url.href;
         }
 

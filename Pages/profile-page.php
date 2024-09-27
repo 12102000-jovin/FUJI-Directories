@@ -314,8 +314,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Process the uploaded file
         $imageExtension = pathinfo($profileImage["name"], PATHINFO_EXTENSION);
-        $newFileName = $profileImageToDeleteEmpId . '_profiles.' . $imageExtension;
-        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\00 - Employee Documents\\01 - Employment Documents\\" . $newFileName;
+        $newFileName = $profileImageToDeleteEmpId . '_profile.' . $imageExtension;
+        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
 
         if (move_uploaded_file($profileImage["tmp_name"], $imagePath)) {
             // Encode the image before insertion
@@ -655,21 +655,43 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .no-shadow-print {
                 box-shadow: none !important;
-
             }
 
             .mt-print-contact {
                 padding-top: 5px !important;
-
+                padding-bottom: 0px !important;
+                margin-bottom: 0 !important;
             }
 
             .mt-print-bank {
                 padding-top: 0px !important;
                 margin-top: 0 !important;
+                padding-bottom: 0px !important;
+                margin-bottom: 0 !important;
             }
 
             .address-print {
                 width: 100%;
+            }
+
+            #chartContainer,
+            #chartContainer2 {
+                height: 150px !important;
+                /* Reduce the height for printing */
+                width: 100% !important;
+                /* Ensure it takes the full width */
+                box-shadow: none;
+            }
+
+            /* You can also adjust margins, padding, and other styles for print */
+            .payRaiseHistoryPrint {
+                margin: 0;
+                padding: 0px;
+                box-shadow: none;
+            }
+
+            .card {
+                page-break-inside: avoid;
             }
 
             @page {
@@ -687,7 +709,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         });
     </script>
     <script>
-        // Wage Chart 
         window.onload = function () {
             try {
                 var chart = new CanvasJS.Chart("chartContainer", {
@@ -732,12 +753,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                 chart.render();
                 chart2.render();
+
+                // Listen for the print event to adjust the chart size
+                window.addEventListener("beforeprint", function () {
+                    chart.options.height = chart.container.clientHeight * 0.5;  // Reduce height by 50% for printing
+                    chart2.options.height = chart2.container.clientHeight * 0.5;
+                    chart.options.width = chart.container.clientWidth * 0.5;
+                    chart2.options.width = chart2.container.clientWidth * 0.5;
+                    chart.render();
+                    chart2.render();
+                });
+
+                // Reset the chart size after printing
+                window.addEventListener("afterprint", function () {
+                    chart.options.height = null;  // Restore responsive behavior
+                    chart2.options.height = null;  // Reset to original responsive state
+                    chart.options.width = null;
+                    chart2.options.width = null;
+                    chart.render();
+                    chart2.render();
+                });
+
             } catch (error) {
                 console.error('An error occurred while rendering the charts:', error);
             }
         }
-
     </script>
+
 </head>
 
 <body class="background-color">
@@ -1128,295 +1170,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 </div>
 
 
-                <div class="col-lg-4 hide-print">
-                    <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0 <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
-                        <div class="p-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="fw-bold signature-color mb-0">Pay Raise History <span
-                                        class="badge rounded-pill signature-btn">Wage</span></p>
-                                <?php if ($role === "admin") { ?>
-                                    <i id="payRaiseEditIconWage" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                        data-bs-target="#wagePayRaiseHistoryModal"></i>
-                                <?php } ?>
-                            </div>
-                            <div class="px-4 py-2">
-                                <div id="chartContainer" style="height: 300px; width: 100%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0 <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
-                        <div class="p-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="fw-bold signature-color mb-0">Pay Raise History <span
-                                        class="badge rounded-pill signature-btn">Salary</span></p>
-                                <?php if ($role === "admin") { ?>
-                                    <i id="payRaiseEditIconSalary" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                        data-bs-target="#salaryPayRaiseHistoryModal"></i>
-                                <?php } ?>
-                            </div>
-                            <div class="px-4 py-2">
-                                <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <?php if (isset($employmentType) && $employmentType == "Casual") {
-                        $today = new DateTime();
-                        $firstMonthDueDate = date('Y-m-d', strtotime($startDate . ' +1 month'));
-                        $thirdMonthDueDate = date('Y-m-d', strtotime($startDate . ' +3 month'));
-                        $sixthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +6 month'));
-                        $ninthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +9 month'));
-                        $twelfthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +12 month'));
-
-                        // $reviewType = isset($reviewType) ? $reviewType : null;
-                        $revieweeEmployeeId = isset($revieweeEmployeeId) ? $revieweeEmployeeId : null;
-                        $reviewerEmployeeId = isset($reviewerEmployeeId) ? $reviewerEmployeeId : null;
-                        // $reviewDate = isset($reviewDate) ? $reviewDate : null;
-                        // $reviewNotes = isset($reviewNotes) ? $reviewNotes : null;
-                        ?>
-                        <div class="card bg-white border-0 rounded shadow-lg mt-4">
-                            <div class="p-3">
-                                <p class="fw-bold signature-color">Performance Review</p>
-                                <!-- First Month Review -->
-                                <div class="d-flex align-items-center">
-                                    <?php $hasFirstMonthReview = false;
-                                    foreach ($performance_review_result as $row) {
-                                        if ($row['review_type'] === "First Month Review") {
-                                            $hasFirstMonthReview = true;
-                                            break;
-                                        }
-                                    } ?>
-                                    <?php
-                                    $firstMonthDueDateFormat = new DateTime($firstMonthDueDate);
-                                    $firstMonthInterval = $today->diff($firstMonthDueDateFormat);
-                                    $firstMonthDaysDifference = $firstMonthInterval->format('%r%a');
-                                    ?>
-                                    <?php if ($hasFirstMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
-                                    <?php } else { ?>
-                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
-                                    <?php } ?>
-                                    <div class="ms-3">
-                                        <div class="d-flex flex-column">
-                                            <div class="fw-bold">1<sup>st</sup> Month Review
-                                                <?php if ($hasFirstMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                                    <span class="badge rounded-pill bg-success">Done</span>
-                                                <?php } else if (!$hasFirstMonthReview && $revieweeEmployeeId != $employeeId && $firstMonthDaysDifference < 7 && $firstMonthDaysDifference >= 0) { ?>
-                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
-                                                <?php } else if (!$hasFirstMonthReview && $firstMonthDaysDifference < 0) { ?>
-                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
-                                                <?php } else {
-                                                    } ?>
-                                            </div>
-                                            <div>
-                                                <small class="text-secondary">Due: <?php echo $firstMonthDueDate ?></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
-                                        <button class="btn ms-auto" data-bs-toggle="modal"
-                                            data-bs-target="#firstMonthPerformanceReviewModal">
-                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
-                                        </button>
-                                    <?php } ?>
-                                </div>
-
-                                <!-- Third Month Review -->
-                                <hr />
-                                <div class="d-flex align-items-center">
-                                    <?php $hasThirdMonthReview = false;
-                                    foreach ($performance_review_result as $row) {
-                                        if ($row['review_type'] === "Third Month Review") {
-                                            $hasThirdMonthReview = true;
-                                            break;
-                                        }
-                                    } ?>
-                                    <?php
-                                    $thirdMonthDueDateFormat = new DateTime($thirdMonthDueDate);
-                                    $thirdMonthInterval = $today->diff($thirdMonthDueDateFormat);
-                                    $thirdMonthDaysDifference = $thirdMonthInterval->format('%r%a');
-                                    ?>
-                                    <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
-                                    <?php } else { ?>
-                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
-                                    <?php } ?>
-                                    <div class="ms-3">
-                                        <div class="d-flex flex-column">
-                                            <div class="fw-bold">3<sup>rd</sup> Month Review
-                                                <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                                    <span class="badge rounded-pill bg-success">Done</span>
-                                                <?php } else if (!$hasThirdMonthReview && $revieweeEmployeeId != $employeeId && $thirdMonthDaysDifference < 7 && $thirdMonthDaysDifference >= 0) { ?>
-                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
-                                                <?php } else if (!$hasThirdMonthReview && $thirdMonthDaysDifference < 0) { ?>
-                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
-                                                <?php } else {
-                                                    } ?>
-                                            </div>
-                                            <div>
-                                                <small class="text-secondary">Due: <?php echo $thirdMonthDueDate ?></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
-                                        <button class="btn ms-auto" data-bs-toggle="modal"
-                                            data-bs-target="#thirdMonthPerformanceReviewModal">
-                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
-                                        </button>
-                                    <?php } ?>
-                                </div>
-
-                                <!-- Sixth Month Review -->
-                                <hr />
-                                <div class="d-flex align-items-center">
-                                    <?php $hasSixthMonthReview = false;
-                                    foreach ($performance_review_result as $row) {
-                                        if ($row['review_type'] === "Sixth Month Review") {
-                                            $hasSixthMonthReview = true;
-                                            break;
-                                        }
-                                    } ?>
-                                    <?php
-                                    $sixthMonthDueDateFormat = new DateTime($sixthMonthDueDate);
-                                    $sixthMonthInterval = $today->diff($sixthMonthDueDateFormat);
-                                    $sixthMonthDaysDifference = $sixthMonthInterval->format('%r%a');
-                                    ?>
-                                    <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
-                                    <?php } else { ?>
-                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
-                                    <?php } ?>
-                                    <div class="ms-3">
-                                        <div class="d-flex flex-column">
-                                            <div class="fw-bold">6<sup>th</sup> Month Review
-                                                <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                                    <span class="badge rounded-pill bg-success">Done</span>
-                                                <?php } else if (!$hasSixthMonthReview && $revieweeEmployeeId != $employeeId && $sixthMonthDaysDifference < 7 && $sixthMonthDaysDifference >= 0) { ?>
-                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
-                                                <?php } else if (!$hasSixthMonthReview && $sixthMonthDaysDifference < 0) { ?>
-                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
-                                                <?php } else {
-                                                    } ?>
-                                            </div>
-                                            <div>
-                                                <small class="text-secondary">Due: <?php echo $sixthMonthDueDate ?></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
-                                        <button class="btn ms-auto" data-bs-toggle="modal"
-                                            data-bs-target="#sixthMonthPerformanceReviewModal">
-                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
-                                        </button>
-                                    <?php } ?>
-                                </div>
-
-                                <!-- Ninth Month Review -->
-                                <hr />
-                                <div class="d-flex align-items-center">
-                                    <?php $hasNinthMonthReview = false;
-                                    foreach ($performance_review_result as $row) {
-                                        if ($row['review_type'] === "Ninth Month Review") {
-                                            $hasNinthMonthReview = true;
-                                            break;
-                                        }
-                                    } ?>
-                                    <?php
-                                    $ninthMonthDueDateFormat = new DateTime($ninthMonthDueDate);
-                                    $ninthMonthInterval = $today->diff($ninthMonthDueDateFormat);
-                                    $ninthMonthDaysDifference = $ninthMonthInterval->format('%r%a');
-                                    ?>
-                                    <?php if ($hasNinthMonthReview) { ?>
-                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
-                                    <?php } else { ?>
-                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
-                                    <?php } ?>
-                                    <div class="ms-3">
-                                        <div class="d-flex flex-column">
-                                            <div class="fw-bold">9<sup>th</sup> Month Review
-                                                <?php if ($hasNinthMonthReview) { ?>
-                                                    <span class="badge rounded-pill bg-success">Done</span>
-                                                <?php } else if (!$hasNinthMonthReview && $revieweeEmployeeId != $employeeId && $reviewerEmployeeId != $loginEmployeeId && $ninthMonthDaysDifference < 7 && $ninthMonthDaysDifference >= 0) { ?>
-                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
-                                                <?php } else if (!$hasNinthMonthReview && $ninthMonthDaysDifference < 0) { ?>
-                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
-                                                <?php } else {
-                                                    } ?>
-                                            </div>
-                                            <div>
-                                                <small class="text-secondary">Due: <?php echo $ninthMonthDueDate ?></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
-                                        <button class="btn ms-auto" data-bs-toggle="modal"
-                                            data-bs-target="#ninthMonthPerformanceReviewModal">
-                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
-                                        </button>
-                                    <?php } ?>
-                                </div>
-
-                                <!-- Twelfth Month Review -->
-                                <hr />
-                                <div class="d-flex align-items-center">
-                                    <?php $hasTwelfthMonthReview = false;
-                                    foreach ($performance_review_result as $row) {
-                                        if ($row['review_type'] === "Twelfth Month Review") {
-                                            $hasTwelfthMonthReview = true;
-                                            break;
-                                        }
-                                    } ?>
-                                    <?php
-                                    $twelfthMonthDueDateFormat = new DateTime($twelfthMonthDueDate);
-                                    $twelfthMonthInterval = $today->diff($twelfthMonthDueDateFormat);
-                                    $twelfthMonthDaysDifference = $twelfthMonthInterval->format('%r%a');
-                                    ?>
-                                    <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                        <i class="fa-solid fa-star fa-lg text-warning"></i>
-                                    <?php } else { ?>
-                                        <i class="fa-solid fa-star fa-lg text-secondary"></i>
-                                    <?php } ?>
-                                    <div class="ms-3">
-                                        <div class="d-flex flex-column">
-                                            <div class="fw-bold">12<sup>th</sup> Month Review
-                                                <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
-                                                    <span class="badge rounded-pill bg-success">Done</span>
-                                                <?php } else if (!$hasTwelfthMonthReview && $revieweeEmployeeId != $employeeId && $twelfthMonthDaysDifference < 7 && $twelfthMonthDaysDifference >= 0) { ?>
-                                                        <span class="badge rounded-pill bg-warning">Due Soon</span>
-                                                <?php } else if (!$hasTwelfthMonthReview && $twelfthMonthDaysDifference < 0) { ?>
-                                                            <span class="badge rounded-pill bg-danger">Past Due</span>
-                                                <?php } else {
-                                                    } ?>
-                                            </div>
-                                            <div>
-                                                <small class="text-secondary">Due: <?php echo $twelfthMonthDueDate ?></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
-                                        <button class="btn ms-auto" data-bs-toggle="modal"
-                                            data-bs-target="#twelfthMonthPerformanceReviewModal">
-                                            <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
-                                        </button>
-                                    <?php } ?>
-                                </div>
-
-                                <!-- <?php echo $firstMonthDueDate . " " . $thirdMonthDueDate . " " . $sixthMonthDueDate . " " . $ninthMonthDueDate ?> -->
-
-                            </div>
-                        </div>
-                    <?php } ?>
-
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                <div class="col-lg-4">
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
                         <div class="p-3">
                             <p class="fw-bold signature-color">Files</p>
                             <!-- 00 - Employee Documents -->
@@ -1465,16 +1220,157 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 </div>
                             </div>
-                            <!-- 01 - Induction and Training Documents-->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
+
+                            <?php if ($employee_payroll_type === "wage") { ?>
+                                <!-- 01 - Induction and Training Documents-->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
                                         <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" title="Open Folder">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip"
+                                                    data-bs-placement="top" title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                        </a>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            01 - Induction and Training Documents
+                                                        </a>
+                                                    </div>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="pay-review-directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
+                                                            <button id="copy-button" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 02 - Resume, ID, and Qualifications -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                    <form method="POST">
+                                                        <input type="hidden" name="annualLeaveFolder">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                        </a>
+                                                    </form>
+                                                </div>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            02 - Resume, ID and Qualifications
+                                                        </a>
+                                                    </div>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="annual-leaves-directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
+                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 03 - Accounts -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                    <form method="POST">
+                                                        <input type="hidden" name="annualLeaveFolder">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                        </a>
+                                                    </form>
+                                                </div>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            03 - Accounts
+                                                        </a>
+                                                    </div>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="annual-leaves-directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
+                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 04 - Leave -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1482,264 +1378,476 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 </div>
                                             </span>
                                         </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        01 - Induction and Training Documents
-                                                    </a>
-                                                </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="pay-review-directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
-                                                        <button id="copy-button" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            04 - Leave
+                                                        </a>
                                                     </div>
-                                                </span>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\04 - Leave" ?>">
+                                                            <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- 02 - Resume, ID, and Qualifications -->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
-                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="Open Folder">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                <form method="POST">
-                                                    <input type="hidden" name="annualLeaveFolder">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </form>
-                                            </div>
-                                        </span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        02 - Resume, ID and Qualifications
-                                                    </a>
-                                                </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="annual-leaves-directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
-                                                        <button id="copy-button-annual" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 03 - Accounts -->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
-                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="Open Folder">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                <form method="POST">
-                                                    <input type="hidden" name="annualLeaveFolder">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </form>
-                                            </div>
-                                        </span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        03 - Accounts
-                                                    </a>
-                                                </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="annual-leaves-directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
-                                                        <button id="copy-button-annual" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 04 - Leave -->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
-                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="Open Folder">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
-                                                    target="_blank"
-                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                        class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                </a>
-                                            </div>
-                                        </span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        04 - Leave
-                                                    </a>
-                                                </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\04 - Leave" ?>">
-                                                        <button id="copy-button-policies" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 05 - HR Actions -->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
-                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="Open Folder">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
-                                                    target="_blank"
-                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                        class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                </a>
-                                            </div>
-                                        </span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
+                                <!-- 05 - HR Actions -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                     <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
                                                         target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        05 - HR Actions
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
                                                     </a>
                                                 </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\05 - HR Actions" ?>">
-                                                        <button id="copy-button-policies" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            05 - HR Actions
+                                                        </a>
                                                     </div>
-                                                </span>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\05 - HR Actions" ?>">
+                                                            <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- 06 - Work Compensation -->
-                            <div class="d-flex justify-content-center mt-3">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
-                                        <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="Open Folder">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
-                                                    target="_blank"
-                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                        class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                </a>
-                                            </div>
-                                        </span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
+                                <!-- 06 - Work Compensation -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                     <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
                                                         target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        06 - Work Compensation
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
                                                     </a>
                                                 </div>
-                                                <span>
-                                                    <div class="d-flex align-items-center">
-                                                        <small id="directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
-                                                        <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\06 - Work Compensation" ?>">
-                                                        <button id="copy-button-policies" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            06 - Work Compensation
+                                                        </a>
                                                     </div>
-                                                </span>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\06 - Work Compensation" ?>">
+                                                            <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <!-- 07 - Exit Information -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                        <div class="col-auto d-flex align-items-center">
+                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Open Folder">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information"
+                                                        target="_blank"
+                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                    </a>
+                                                </div>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            07 - Exit Information
+                                                        </a>
+                                                    </div>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\07 - Exit Information" ?></small>
+                                                            <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\07 - Exit Information" ?>">
+                                                            <button id="copy-button-policies" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                    <div
+                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                    Pay Raise History
+                                    <span class="badge rounded-pill signature-btn mx-1">Wage</span>
+                                    <span class="mx-2">|</span>
+                                    <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn"
+                                        role="button"></i>
+                                    <small class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn">
+                                        <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
+                                    </small>
+                                </p>
+
+                                <?php if ($role === "admin") { ?>
+                                    <i id="payRaiseEditIconWage" role="button"
+                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
+                                        data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                <?php } ?>
+                            </div>
+                            <div class="px-4 py-2">
+                                <div id="chartContainer" style="height: 300px; width: 100%;" class="d-block"></div>
                             </div>
                         </div>
                     </div>
-                    <!-- <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                    <div
+                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                    Pay Raise History
+                                    <span class="badge rounded-pill signature-btn mx-1">Salary</span>
+                                    <span class="mx-2">|</span>
+                                    <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn"
+                                        role="button"></i>
+                                    <small class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn">
+                                        <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
+                                    </small>
+                                </p>
+
+                                <?php if ($role === "admin") { ?>
+                                    <i id="payRaiseEditIconSalary" role="button"
+                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
+                                        data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                <?php } ?>
+                            </div>
+                            <div class="px-4 py-2">
+                                <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hide-print">
+                        <?php if (isset($employmentType) && $employmentType == "Casual") {
+                            $today = new DateTime();
+                            $firstMonthDueDate = date('Y-m-d', strtotime($startDate . ' +1 month'));
+                            $thirdMonthDueDate = date('Y-m-d', strtotime($startDate . ' +3 month'));
+                            $sixthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +6 month'));
+                            $ninthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +9 month'));
+                            $twelfthMonthDueDate = date('Y-m-d', strtotime($startDate . ' +12 month'));
+
+                            // $reviewType = isset($reviewType) ? $reviewType : null;
+                            $revieweeEmployeeId = isset($revieweeEmployeeId) ? $revieweeEmployeeId : null;
+                            $reviewerEmployeeId = isset($reviewerEmployeeId) ? $reviewerEmployeeId : null;
+                            // $reviewDate = isset($reviewDate) ? $reviewDate : null;
+                            // $reviewNotes = isset($reviewNotes) ? $reviewNotes : null;
+                            ?>
+                            <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                                <div class="p-3">
+                                    <p class="fw-bold signature-color">Performance Review</p>
+                                    <!-- First Month Review -->
+                                    <div class="d-flex align-items-center">
+                                        <?php $hasFirstMonthReview = false;
+                                        foreach ($performance_review_result as $row) {
+                                            if ($row['review_type'] === "First Month Review") {
+                                                $hasFirstMonthReview = true;
+                                                break;
+                                            }
+                                        } ?>
+                                        <?php
+                                        $firstMonthDueDateFormat = new DateTime($firstMonthDueDate);
+                                        $firstMonthInterval = $today->diff($firstMonthDueDateFormat);
+                                        $firstMonthDaysDifference = $firstMonthInterval->format('%r%a');
+                                        ?>
+                                        <?php if ($hasFirstMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                            <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                        <?php } else { ?>
+                                            <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                        <?php } ?>
+                                        <div class="ms-3">
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">1<sup>st</sup> Month Review
+                                                    <?php if ($hasFirstMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                        <span class="badge rounded-pill bg-success">Done</span>
+                                                    <?php } else if (!$hasFirstMonthReview && $revieweeEmployeeId != $employeeId && $firstMonthDaysDifference < 7 && $firstMonthDaysDifference >= 0) { ?>
+                                                            <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                    <?php } else if (!$hasFirstMonthReview && $firstMonthDaysDifference < 0) { ?>
+                                                                <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                    <?php } else {
+                                                        } ?>
+                                                </div>
+                                                <div>
+                                                    <small class="text-secondary">Due: <?php echo $firstMonthDueDate ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                            <button class="btn ms-auto" data-bs-toggle="modal"
+                                                data-bs-target="#firstMonthPerformanceReviewModal">
+                                                <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                            </button>
+                                        <?php } ?>
+                                    </div>
+
+                                    <!-- Third Month Review -->
+                                    <hr />
+                                    <div class="d-flex align-items-center">
+                                        <?php $hasThirdMonthReview = false;
+                                        foreach ($performance_review_result as $row) {
+                                            if ($row['review_type'] === "Third Month Review") {
+                                                $hasThirdMonthReview = true;
+                                                break;
+                                            }
+                                        } ?>
+                                        <?php
+                                        $thirdMonthDueDateFormat = new DateTime($thirdMonthDueDate);
+                                        $thirdMonthInterval = $today->diff($thirdMonthDueDateFormat);
+                                        $thirdMonthDaysDifference = $thirdMonthInterval->format('%r%a');
+                                        ?>
+                                        <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                            <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                        <?php } else { ?>
+                                            <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                        <?php } ?>
+                                        <div class="ms-3">
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">3<sup>rd</sup> Month Review
+                                                    <?php if ($hasThirdMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                        <span class="badge rounded-pill bg-success">Done</span>
+                                                    <?php } else if (!$hasThirdMonthReview && $revieweeEmployeeId != $employeeId && $thirdMonthDaysDifference < 7 && $thirdMonthDaysDifference >= 0) { ?>
+                                                            <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                    <?php } else if (!$hasThirdMonthReview && $thirdMonthDaysDifference < 0) { ?>
+                                                                <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                    <?php } else {
+                                                        } ?>
+                                                </div>
+                                                <div>
+                                                    <small class="text-secondary">Due: <?php echo $thirdMonthDueDate ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                            <button class="btn ms-auto" data-bs-toggle="modal"
+                                                data-bs-target="#thirdMonthPerformanceReviewModal">
+                                                <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                            </button>
+                                        <?php } ?>
+                                    </div>
+
+                                    <!-- Sixth Month Review -->
+                                    <hr />
+                                    <div class="d-flex align-items-center">
+                                        <?php $hasSixthMonthReview = false;
+                                        foreach ($performance_review_result as $row) {
+                                            if ($row['review_type'] === "Sixth Month Review") {
+                                                $hasSixthMonthReview = true;
+                                                break;
+                                            }
+                                        } ?>
+                                        <?php
+                                        $sixthMonthDueDateFormat = new DateTime($sixthMonthDueDate);
+                                        $sixthMonthInterval = $today->diff($sixthMonthDueDateFormat);
+                                        $sixthMonthDaysDifference = $sixthMonthInterval->format('%r%a');
+                                        ?>
+                                        <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                            <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                        <?php } else { ?>
+                                            <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                        <?php } ?>
+                                        <div class="ms-3">
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">6<sup>th</sup> Month Review
+                                                    <?php if ($hasSixthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                        <span class="badge rounded-pill bg-success">Done</span>
+                                                    <?php } else if (!$hasSixthMonthReview && $revieweeEmployeeId != $employeeId && $sixthMonthDaysDifference < 7 && $sixthMonthDaysDifference >= 0) { ?>
+                                                            <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                    <?php } else if (!$hasSixthMonthReview && $sixthMonthDaysDifference < 0) { ?>
+                                                                <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                    <?php } else {
+                                                        } ?>
+                                                </div>
+                                                <div>
+                                                    <small class="text-secondary">Due: <?php echo $sixthMonthDueDate ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                            <button class="btn ms-auto" data-bs-toggle="modal"
+                                                data-bs-target="#sixthMonthPerformanceReviewModal">
+                                                <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                            </button>
+                                        <?php } ?>
+                                    </div>
+
+                                    <!-- Ninth Month Review -->
+                                    <hr />
+                                    <div class="d-flex align-items-center">
+                                        <?php $hasNinthMonthReview = false;
+                                        foreach ($performance_review_result as $row) {
+                                            if ($row['review_type'] === "Ninth Month Review") {
+                                                $hasNinthMonthReview = true;
+                                                break;
+                                            }
+                                        } ?>
+                                        <?php
+                                        $ninthMonthDueDateFormat = new DateTime($ninthMonthDueDate);
+                                        $ninthMonthInterval = $today->diff($ninthMonthDueDateFormat);
+                                        $ninthMonthDaysDifference = $ninthMonthInterval->format('%r%a');
+                                        ?>
+                                        <?php if ($hasNinthMonthReview) { ?>
+                                            <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                        <?php } else { ?>
+                                            <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                        <?php } ?>
+                                        <div class="ms-3">
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">9<sup>th</sup> Month Review
+                                                    <?php if ($hasNinthMonthReview) { ?>
+                                                        <span class="badge rounded-pill bg-success">Done</span>
+                                                    <?php } else if (!$hasNinthMonthReview && $revieweeEmployeeId != $employeeId && $reviewerEmployeeId != $loginEmployeeId && $ninthMonthDaysDifference < 7 && $ninthMonthDaysDifference >= 0) { ?>
+                                                            <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                    <?php } else if (!$hasNinthMonthReview && $ninthMonthDaysDifference < 0) { ?>
+                                                                <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                    <?php } else {
+                                                        } ?>
+                                                </div>
+                                                <div>
+                                                    <small class="text-secondary">Due: <?php echo $ninthMonthDueDate ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                            <button class="btn ms-auto" data-bs-toggle="modal"
+                                                data-bs-target="#ninthMonthPerformanceReviewModal">
+                                                <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                            </button>
+                                        <?php } ?>
+                                    </div>
+
+                                    <!-- Twelfth Month Review -->
+                                    <hr />
+                                    <div class="d-flex align-items-center">
+                                        <?php $hasTwelfthMonthReview = false;
+                                        foreach ($performance_review_result as $row) {
+                                            if ($row['review_type'] === "Twelfth Month Review") {
+                                                $hasTwelfthMonthReview = true;
+                                                break;
+                                            }
+                                        } ?>
+                                        <?php
+                                        $twelfthMonthDueDateFormat = new DateTime($twelfthMonthDueDate);
+                                        $twelfthMonthInterval = $today->diff($twelfthMonthDueDateFormat);
+                                        $twelfthMonthDaysDifference = $twelfthMonthInterval->format('%r%a');
+                                        ?>
+                                        <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                            <i class="fa-solid fa-star fa-lg text-warning"></i>
+                                        <?php } else { ?>
+                                            <i class="fa-solid fa-star fa-lg text-secondary"></i>
+                                        <?php } ?>
+                                        <div class="ms-3">
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold">12<sup>th</sup> Month Review
+                                                    <?php if ($hasTwelfthMonthReview && $revieweeEmployeeId == $employeeId) { ?>
+                                                        <span class="badge rounded-pill bg-success">Done</span>
+                                                    <?php } else if (!$hasTwelfthMonthReview && $revieweeEmployeeId != $employeeId && $twelfthMonthDaysDifference < 7 && $twelfthMonthDaysDifference >= 0) { ?>
+                                                            <span class="badge rounded-pill bg-warning">Due Soon</span>
+                                                    <?php } else if (!$hasTwelfthMonthReview && $twelfthMonthDaysDifference < 0) { ?>
+                                                                <span class="badge rounded-pill bg-danger">Past Due</span>
+                                                    <?php } else {
+                                                        } ?>
+                                                </div>
+                                                <div>
+                                                    <small class="text-secondary">Due:
+                                                        <?php echo $twelfthMonthDueDate ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ((string) $loginEmployeeId != (string) $revieweeEmployeeId) { ?>
+                                            <button class="btn ms-auto" data-bs-toggle="modal"
+                                                data-bs-target="#twelfthMonthPerformanceReviewModal">
+                                                <i class="fa-solid fa-arrow-up-right-from-square signature-color"></i>
+                                            </button>
+                                        <?php } ?>
+                                    </div>
+
+                                    <!-- <?php echo $firstMonthDueDate . " " . $thirdMonthDueDate . " " . $sixthMonthDueDate . " " . $ninthMonthDueDate ?> -->
+
+                                </div>
+                            </div>
+                        <?php } ?>
+
+                        <!-- <div class="card bg-white border-0 rounded shadow-lg mt-4">
                         <div class="p-3">
                             <div class="d-flex justify-content-between">
                                 <p class="fw-bold signature-color">Policies</p>
@@ -1750,55 +1858,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 Smoking and Vaping Policy </a>
                         </div>
                     </div> -->
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
-                        <div class="p-3">
-                            <p class="fw-bold signature-color">Access</p>
+                        <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                            <div class="p-3">
+                                <p class="fw-bold signature-color">Access</p>
 
-                            <?php
-                            // Check if there are any results
-                            if ($employee_group_access_result->num_rows > 0) {
-                                $current_group_id = null;
+                                <?php
+                                // Check if there are any results
+                                if ($employee_group_access_result->num_rows > 0) {
+                                    $current_group_id = null;
 
-                                // Initialize arrays to store unique group names and folder names
-                                $unique_group_names = [];
-                                $unique_folders = [];
+                                    // Initialize arrays to store unique group names and folder names
+                                    $unique_group_names = [];
+                                    $unique_folders = [];
 
-                                // Fetch all rows from the result set
-                                while ($row = $employee_group_access_result->fetch_assoc()) {
-                                    $group_id = $row['group_id'];
-                                    $group_name = htmlspecialchars($row['group_name']);
-                                    $folder_id = htmlspecialchars($row['folder_id']);
-                                    $folder_name = htmlspecialchars($row['folder_name']);
+                                    // Fetch all rows from the result set
+                                    while ($row = $employee_group_access_result->fetch_assoc()) {
+                                        $group_id = $row['group_id'];
+                                        $group_name = htmlspecialchars($row['group_name']);
+                                        $folder_id = htmlspecialchars($row['folder_id']);
+                                        $folder_name = htmlspecialchars($row['folder_name']);
 
-                                    // Collect unique group names
-                                    if (!isset($unique_group_names[$group_id])) {
-                                        $unique_group_names[$group_id] = $group_name;
+                                        // Collect unique group names
+                                        if (!isset($unique_group_names[$group_id])) {
+                                            $unique_group_names[$group_id] = $group_name;
+                                        }
+
+                                        // Collect unique folder names
+                                        $unique_folders[$folder_id] = $folder_name;
                                     }
 
-                                    // Collect unique folder names
-                                    $unique_folders[$folder_id] = $folder_name;
-                                }
-
-                                // Output unique group names
-                                if (!empty($unique_group_names)) {
-                                    echo "<strong>Groups:</strong><br>";
-                                    foreach ($unique_group_names as $group_id => $group_name) {
-                                        echo "<p>$group_name</p>";
+                                    // Output unique group names
+                                    if (!empty($unique_group_names)) {
+                                        echo "<strong>Groups:</strong><br>";
+                                        foreach ($unique_group_names as $group_id => $group_name) {
+                                            echo "<p>$group_name</p>";
+                                        }
+                                        echo "<hr>";
                                     }
-                                    echo "<hr>";
-                                }
 
-                                // Output unique folder names
-                                if (!empty($unique_folders)) {
-                                    echo "<strong>Folders:</strong><br>";
-                                    foreach ($unique_folders as $folder_id => $folder_name) {
-                                        echo "<p>$folder_name</p>";
+                                    // Output unique folder names
+                                    if (!empty($unique_folders)) {
+                                        echo "<strong>Folders:</strong><br>";
+                                        foreach ($unique_folders as $folder_id => $folder_name) {
+                                            echo "<p>$folder_name</p>";
+                                        }
                                     }
+                                } else {
+                                    echo '<p>No group or folder access found.</p>';
                                 }
-                            } else {
-                                echo '<p>No group or folder access found.</p>';
-                            }
-                            ?>
+                                ?>
+                            </div>
                         </div>
                     </div>
                     <!-- ================== Pay History Modal (Wage) ================== -->
@@ -2770,6 +2879,83 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             });
         </script>
 
+        <!-- Toggle hide and show Wage Pay Raise History -->
+        <script>
+            // Get the elements
+            const wagePayRaiseHistoryChart = document.getElementById('chartContainer');
+            const hideWagePayRaiseHistoryModalLabel = document.getElementById('hideWagePayRaiseHistoryModalLabel');
+            const showWagePayRaiseHistoryChartBtns = document.querySelectorAll('.showWagePayRaiseHistoryChartBtn');
+
+            // Delay adding the d-none class by 40 milliseconds on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                setTimeout(function () {
+                    wagePayRaiseHistoryChart.classList.add('d-none');
+                }, 40);
+            });
+
+            // Function to toggle the visibility of the wage pay raise history chart
+            function toggleWagePayRaiseHistory() {
+                if (wagePayRaiseHistoryChart.classList.contains('d-none')) {
+                    // Show the chart
+                    wagePayRaiseHistoryChart.classList.remove('d-none');
+                    wagePayRaiseHistoryChart.classList.add('d-block');
+                    hideWagePayRaiseHistoryModalLabel.innerHTML = "Hide";
+                    showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
+                    showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
+                } else {
+                    // Hide the chart
+                    wagePayRaiseHistoryChart.classList.remove('d-block');
+                    wagePayRaiseHistoryChart.classList.add('d-none');
+                    hideWagePayRaiseHistoryModalLabel.innerHTML = "Show";
+                    showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
+                    showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye');
+                }
+            }
+
+            // Add event listeners to each button
+            showWagePayRaiseHistoryChartBtns.forEach(btn => {
+                btn.addEventListener('click', toggleWagePayRaiseHistory);
+            });
+        </script>
+
+        <!-- Toggle hide and show Salary Pay Raise History -->
+        <script>
+            // Get the Elements
+            const salaryPayRaiseHistoryChart = document.getElementById('chartContainer2');
+            const hideSalaryPayRaiseHistoryModalLabel = document.getElementById('hideSalaryPayRaiseHistoryModalLabel');
+            const showSalaryPayRaiseHistoryChartBtns = document.querySelectorAll('.showSalaryPayRaiseHistoryChartBtn');
+
+            // Delay adding the d-none class by 40 milliseconds on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                setTimeout(function () {
+                    salaryPayRaiseHistoryChart.classList.add('d-none')
+                }, 40);
+            })
+
+            // Function to toggle the visibility of the salary pat raise history chart
+            function toggleSalaryPayRaiseHistory() {
+                if (salaryPayRaiseHistoryChart.classList.contains('d-none')) {
+                    // Show the chart
+                    salaryPayRaiseHistoryChart.classList.remove('d-none');
+                    salaryPayRaiseHistoryChart.classList.add('d-block');
+                    hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Hide";
+                    showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
+                    showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
+                } else {
+                    // Hide the chart
+                    salaryPayRaiseHistoryChart.classList.remove('d-block');
+                    salaryPayRaiseHistoryChart.classList.add('d-none');
+                    hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Show";
+                    showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
+                    showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye');
+                }
+            }
+
+            // Add event listeners to each button
+            showSalaryPayRaiseHistoryChartBtns.forEach(btn => {
+                btn.addEventListener('click', toggleSalaryPayRaiseHistory);
+            })
+        </script>
 </body>
 
 </html>

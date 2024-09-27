@@ -329,7 +329,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         // Generate the new filename based on employee ID
         $newFileName = $employeeId . '_profile.' . $imageExtension;
 
-        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\00 - Employee Documents\\01 - Employment Documents\\" . $newFileName;
+        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
         move_uploaded_file($profileImage["tmp_name"], $imagePath);
 
         // Encode the image before insertion

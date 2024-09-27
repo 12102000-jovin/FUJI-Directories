@@ -123,23 +123,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 <label for="department" class="fw-bold">Department</label>
                 <a class="ms-2 text-decoration-underline editDocumentNameButton" role="button">Edit</a>
             </div>
-            <!-- <select class="form-select" aria-label="department" name="department" id="departmentToSubmit">
-                <option disabled selected hidden></option>
-                <option value="Accounts">Accounts</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Estimating">Estimating</option>
-                <option value="Human Resources">Human Resources</option>
-                <option value="Management">Management</option>
-                <option value="Operations Support">Operations Support</option>
-                <option value="Projects">Projects</option>
-                <option value="Quality Assurance">Quality Assurance</option>
-                <option value="Quality Control">Quality Control</option>
-                <option value="Research & Development">Research & Development</option>
-                <option value="Special Projects">Special Projects</option>
-                <option value="Work, Health and Safety">Work, Health and Safety</option>
-                <option value="N/A">N/A</option>
-            </select> -->
             <input type="text" name="department" class="form-control" id="departmentToSubmit" readonly>
         </div>
         <div class="form-group col-md-6 mt-3">
@@ -147,23 +130,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 <label for="type" class="fw-bold">Type</label>
                 <a class="ms-2 text-decoration-underline editDocumentNameButton" role="button">Edit</a>
             </div>
-            <!-- <select class="form-select" aria-label="type" name="type" id="typeToSubmit">
-                <option disabled selected hidden></option>
-                <option value="Additional Duties">Additional Duties</option>
-                <option value="CAPA">CAPA</option>
-                <option value="Employee Record">Employee Record</option>
-                <option value="External Documents">External Documents</option>
-                <option value="Form">Form</option>
-                <option value="Internal Documents">Internal Documents</option>
-                <option value="Job Description">Job Description</option>
-                <option value="Manuals">Manuals</option>
-                <option value="Policy">Policy</option>
-                <option value="Process/Procedure">Process/Procedure</option>
-                <option value="Quiz">Quiz</option>
-                <option value="Risk Assessment">Risk Assessment</option>
-                <option value="Work Instruction">Work Instruction</option>
-                <option value="N/A">N/A</option>
-            </select> -->
             <input type="text" name="type" class="form-control" id="typeToSubmit" readonly>
         </div>
         <div class="form-group col-md-6 mt-3">
@@ -400,7 +366,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 ownerSelect.value = "General Manager";
             }
         }
-
 
         department.addEventListener('change', function () {
             const selectedDepartment = department.options[department.selectedIndex].text;

@@ -401,7 +401,7 @@ if ($employee_list_result->num_rows > 0) {
                                                 <?php } ?>
                                             </h5>
                                             <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
-                                            <p class="nickname"><?php echo $nickname ?></p>
+                                            <!-- <p class="nickname"><?php echo $nickname ?></p> -->
                                             <a
                                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">
                                                 <button class="btn btn-dark btn-sm"><small>Profile <i
@@ -496,7 +496,7 @@ if ($employee_list_result->num_rows > 0) {
                                                             data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . ' "> </i>';
                                                     } else if ($daysDifference < 0) {
                                                         echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
-                                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . '> </i>';
+                                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . '"> </i>';
                                                     }
                                                     ?>
                                                 <?php } ?>
