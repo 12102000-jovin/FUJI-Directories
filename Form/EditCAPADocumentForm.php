@@ -2,14 +2,132 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-?>
 
+// Create new email sender object
+$emailSender = new emailSender();
+
+if (!$emailSender) {
+    die("Email sender object is not initialized.");
+}
+
+// ========================= Get the employees ========================= 
+$employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
+$employees_result = $conn->query($employees_sql);
+
+// ========================= E D I T  D O C U M E N T ( OPEN FORM ) =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"]) && isset($_POST["editCapaDocument"])) {
+    $capaIdToEdit = $_POST["capaIdToEdit"];
+    $capaDocumentId = $_POST["capaDocumentIdToEdit"];
+    $dateRaised = $_POST["dateRaisedToEdit"];
+    $capaDescription = $_POST["capaDescriptionToEdit"];
+    $severity = $_POST["severityToEdit"];
+    $raisedAgainst = $_POST["raisedAgainstToEdit"];
+    $capaOwner = $_POST["capaOwnerToEdit"];
+    $assignedTo = $_POST["assignedToToEdit"];
+    $mainSourceType = $_POST["mainSourceTypeToEdit"];
+    $productOrService = $_POST["productOrServiceToEdit"];
+    $mainFaultCategory = $_POST["mainFaultCategoryToEdit"];
+    $targetCloseDate = $_POST["targetCloseDateToEdit"];
+    $capaOwnerEmail = $_POST["capaOwnerEmail"];
+
+    // Prepare statement
+    $edit_document_sql = "UPDATE capa SET capa_document_id = ?, date_raised = ?, capa_description = ?, severity = ?, raised_against = ?, capa_owner = ?, assigned_to = ?, main_source_type = ?, product_or_service = ?, main_fault_category = ?, target_close_date = ? WHERE capa_id = ?";
+    $edit_document_result = $conn->prepare($edit_document_sql);
+
+    // Check if the statement preparation was successful
+    if ($edit_document_result === false) {
+        die("Error preparing the statement: " . $conn->error);
+    }
+
+    // Bind parameters
+    $edit_document_result->bind_param(
+        "sssssssssssi",
+        $capaDocumentId,
+        $dateRaised,
+        $capaDescription,
+        $severity,
+        $raisedAgainst,
+        $capaOwner,
+        $assignedTo,
+        $mainSourceType,
+        $productOrService,
+        $mainFaultCategory,
+        $targetCloseDate,
+        $capaIdToEdit
+    );
+
+    // Execute and check for errors
+    if ($edit_document_result->execute()) {
+        // Build current URL
+        $current_url = htmlspecialchars($_SERVER['PHP_SELF']);
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . urlencode($_SERVER['QUERY_STRING']);
+        }
+
+        $emailSender->sendEmail(
+            $capaOwnerEmail,// Recipient email
+            'Jovin Hampton', // Recipient name
+            'Your CAPA document has been edited!', // Subject
+            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
+        );
+
+
+        // Redirect
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $edit_document_result->error;
+    }
+}
+
+// ========================= E D I T  D O C U M E N T ( CLOSE FORM ) =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
+    $capaIdToEdit = $_POST["capaIdToEdit"];
+    $dateClosed = $_POST["dateClosed"];
+    $keyTakeaways = $_POST["keyTakeaways"];
+    $additionalComments = $_POST["additionalComments"];
+
+    // Prepare statement for closing CAPA
+    $close_capa_sql = "UPDATE capa SET status = 'Closed', date_closed = ?, key_takeaways = ?, additional_comments = ? WHERE capa_id = ?";
+    $close_capa_result = $conn->prepare($close_capa_sql);
+    $close_capa_result->bind_param("sssi", $dateClosed, $keyTakeaways, $additionalComments, $capaIdToEdit);
+
+    if ($close_capa_result->execute()) {
+        // Redirect or show success message
+        echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";
+        exit();
+    } else {
+        echo "Error closing document: " . $close_capa_result->error;
+    }
+}
+
+// ========================= E D I T  C A P A  S T A T U S =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
+    $capaIdToEdit = $_POST["capaIdToEdit"];
+    $open_capa_sql = "UPDATE capa SET status = 'Open' , date_closed = NULL WHERE capa_id = ?";
+    $open_capa_result = $conn->prepare($open_capa_sql);
+    $open_capa_result->bind_param("i", $capaIdToEdit);
+
+    if ($open_capa_result->execute()) {
+        // Redirect or show success message
+        echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";
+        exit();
+    } else {
+        echo "Error closing document: " . $open_capa_result->error;
+    }
+}
+
+?>
 
 <form method="POST" id="editCAPADocumentForm" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
         id="result">
-        Duplicate document found.</p>
-
+    </p>
+    <div class="d-flex justify-content-center align-items-center">
+        <button class="btn btn-secondary m-1 d-none" id="cancelOpenCapaBtn" data-bs-dismiss="modal"
+            aria-label="Close">Cancel</button>
+        <button class="btn signature-btn d-none" id="openCapaBtn" name="openCapaBtn"> Re-Open CAPA</button>
+    </div>
     <div id="openForm">
         <div class="d-flex justify-content-center">
             <div class="d-grid grid-template-columns mt-3 mb-4 fw-bold text-center bg-danger text-white py-2 rounded-3"
@@ -67,7 +185,18 @@ error_reporting(E_ALL);
             </div>
             <div class="form-group col-md-6 mt-3">
                 <label for="capaOwnerToEdit" class="fw-bold"> CAPA Owner</label>
-                <input type="text" name="capaOwnerToEdit" class="form-control" id="capaOwnerToEdit" required>
+                <select name="capaOwnerToEdit" aria-label="employeeId" class="form-select" id="capaOwnerToEdit" required
+                    onchange="updateEmail()">
+                    <?php
+                    echo '<option disabled selected hidden></option>';
+                    while ($row = $employees_result->fetch_assoc()) {
+                        echo '<option value="' . $row['employee_id'] . '" data-email-owner="' . htmlspecialchars($row['email']) . '">' .
+                            htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
+                            htmlspecialchars($row['employee_id']) . ')</option>';
+                    }
+                    ?>
+                </select>
+                <input type="text" name="capaOwnerEmail" id="capaOwnerEmailEdit">
                 <div class="invalid-feedback">
                     Please provide CAPA Owner
                 </div>
@@ -129,15 +258,16 @@ error_reporting(E_ALL);
         <div class="row mt-3">
             <div class="form-group col-md-12">
                 <label for="dateClosed" class="fw-bold">Date Closed</label>
-                <input type="date" name="dateClosed" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                <input type="date" name="dateClosed" class="form-control" id=dateClosed
+                    value="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="form-group col-md-12 mt-3">
                 <label for="keyTakeaways" class="fw-bold">Key Takeaways</label>
-                <textarea class="form-control" name="keyTakeaways" id="keyTakeaways" rows="4" required></textarea>
+                <textarea class="form-control" name="keyTakeaways" id="keyTakeawaysToEdit" rows="4" required></textarea>
             </div>
             <div class="form-group col-md-12 mt-3">
                 <label for="additionalComments" class="fw-bold">Additional Comments</label>
-                <textarea class="form-control" name="additionalComments" id="additionalComments" rows="4"
+                <textarea class="form-control" name="additionalComments" id="additionalCommentsToEdit" rows="4"
                     required></textarea>
             </div>
 
@@ -154,6 +284,8 @@ error_reporting(E_ALL);
         const closeForm = document.getElementById("closeForm");
         const closeCAPAbtn = document.getElementById("closeCAPAbtn");
         const backFormBtn = document.getElementById("backFormBtn");
+        const statusValue = document.getElementById("capaStatus").textContent.trim();
+        const openCapaBtn = document.getElementById("openCapaBtn")
 
         if (closeCAPAbtn) {
             closeCAPAbtn.addEventListener("click", function (event) {
@@ -174,6 +306,84 @@ error_reporting(E_ALL);
                 openForm.classList.remove("d-none"); // Show the open form
             });
         }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editCAPADocumentForm = document.getElementById("editCAPADocumentForm");
+        const capaDocumentId = document.getElementById("capaDocumentId");
+        const errorMessage = document.getElementById("result");
+
+        function checkDuplicateDocument() {
+            return fetch('../AJAXphp/checkDuplicateDocument.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencode' },
+                body: new URLSearchParams({})
+            })
+        }
+
+            .then(response => response.text()) // Get the plain text response
+            .then(data => {
+                console.log('Server Response:', data); // Log response for debugging
+                return data === '0'; // Return true id no duplicate (0), false if duplicate (1)
+            })
+
+        function validateForm() {
+            return checkDuplicateDocument().then(isDuplicateValid => {
+                return isDuplicateValid;
+            })
+        }
+
+        editCAPADocumentForm.addEventListener('submit', function (event) {
+            // Prevent default form submission
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (editCAPADocumentForm.checkValidity() === false) {
+                // Add was-validated class to show validation feedback
+                editCAPADocumentForm.classList.add('was-validated');
+            } else {
+                // Perform your duplicate document validation if the form is valid
+                validateForm().then(isValid => {
+                    if (isValid) {
+                        // Now submit the form
+                        editCAPADocumentForm.submit();
+                    } else {
+                        // Add was-validated class and show alert for duplicate ID
+                        editCAPADocumentForm.classList.add('was-validated');
+                        errorMessage.classList.add('d-none');
+                        errorMessage.innerHTML = "Duplicate document found.";
+                    }
+                })
+            }
+        })
+    })
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function updateEmail() {
+            console.log('updateEmail called'); // Check if this line is executed
+
+            // Get the select dropdown and email input elements
+            const select = document.getElementById('capaOwnerToEdit');
+            const emailInput = document.getElementById('capaOwnerEmailEdit');
+
+            // Get the currently selected option in the dropdown
+            const selectedOption = select.options[select.selectedIndex];
+
+            // If there is a valid option selected, update the email input field
+            if (selectedOption) {
+                const email = selectedOption.getAttribute('data-email-owner'); // Get the email from the selected option
+                emailInput.value = email; // Set the email input value to the selected owner's email
+                console.log('Email updated to:', emailInput.value); // Debugging output
+            } else {
+                console.log('No option selected');
+            }
+        }
+
+        // Call updateEmail when the page loads
+        updateEmail();
     });
 
 </script>

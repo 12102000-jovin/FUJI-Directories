@@ -18,6 +18,9 @@ $projectName = $config['project_name'];
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
 
+// Get status filter
+$statusFilter = isset($_GET['status']) ? $conn->real_escape_string($_GET['status']) : '';
+
 // Sorting Variables
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'capa_document_id';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
@@ -30,8 +33,10 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 // Get search term 
 $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
 
-// Build base SQL query with role-based filtering
+// Build base SQL query with role-based filtering1
 $whereClause = "(capa_document_id LIKE '%$searchTerm%')";
+
+$whereClause .= " AND (status = '$statusFilter' OR '$statusFilter' = '')";
 
 // SQL query to retrieve CAPA data
 $capa_sql = "SELECT * FROM capa WHERE $whereClause
@@ -165,6 +170,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                             <button class="btn btn-danger ms-2">
                                 <a class="dropdown-item" href="#" onclick="clearURLParameters()">Clear</a>
                             </button>
+                            <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
+                                id="statusDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                <?php echo $statusFilter ? $statusFilter : "All Status" ?>
+                            </button>
+                            <div class="dropdown">
+                                <form method="GET" action="">
+                                    <input type="hidden" id="selectedStatusFilter" name="status" value="">
+                                    <ul class="dropdown-menu" aria-labelledby="statusDropdownMenuButton">
+                                        <li><a class="dropdown-item dropdown-status-item" href="#"
+                                                data-status-filter="All Status">All Status</a></li>
+                                        <li><a class="dropdown-item dropdown-status-item" href="#"
+                                                data-status-filter="Open">Open</a></li>
+                                        <li><a class="dropdown-item dropdown-status-item" href="#"
+                                                data-status-filter="Closed">Closed</a></li>
+                                    </ul>
+                                </form>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -215,7 +237,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                             data-main-source-type="<?= $row['main_source_type'] ?>"
                                             data-product-or-service="<?= $row['product_or_service'] ?>"
                                             data-main-fault-category="<?= $row['main_fault_category'] ?>"
-                                            data-target-close-date="<?= $row['target_close_date'] ?>">
+                                            data-target-close-date="<?= $row['target_close_date'] ?>"
+                                            data-date-closed="<?= $row['date_closed'] ?>"
+                                            data-key-takeaways="<?= $row['key_takeaways'] ?>"
+                                            data-additional-comments="<?= $row['additional_comments'] ?>">
                                             <i class="fa-regular fa-pen-to-square"></i>
                                         </button>
 
@@ -225,7 +250,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                                 class="fa-regular fa-trash-can text-danger"></i></button>
                                     </div>
                                 </td>
-                                <td class="py-2 align-middle text-center"><a href="#"><?= $row['capa_document_id'] ?></a></td>
+                                <td class="py-2 align-middle text-center"><a
+                                        href="../open-capa-folder.php?folder=<?= $folder ?>"
+                                        target="_blank"><?= $row['capa_document_id'] ?></a></td>
                                 <td class="py-2 align-middle text-center"><?= $row['date_raised'] ?></td>
                                 <td class="py-2 align-middle"><?= $row['capa_description'] ?></td>
                                 <td class="py-2 align-middle text-center 
@@ -249,10 +276,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     <?= $row['severity'] ?>
                                 </td>
                                 <td class="py-2 align-middle text-center"><?= $row['raised_against'] ?></td>
-                                <td class="py-2 align-middle text-center" <?= isset($row['capa_owner']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['capa_owner']) ? $row['capa_owner'] : "N/A" ?>
+
+                                <?php
+                                $employee_id = $row['capa_owner'];
+                                $employee_name = "N/A"; // Default value
+                        
+                                if (isset($employee_id)) {
+                                    // Prepare and execute the query to fetch employee name
+                                    $stmt = $conn->prepare("SELECT first_name, last_name FROM employees WHERE employee_id = ?");
+                                    $stmt->bind_param("i", $employee_id);
+                                    $stmt->execute();
+                                    $result = $stmt->get_result();
+
+                                    // Fetch the employee name
+                                    if ($rowEmployee = $result->fetch_assoc()) {
+                                        $employee_first_name = $rowEmployee['first_name'];
+                                        $employee_last_name = $rowEmployee['last_name'];
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name; // Combine first and last name
+                                    }
+                                }
+                                ?>
+                                <td class="py-2 align-middle text-center" <?= ($employee_name === "N/A") ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
+                                    <?= htmlspecialchars($employee_name) ?>
                                 </td>
-                                <td class="py-2 align-middle text-center"><?= $row['status'] ?></td>
+
+                                <td class="py-2 align-middle text-center 
+                                    <?php if ($row['status'] === "Open") {
+                                        echo 'bg-danger text-white';
+                                    } else if ($row['status'] === "Closed") {
+                                        echo 'bg-success text-white';
+                                    } ?>">
+                                    <?= $row['status'] ?>
+                                </td>
+
                                 <td class="py-2 align-middle text-center" <?= isset($row['assigned_to']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['assigned_to']) ? $row['assigned_to'] : "N/A" ?>
                                 </td>
@@ -267,7 +323,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 <td class="py-2 align-middle text-center 
                                 <?php
                                 // Define the class based on the value of daysLeft
-                                if (!empty($row['target_close_date'])) {
+                                if (!empty($row['target_close_date']) && $row['status'] === "Open") {
                                     $targetCloseDate = new DateTime($row['target_close_date']);
                                     $currentDate = new DateTime();
                                     $interval = $currentDate->diff($targetCloseDate);
@@ -279,17 +335,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     } else if ($daysLeft <= 30) {
                                         echo 'text-white bg-warning';
                                     }
+                                    // if ($daysLeft == 30) {
+                                    //     $emailSender->sendEmail(
+                                    //         'jovin.hampton@smbeharwal.fujielectric.com', // Recipient email
+                                    //         'Jovin Hampton', // Recipient name
+                                    //         'CAPA Reminder: 30 Days Left', // Subject
+                                    //         "Reminder: The CAPA document with ID {$row['capa_document_id']} has 30 days left before its target close date." // Body
+                                    //     );
+                                    // }
                                 }
                                 ?>
-                                ">
+                                " <?php if ($row['status'] === "Closed") {
+                                    echo "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'";
+                                } ?>>
                                     <?php
-                                    if (!empty($row['target_close_date'])) {
+                                    if (!empty($row['target_close_date']) && $row['status'] === "Open") {
                                         // Output the message based on daysLeft
                                         if ($daysLeft < 0) {
                                             echo "Overdue By " . abs($daysLeft) . " days";
                                         } else {
                                             echo "$daysLeft" . " Days Remaining";
                                         }
+                                    } else {
+                                        echo "N/A";
                                     }
                                     ?>
                                 </td>
@@ -301,8 +369,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     <?= isset($row['key_takeaways']) ? $row['key_takeaways'] : "N/A" ?>
                                 </td>
                                 <td class="py-2 align-middle text-center" <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['additional_comments']) ? $row['key_takeaways'] : "N/A" ?>
-                                    <?= $row['additional_comments'] ?>
+                                    <?= isset($row['additional_comments']) ? $row['additional_comments'] : "N/A" ?>
                                 </td>
                             </tr>
                         <?php } ?>
@@ -513,6 +580,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 var productOrService = button.getAttribute('data-product-or-service');
                 var mainFaultCategory = button.getAttribute('data-main-fault-category');
                 var targetCloseDate = button.getAttribute('data-target-close-date');
+                var dateClosed = button.getAttribute('data-date-closed');
+                var keyTakeaways = button.getAttribute('data-key-takeaways');
+                var additionalComments = button.getAttribute('data-additional-comments');
 
                 // Update the modal's content with the extracted data
                 var modalCapaId = myModalEl.querySelector('#capaIdToEdit');
@@ -528,6 +598,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 var modalProductOrService = myModalEl.querySelector('#productOrServiceToEdit');
                 var modalMainFaultCategory = myModalEl.querySelector('#mainFaultCategoryToEdit');
                 var modalTargetCloseDate = myModalEl.querySelector('#targetCloseDateToEdit');
+                var modalDateClosed = myModalEl.querySelector('#dateClosed');
+                var modalKeyTakeaways = myModalEl.querySelector('#keyTakeawaysToEdit');
+                var modalKeyAdditionalComments = myModalEl.querySelector('#additionalCommentsToEdit');
 
                 // Assign the extracted values to the modal input fields
                 modalCapaId.value = capaId;
@@ -543,7 +616,78 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 modalProductOrService.value = productOrService;
                 modalMainFaultCategory.value = mainFaultCategory;
                 modalTargetCloseDate.value = targetCloseDate;
+                if (dateClosed !== null && dateClosed !== '') {
+                    modalDateClosed.value = dateClosed;
+                }
+
+                modalKeyTakeaways.value = keyTakeaways;
+                modalKeyAdditionalComments.value = additionalComments;
+
+                // Show or hide the form based on the status
+                var openForm = myModalEl.querySelector('#openForm');
+                var closeForm = myModalEl.querySelector('#closeForm');
+                var resultText = myModalEl.querySelector('#result'); // Assuming you want to display a message here
+                var openCapaBtn = myModalEl.querySelector('#openCapaBtn');
+                var cancelOpenCapaBtn = myModalEl.querySelector('#cancelOpenCapaBtn')
+
+                if (status !== "Open") {
+                    openForm.style.display = 'none'; // Hide the form
+                    // closeForm.style.display = 'none'; // Hide the close form
+                    resultText.innerHTML = "This CAPA document has been closed."; // Set the message
+                    resultText.classList.remove('d-none'); // Show the message
+                    openCapaBtn.classList.remove('d-none');
+                    cancelOpenCapaBtn.classList.remove('d-none');
+                } else {
+                    openForm.style.display = 'block'; // Show the form
+                    // closeForm.style.display = 'none'; // Hide the close form
+                    resultText.classList.add('d-none'); // Hide the message
+                    openCapaBtn.classList.add('d-none');
+                    cancelOpenCapaBtn.classList.add('d-none');
+                }
             });
+        });
+
+    </script>
+    <script>
+        document.querySelectorAll('.dropdown-menu .dropdown-status-item').forEach(item => {
+            item.addEventListener('click', function (event) {
+                event.preventDefault(); // Preveb default anchor click behavior
+                let status = this.getAttribute('data-status-filter');
+                if (status === "All Status") {
+                    document.getElementById('selectedStatusFilter').value = "";
+                } else {
+                    document.getElementById('selectedStatusFilter').value = status;
+                }
+                this.closest('form').submit();
+            })
+        })
+    </script>
+    <script>
+        // Load saved zoom level from localStorage or use default
+        let currentZoom = parseFloat(localStorage.getItem('zoomLevel')) || 1;
+
+        // Apply the saved zoom level
+        document.body.style.zoom = currentZoom;
+
+        function zoom(factor) {
+            currentZoom *= factor;
+            document.body.style.zoom = currentZoom;
+
+            // Save the new zoom level to localStorage
+            localStorage.setItem('zoomLevel', currentZoom);
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.body.style.zoom = currentZoom;
+
+            // Remove the zoom level from localStorage
+            localStorage.removeItem('zoomLevel');
+        }
+
+        // Optional: Reset zoom level on page load
+        window.addEventListener('load', () => {
+            document.body.style.zoom = currentZoom;
         });
 
     </script>

@@ -294,7 +294,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
         const qaDocumentToEdit = document.getElementById("qaDocumentToEdit");
         const qaIdToEdit = document.getElementById("qaIdToEdit");
 
-
+        
         documentDescriptionToEdit.value = "";
 
         function checkISO9001RadioSelection() {

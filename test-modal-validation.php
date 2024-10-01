@@ -1,39 +1,21 @@
 <?php
-require '../vendor/autoload.php'; // Adjust path if necessary
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
-function sendEmail($recipient, $subject, $body) {
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = 'smtp.gmail.com';
-    $mail->SMTPAuth = true;
-    $mail->Username = 'jovinhampton@gmail.com'; 
-    $mail->Password = 'qurp ubnx zcnl ldxl'; // Use environment variables or secure method for passwords
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-    $mail->Port = 587;
+require_once 'vendor/autoload.php';
 
-    $mail->setFrom('jovinhampton@gmail.com', 'Jovin Hampton');
-    $mail->addAddress($recipient);
+// Database connection
+require_once 'db_connect.php';
+require_once 'email_sender.php';
 
-    $mail->Subject = $subject;
-    $mail->Body = $body;
+$emailSender = new emailSender();
 
-    try {
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        return false;
-    }
-}
 
-// Check if the request is an AJAX request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_email') {
-    $recipient = $_POST['recipient'];
-    $subject = $_POST['subject'];
-    $body = $_POST['body'];
-
-    $success = sendEmail($recipient, $subject, $body);
-    echo json_encode(['success' => $success]);
-}
-?>
+// Send the email to the capa_owner
+$emailSender->sendEmail(
+    'jovin.hampton@smbeharwal.fujielectric.com', // Recipient email
+    'Test Name', // Recipient name
+    'CAPA Reminder: 30 Days Left', // Subject
+    "Reminder: The CAPA document with ID  has 30 days left before its target close date." // Body
+);

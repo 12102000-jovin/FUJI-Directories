@@ -3,8 +3,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Create new email sender object
+$emailSender = new emailSender();
 
-// ========================= SQL to get lates CAPA ID =========================
+// ========================= Get the employees ========================= 
+$employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
+$employees_result = $conn->query($employees_sql);
+
+// ========================= SQL to get latest CAPA ID =========================
 $capa_document_id_sql = "SELECT MAX(capa_document_id) AS latest_id FROM capa";
 $capa_document_id_result = $conn->query($capa_document_id_sql);
 
@@ -43,6 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
     $productOrService = $_POST["productOrService"];
     $mainFaultCategory = $_POST["mainFaultCategory"];
     $targetCloseDate = $_POST["targetCloseDate"];
+    $capaOwnerEmail = $_POST["capaOwnerEmail"];
 
     $add_capa_document_sql = "INSERT INTO capa (capa_document_id, date_raised, capa_description, severity, raised_against, capa_owner, status, assigned_to, main_source_type, product_or_service, main_fault_category, target_close_date) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -56,6 +63,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
+
+        $emailSender->sendEmail(
+            $capaOwnerEmail, // Recipient email
+            'Jovin Hampton', // Recipient name
+            'A new CAPA added!', // Subject
+            "Reminder: The CAPA document with ID $capaDocumentId has been added by $capaOwner!" // Body
+        );
+
         echo "<script>alert('Document added successfully')</script>";
         // Redirect to the same URL with parameters
         echo "<script>window.location.replace('" . $current_url . "');</script>";
@@ -71,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
 <form method="POST" id="addCAPADocumentForm" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
         id="result">
-        Duplicate document found.</p>
+    </p>
     <div class="row">
         <div class="form-group col-md-6">
             <label for="capaDocumentId" class="fw-bold">CAPA Document ID</label>
@@ -83,7 +98,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         </div>
         <div class="form-group col-md-6 mt-md-0 mt-3">
             <label for="dateRaised" class="fw-bold">Date Raised</label>
-            <input type="date" name="dateRaised" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+            <input type="date" name="dateRaised" class="form-control" id="dateRaised"
+                value="<?php echo date('Y-m-d'); ?>">
             <div class="invalid-feedback" required>
                 Please provide the date raised.
             </div>
@@ -117,11 +133,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="capaOwner" class="fw-bold">CAPA Owner</label>
-            <input type="text" name="capaOwner" class="form-control" required>
+            <select name="capaOwner" aria-label="employeeId" class="form-select" id="employeeId" required
+                onchange="updateEmail()">
+                <?php
+                echo '<option disabled selected hidden></option>';
+                while ($row = $employees_result->fetch_assoc()) {
+                    echo '<option value="' . $row['employee_id'] . '" data-email="' . htmlspecialchars($row['email']) . '">' .
+                        htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
+                        htmlspecialchars($row['employee_id']) . ')</option>';
+                }
+                ?>
+            </select>
+            <input type="hidden" name="capaOwnerEmail" id="capaOwnerEmail">
             <div class="invalid-feedback">
-                Please provide the capa owner.
+                Please provide the CAPA owner.
             </div>
         </div>
+
         <!-- <div class="form-group col-md-6 mt-3">
             <label for="status" class="fw-bold">Status</label>
             <select class="form-select" name="status" aria-label="status">
@@ -190,7 +218,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="targetCloseDate" class="fw-bold">Target Close Date</label>
-            <input type="date" name="targetCloseDate" class="form-control" required>
+            <input type="date" name="targetCloseDate" class="form-control" id="targetCloseDate" required>
             <div class="invalid-feedback">
                 Please provide the target close date.
             </div>
@@ -214,11 +242,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ capaDocumentId: capaDocumentId.value })
             })
-                .then(response => response.text())  // Get the plain text response
+                .then(response => response.text()) // Get the plain text response
                 .then(data => {
-                    console.log('Server Response:', data);  // Log response for debugging
-                    return data === '0'; // Return true if no duplicate (0), false if duplicate (1)
-                });
+                    console.log('Server Response:', data); // Log response for debugging
+                    return data === '0'; // Return true id no duplicate (0), false if duplicate (1)
+                })
         }
 
         function validateForm() {
@@ -231,6 +259,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
             // Prevent default form submission
             event.preventDefault();
             event.stopPropagation();
+
+            // Fetch values dynamically within the submit event handler
+            const dateRaised = document.getElementById("dateRaised").value;
+            const targetCloseDate = document.getElementById("targetCloseDate").value;
+
+            // Convert date strings to Date objects for proper comparison 
+            const raisedDate = new Date(dateRaised);
+            const closeDate = new Date(targetCloseDate);
+
+            // Clear previous error message
+            errorMessage.classList.add('d-none');
+            errorMessage.innerHTML = '';
+
+            if (closeDate < raisedDate) {
+                errorMessage.classList.remove('d-none');
+                errorMessage.innerHTML = "Target date should be after date raised.";
+                return; // Stop execution if date validation fails
+            }
 
             // Check validity of the form
             if (addCAPADocumentForm.checkValidity() === false) {
@@ -246,10 +292,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                         // Add was-validated class and show alert for duplicate ID
                         addCAPADocumentForm.classList.add('was-validated');
                         errorMessage.classList.remove('d-none');
+                        errorMessage.innerHTML = "Duplicate document found.";
                     }
-                });
+                })
             }
-        }, false);
+        })
+    })
+</script>
 
-    });
+<script>
+    function updateEmail() {
+        const select = document.getElementById('employeeId');
+        const emailInput = document.getElementById('capaOwnerEmail');
+        const selectedOption = select.options[select.selectedIndex];
+
+        // Set the hidden input value to the email of the selected employee
+        emailInput.value = selectedOption.getAttribute('data-email');
+    }
 </script>
