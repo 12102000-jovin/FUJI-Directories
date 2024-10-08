@@ -7,11 +7,10 @@ error_reporting(E_ALL);
 // Get the current file to display (if any)
 $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
 $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
-$employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
 $subDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
 
-$baseDirectory = 'D:\FSMBEH-Data\09 - HR\04 - Wage Staff\\';
-$filePath = $baseDirectory . $employeeId . "/" . $folder . ($subDir ? '/' . $subDir : '') . "/" . $currentFile;
+$baseDirectory = 'D:\FSMBEH-Data\00 - QA\05 - CAPA';
+$filePath = $baseDirectory . "/" . $folder . ($subDir ? '/' . $subDir : '') . "/" . $currentFile;
 
 // Check if the file exists
 if (file_exists($filePath)) {

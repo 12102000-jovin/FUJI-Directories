@@ -30,7 +30,7 @@ $department_counts = [];
 $total_employees_count = 0;
 
 foreach ($departments as $department_id => $department_name) {
-    $count_sql = "SELECT COUNT(*) AS department_count FROM employees WHERE department='$department_id' AND is_active = 1";
+    $count_sql = "SELECT COUNT(*) AS department_count FROM employees WHERE department='$department_id'";
     $count_result = $conn->query($count_sql);
 
     if ($count_result) {
@@ -76,16 +76,17 @@ foreach ($department_counts as $department_name => $count) {
 
 
 // =============================== E M P L O Y M E N T  T Y P E  C H A R T ===============================
+
 // Query to get the number of permanent employees
-$permanent_employees_sql = "SELECT COUNT(*) AS permanent_count FROM employees WHERE employment_type='Full-Time' AND is_active = 1";
+$permanent_employees_sql = "SELECT COUNT(*) AS permanent_count FROM employees WHERE employment_type='Full-Time'";
 $permanent_employees_result = $conn->query($permanent_employees_sql);
 
 // Query to get the number of part-time employees
-$part_time_employees_sql = "SELECT COUNT(*) AS part_time_count FROM employees WHERE employment_type='Part-Time' AND is_active = 1";
+$part_time_employees_sql = "SELECT COUNT(*) AS part_time_count FROM employees WHERE employment_type='Part-Time'";
 $part_time_employees_result = $conn->query($part_time_employees_sql);
 
 // Query to get the number of casual employees
-$casual_employees_sql = "SELECT COUNT(*) AS casual_count FROM employees WHERE employment_type='Casual' AND is_active = 1";
+$casual_employees_sql = "SELECT COUNT(*) AS casual_count FROM employees WHERE employment_type='Casual'";
 $casual_employees_result = $conn->query($casual_employees_sql);
 
 // Initialize variables to employment type counts
@@ -441,7 +442,7 @@ $folders_result->free();
                         <div class="" id="chartContainer" style="height: 370px;"></div>
                     </div>
                 </div>
-                <div class="col-lg-4 ">
+                <div class="col-lg-4">
                     <div class="bg-white p-2 mt-3 mt-lg-0 rounded-3">
                         <h4 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
                             data-bs-target="#employmentTypeCollapse" aria-expanded="false"

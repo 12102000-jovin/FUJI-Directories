@@ -33,15 +33,21 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 // Get search term 
 $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
 
-// Build base SQL query with role-based filtering1
+// Build base SQL query with role-based filtering
 $whereClause = "(capa_document_id LIKE '%$searchTerm%')";
 
 $whereClause .= " AND (status = '$statusFilter' OR '$statusFilter' = '')";
 
 // SQL query to retrieve CAPA data
-$capa_sql = "SELECT * FROM capa WHERE $whereClause
-    ORDER BY $sort $order
-    LIMIT $offset, $records_per_page";
+$capa_sql = "SELECT capa.*, 
+                    capa_owner.email AS capa_owner_email, 
+                    assigned_to.email AS assigned_to_email
+             FROM capa 
+             LEFT JOIN employees AS capa_owner ON capa.capa_owner = capa_owner.employee_id
+             LEFT JOIN employees AS assigned_to ON capa.assigned_to = assigned_to.employee_id
+             WHERE $whereClause
+             ORDER BY $sort $order 
+             LIMIT $offset, $records_per_page";
 $capa_result = $conn->query($capa_sql);
 
 // Get total number of records
@@ -135,6 +141,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
+                    <li class="breadcrumb-item"><a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-index.php">Quality
+                            Assurances</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">CAPA Table</li>
                 </ol>
             </nav>
@@ -201,29 +210,109 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 <thead>
                     <tr>
                         <th></th>
-                        <th class="py-4 align-middle text-center" style="min-width:100px">CAPA ID</th>
-                        <th class="py-4 align-middle text-center" style="min-width:100px">Date Raised</th>
-                        <th class="py-4 align-middle text-center" style="min-width:300px">CAPA Description</th>
-                        <th class="py-4 align-middle text-center" style="min-width:100px">Severity</th>
-                        <th class="py-4 align-middle text-center">Raised Against</th>
-                        <th class="py-4 align-middle text-center">CAPA Owner</th>
-                        <th class="py-4 align-middle text-center">Status</th>
-                        <th class="py-4 align-middle text-center">Assigned to</th>
-                        <th class="py-4 align-middle text-center" style="min-width:200px">Main Source Type</th>
-                        <th class="py-4 align-middle text-center">Product/Service</th>
-                        <th class="py-4 align-middle text-center">Main Fault Category</th>
-                        <th class="py-4 align-middle text-center" style="min-width:100px">Target Close Date</th>
-                        <th class="py-4 align-middle text-center" style="min-width:200px">Days Left</th>
-                        <th class="py-4 align-middle text-center" style="min-width:100px">Date Closed</th>
-                        <th class="py-4 align-middle text-center" style="min-width:200px">Key Takeaways</th>
-                        <th class="py-4 align-middle text-center" style="min-width:200px">Additional Comments</th>
+                        <th class="py-4 align-middle text-center capaDocumentIdColumn" style="min-width:120px">
+                            <a onclick="updateSort('capa_document_id', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                CAPA ID <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center dateRaisedColumn" style="min-width:100px">
+                            <a onclick="updateSort('date_raised', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Date Raised<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center capaDescriptionColumn" style="min-width:300px">
+                            <a onclick="updateSort('capa_description', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Description<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center severityColumn" style="min-width:100px">
+                            <a onclick="updateSort('severity', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Severity<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center raisedAgainstColumn" style="min-width:150px">
+                            <a onclick="updateSort('raised_against', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Raised Against <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center capaOwnerColumn" style="min-width:140px">
+                            <a onclick="updateSort('capa_owner', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Owner<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center statusColumn" style="min-width:100px">
+                            <a onclick="updateSort('status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Status<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center assignedToColumn" style="min-width:150px">
+                            <a onclick="updateSort('assigned_to', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Assigned to<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center mainSourceTypeColumn" style="min-width:200px">
+                            <a onclick="updateSort('main_source_type', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Main Source Type<i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center productOrServiceColumn" style="min-width:160px">
+                            <a onclick="updateSort('product_or_service', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Product/Service <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center mainFaultCategoryColumn" style="min-width:200px">
+                            <a onclick="updateSort('main_fault_category', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Main Fault Category <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center targetCloseDateColumn" style="min-width:150px">
+                            <a onclick="updateSort('target_close_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Target Close Date <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center daysLeftColumn" style="min-width:200px">
+                            <a onclick="updateSort('days_left', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Days Left <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center dateClosedColumn" style="min-width:100px">
+                            <a onclick="updateSort('date_closed', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Date Closed <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center keyTakeawayColumn" style="min-width:200px">
+                            <a onclick="updateSort('key_takeaways', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Key Takeaways <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
+                        <th class="py-4 align-middle text-center additionalCommentColumn" style="min-width:200px">
+                            <a onclick="updateSort('additional_comments', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">
+                                Additional Comments <i class="fa-solid fa-sort fa-md ms-1"></i>
+                            </a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($capa_result->num_rows > 0) { ?>
                         <?php while ($row = $capa_result->fetch_assoc()) { ?>
                             <tr>
-                                <td class="py-2 align-middle text-center">
+                                <td class="py-2 align-middle text-center ">
                                     <div class="d-flex">
                                         <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
                                             data-capa-id="<?= $row['capa_id'] ?>"
@@ -240,7 +329,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                             data-target-close-date="<?= $row['target_close_date'] ?>"
                                             data-date-closed="<?= $row['date_closed'] ?>"
                                             data-key-takeaways="<?= $row['key_takeaways'] ?>"
-                                            data-additional-comments="<?= $row['additional_comments'] ?>">
+                                            data-additional-comments="<?= $row['additional_comments'] ?>"
+                                            data-capa-owner-email="<?= $row['capa_owner_email'] ?>"
+                                            data-assigned-to-email="<?= $row['assigned_to_email'] ?>">
                                             <i class="fa-regular fa-pen-to-square"></i>
                                         </button>
 
@@ -250,12 +341,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                                 class="fa-regular fa-trash-can text-danger"></i></button>
                                     </div>
                                 </td>
-                                <td class="py-2 align-middle text-center"><a
-                                        href="../open-capa-folder.php?folder=<?= $folder ?>"
+                                <td class="py-2 align-middle text-center capaDocumentIdColumn"><a
+                                        href="../open-capa-folder.php?folder=<?= $row["capa_document_id"] ?>"
                                         target="_blank"><?= $row['capa_document_id'] ?></a></td>
-                                <td class="py-2 align-middle text-center"><?= $row['date_raised'] ?></td>
-                                <td class="py-2 align-middle"><?= $row['capa_description'] ?></td>
-                                <td class="py-2 align-middle text-center 
+                                <td class="py-2 align-middle text-center dateRaisedColumn"><?= $row['date_raised'] ?></td>
+                                <td class="py-2 align-middle capaDescriptionColumn"><?= $row['capa_description'] ?></td>
+                                <td class="py-2 align-middle text-center severityColumn
                                 <?php
                                 if ($row['severity'] === "Major" || $row['severity'] === "Minor" || $row['severity'] === "Catastrophic") {
                                     echo "text-white";
@@ -275,7 +366,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 ?>>
                                     <?= $row['severity'] ?>
                                 </td>
-                                <td class="py-2 align-middle text-center"><?= $row['raised_against'] ?></td>
+                                <td class="py-2 align-middle text-center raisedAgainstColumn"><?= $row['raised_against'] ?></td>
 
                                 <?php
                                 $employee_id = $row['capa_owner'];
@@ -296,11 +387,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     }
                                 }
                                 ?>
-                                <td class="py-2 align-middle text-center" <?= ($employee_name === "N/A") ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
+                                <td class="py-2 align-middle text-center capaOwnerColumn" <?= ($employee_name === "N/A") ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
                                     <?= htmlspecialchars($employee_name) ?>
                                 </td>
 
-                                <td class="py-2 align-middle text-center 
+                                <td class="py-2 align-middle text-center statusColumn
                                     <?php if ($row['status'] === "Open") {
                                         echo 'bg-danger text-white';
                                     } else if ($row['status'] === "Closed") {
@@ -309,18 +400,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     <?= $row['status'] ?>
                                 </td>
 
-                                <td class="py-2 align-middle text-center" <?= isset($row['assigned_to']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['assigned_to']) ? $row['assigned_to'] : "N/A" ?>
+                                <?php
+                                $assignedToEmployeeId = $row['assigned_to'];
+                                $assignedToEmployeeName = "N/A";
+
+                                if (isset($assignedToEmployeeId)) {
+                                    // Prepare and execute the query to fetch employee name
+                                    $assignedToStmt = $conn->prepare("SELECT first_name, last_name FROM employees WHERE employee_id = ?");
+                                    $assignedToStmt->bind_param("i", $assignedToEmployeeId);
+                                    $assignedToStmt->execute();
+                                    $assignedToResult = $assignedToStmt->get_result();
+
+                                    // Fetch the employee name
+                                    if ($assignedToRowEmployee = $assignedToResult->fetch_assoc()) {
+                                        $assigned_to_first_name = $assignedToRowEmployee['first_name'];
+                                        $assigned_to_last_name = $assignedToRowEmployee['last_name'];
+                                        $assignedToEmployeeName = $assigned_to_first_name . ' ' . $assigned_to_last_name; // Combine first and last name
+                                    }
+                                }
+                                ?>
+
+                                <td class="py-2 align-middle text-center assignedToColumn" <?= ($assignedToEmployeeName === "N/A") ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
+                                    <?= htmlspecialchars($assignedToEmployeeName) ?>
                                 </td>
-                                <td class="py-2 align-middle text-center"><?= $row['main_source_type'] ?></td>
-                                <td class="py-2 align-middle text-center">
+                                <td class="py-2 align-middle text-center mainSourceTypeColumn"><?= $row['main_source_type'] ?>
+                                </td>
+                                <td class="py-2 align-middle text-center productOrServiceColumn">
                                     <?= isset($row['product_or_service']) ? $row['product_or_service'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center" <?= isset($row['main_fault_category']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-2 align-middle text-center mainFaultCategoryColumn"
+                                    <?= isset($row['main_fault_category']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['main_fault_category']) ? $row['main_fault_category'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center"><?= $row['target_close_date'] ?></td>
-                                <td class="py-2 align-middle text-center 
+                                <td class="py-2 align-middle text-center targetCloseDateColumn"><?= $row['target_close_date'] ?></td>
+                                <td class="py-2 align-middle text-center daysLeftColumn
                                 <?php
                                 // Define the class based on the value of daysLeft
                                 if (!empty($row['target_close_date']) && $row['status'] === "Open") {
@@ -362,20 +475,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     ?>
                                 </td>
 
-                                <td class="py-2 align-middle text-center" <?= isset($row['date_closed']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-2 align-middle text-center dateClosedColumn" <?= isset($row['date_closed']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['date_closed']) ? $row['date_closed'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center" <?= isset($row['key_takeaways']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-2 align-middle text-center keyTakeawayColumn" <?= isset($row['key_takeaways']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['key_takeaways']) ? $row['key_takeaways'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center" <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-2 align-middle text-center additionalCommentColumn" <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['additional_comments']) ? $row['additional_comments'] : "N/A" ?>
                                 </td>
                             </tr>
                         <?php } ?>
                     <?php } else { ?>
                         <tr>
-                            <td colspan="13" class="text-center">No records found</td>
+                            <td colspan="17" class="text-center">No records found</td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -510,6 +623,121 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 </div>
             </div>
         </div>
+
+        <!-- ================== Filter Column Modal ================== -->
+        <div class="modal fade" id="filterColumnModal" tab-index="-1" aria-labelledby="filterColumnModal"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="filterColumnModalLabel">Filter Column</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="capaDocumentIdColumn"
+                                    data-column="capaDocumentIdColumn">
+                                <label class="form-check-label" for="capaDocumentIdColumn">
+                                    CAPA Id
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="dateRaisedColumn"
+                                    data-column="dateRaisedColumn">
+                                <label class="form-check-label" for="dateRaisedColumn">
+                                    Date Raised
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="capaDescriptionColumn"
+                                    data-column="capaDescriptionColumn">
+                                <label class="form-check-label" for="capaDescriptionColumn">
+                                    Description
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="severityColumn"
+                                    data-column="severityColumn">
+                                <label class="form-check-label" for="severityColumn">
+                                    Severity
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="raisedAgainstColumn"
+                                    data-column="raisedAgainstColumn">
+                                <label class="form-check-label" for="raisedAgainstColumn">
+                                    Raised Against
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="capaOwnerColumn"
+                                    data-column="capaOwnerColumn">
+                                <label class="form-check-label" for="capaOwnerColumn">
+                                    Owner
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="statusColumn"
+                                    data-column="statusColumn">
+                                <label class="form-check-label" for="statusColumn">Status</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="assignedToColumn"
+                                    data-column="assignedToColumn">
+                                <label class="form-check-label" for="assignedToColumn">Assigned To</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="mainSourceTypeColumn"
+                                    data-column="mainSourceTypeColumn">
+                                <label class="form-check-label" for="mainSourceTypeColumn">Main Source Type</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="productOrServiceColumn"
+                                    data-column="productOrServiceColumn">
+                                <label class="form-check-label" for="productOrServiceColumn">Product/Service</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="mainFaultCategoryColumn"
+                                    data-column="mainFaultCategoryColumn">
+                                <label class="form-check-label" for="mainFaultCategoryColumn">Main Fault
+                                    Category</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="targetCloseDateColumn"
+                                    data-column="targetCloseDateColumn">
+                                <label class="form-check-label" for="targetCloseDateColumn">Target Close Date</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="daysLeftColumn"
+                                    data-column="daysLeftColumn">
+                                <label class="form-check-label" for="daysLeftColumn">Days Left</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="dateClosedColumn"
+                                    data-column="dateClosedColumn">
+                                <label class="form-check-label" for="dateClosedColumn">Date Closed</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="keyTakeawayColumn"
+                                    data-column="keyTakeawayColumn">
+                                <label class="form-check-label" for="keyTakeawayColumn">Key Takeaway</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="additionalCommentColumn"
+                                    data-column="additionalCommentColumn">
+                                <label class="form-check-label" for="additionalCommentColumn">Additional Comment</label>
+                            </div>
+                            <div class="d-flex justify-content-end" style="cursor:pointer">
+                                <button onclick="resetColumnFilter()" class="btn btn-sm btn-danger me-1"> Reset
+                                    Filter</button>
+                                <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Done</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
@@ -583,6 +811,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 var dateClosed = button.getAttribute('data-date-closed');
                 var keyTakeaways = button.getAttribute('data-key-takeaways');
                 var additionalComments = button.getAttribute('data-additional-comments');
+                var capaOwnerEmail = button.getAttribute('data-capa-owner-email');
+                var assignedToEmail = button.getAttribute('data-assigned-to-email');
 
                 // Update the modal's content with the extracted data
                 var modalCapaId = myModalEl.querySelector('#capaIdToEdit');
@@ -601,6 +831,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 var modalDateClosed = myModalEl.querySelector('#dateClosed');
                 var modalKeyTakeaways = myModalEl.querySelector('#keyTakeawaysToEdit');
                 var modalKeyAdditionalComments = myModalEl.querySelector('#additionalCommentsToEdit');
+                var modalCapaOwnerEmail = myModalEl.querySelector('#capaOwnerEmailEdit');
+                var modalAssignedToEmail = myModalEl.querySelector('#assignedToEmailEdit');
 
                 // Assign the extracted values to the modal input fields
                 modalCapaId.value = capaId;
@@ -622,6 +854,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
 
                 modalKeyTakeaways.value = keyTakeaways;
                 modalKeyAdditionalComments.value = additionalComments;
+                modalCapaOwnerEmail.value = capaOwnerEmail;
+                modalAssignedToEmail.value = assignedToEmail;
 
                 // Show or hide the form based on the status
                 var openForm = myModalEl.querySelector('#openForm');
@@ -689,6 +923,87 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
         window.addEventListener('load', () => {
             document.body.style.zoom = currentZoom;
         });
+    </script>
+    <script>
+        function updateSort(sort, order) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', sort);
+            url.searchParams.set('order', order);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+
+        // Save checkbox state to localStorage with a timestamp
+        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const columnClass = this.getAttribute('data-column');
+                const columns = document.querySelectorAll(`.${columnClass}`);
+                columns.forEach(column => {
+                    if (this.checked) {
+                        column.style.display = '';
+                        localStorage.setItem(columnClass, 'visible');
+                    } else {
+                        column.style.display = 'none';
+                        localStorage.setItem(columnClass, 'hidden');
+                    }
+                });
+                localStorage.setItem(columnClass + '_timestamp', Date.now()); // Save current timestamp
+            });
+        });
+
+        // Initialize checkboxes based on current column visibility
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                const columnClass = checkbox.getAttribute('data-column');
+                const columns = document.querySelectorAll(`.${columnClass}`);
+
+                // Retrieve stored visibility state and timestamp
+                const storedVisibility = localStorage.getItem(columnClass);
+                const storedTimestamp = localStorage.getItem(columnClass + '_timestamp');
+                const currentTime = Date.now();
+
+                // Check if stored timestamp is within the expiration time
+                if (storedTimestamp && (currentTime - storedTimestamp <= STORAGE_EXPIRATION_TIME)) {
+                    if (storedVisibility === 'hidden') {
+                        columns.forEach(column => column.style.display = 'none');
+                        checkbox.checked = false;
+                    } else {
+                        columns.forEach(column => column.style.display = '');
+                        checkbox.checked = true;
+                    }
+                } else {
+                    // Clear the localStorage if timestamp is expired
+                    localStorage.removeItem(columnClass);
+                    localStorage.removeItem(columnClass + '_timestamp');
+                    columns.forEach(column => column.style.display = '');
+                    checkbox.checked = true;
+                }
+            });
+        });
+        function resetColumnFilter() {
+            // Get all checkboxes
+            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                // Check each checkbox
+                checkbox.checked = true;
+
+                // Get the column class associated with the checkbox
+                const columnClass = checkbox.getAttribute('data-column');
+
+                // Get all columns with that class
+                const columns = document.querySelectorAll(`.${columnClass}`);
+
+                // Show all columns
+                columns.forEach(column => {
+                    column.style.display = '';
+                });
+
+                // Also update localStorage to reflect the reset state
+                localStorage.setItem(columnClass, 'visible');
+                localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
+            });
+        }
 
     </script>
 </body>

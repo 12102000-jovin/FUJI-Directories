@@ -36,6 +36,7 @@ if ($capa_result->num_rows > 0) {
             $targetCloseDate = new DateTime($row['target_close_date']);
             $currentDate = new DateTime();
             $capaOwner = $row['capa_owner'];
+            $assignedTo = $row['assigned_to'];
             $interval = $currentDate->diff($targetCloseDate);
             $daysLeft = $interval->format('%r%a');
 
@@ -43,16 +44,34 @@ if ($capa_result->num_rows > 0) {
             if ($daysLeft == 30 && isset($employees[$capaOwner])) {
                 $ownerEmail = $employees[$capaOwner]['email'];
                 $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
+                $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
 
                 // Send the email to the capa_owner
                 $emailSender->sendEmail(
                     $ownerEmail, // Recipient email
                     $ownerName, // Recipient name
                     'CAPA Reminder: 30 Days Left', // Subject
-                    "Reminder: The CAPA document with ID {$row['capa_document_id']} has 30 days left before its target close date." // Body
+                    body: "
+                        <p>Dear $ownerName,</p>
+
+                        <p>This is a reminder that the CAPA document with ID <strong> {$row['capa_document_id']} </strong> has <strong> 30 days left </strong> before its target close date. </p>
+
+                        <p><strong>Details:</strong></p>
+                        <ul>
+                            <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
+                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
+                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
+                            <li><strong>CAPA Owner: $ownerName </strong></li>
+                            <li><strong>Assigned To: $assignedName </strong></li>
+                        </ul>
+                        <p>Please take the necessary actions regarding this document.</p>
+                        <p>This email is send automatically. Please do not reply.</p>
+                        <p>Best regards,<br></p>
+                    "
                 );
+            } else {
+                error_log("Employee with ID $capaOwner not found.");
             }
         }
     }
 }
-?>

@@ -10,6 +10,12 @@ $emailSender = new emailSender();
 $employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
 $employees_result = $conn->query($employees_sql);
 
+// Fetch all results into an array
+$employees = [];
+while ($row = $employees_result->fetch_assoc()) {
+    $employees[] = $row;
+}
+
 // ========================= SQL to get latest CAPA ID =========================
 $capa_document_id_sql = "SELECT MAX(capa_document_id) AS latest_id FROM capa";
 $capa_document_id_result = $conn->query($capa_document_id_sql);
@@ -50,6 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
     $mainFaultCategory = $_POST["mainFaultCategory"];
     $targetCloseDate = $_POST["targetCloseDate"];
     $capaOwnerEmail = $_POST["capaOwnerEmail"];
+    $assignedToEmail = $_POST["assignedToEmail"];
 
     $add_capa_document_sql = "INSERT INTO capa (capa_document_id, date_raised, capa_description, severity, raised_against, capa_owner, status, assigned_to, main_source_type, product_or_service, main_fault_category, target_close_date) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -64,12 +71,146 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
 
-        $emailSender->sendEmail(
-            $capaOwnerEmail, // Recipient email
-            'Jovin Hampton', // Recipient name
-            'A new CAPA added!', // Subject
-            "Reminder: The CAPA document with ID $capaDocumentId has been added by $capaOwner!" // Body
-        );
+        // Existing code for fetching CAPA owner name
+        $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $capa_owner_name_result = $conn->prepare($capa_owner_name_sql);
+
+        if ($capa_owner_name_result) {
+            $capa_owner_name_result->bind_param("i", $capaOwner);
+            $capa_owner_name_result->execute();
+            $fullName = $capa_owner_name_result->get_result();
+
+            if ($fullName && $fullName->num_rows > 0) {
+                $employee = $fullName->fetch_assoc();
+                $recipientName = $employee['first_name'] . ' ' . $employee['last_name'];
+
+                // Code for fetching assigned employee name
+                $assigned_to_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+                $assigned_to_name_result = $conn->prepare($assigned_to_name_sql);
+
+                if ($assigned_to_name_result) {
+                    $assigned_to_name_result->bind_param("i", $assignedTo);
+                    $assigned_to_name_result->execute();
+                    $assignedNameResult = $assigned_to_name_result->get_result();
+
+                    if ($assignedNameResult && $assignedNameResult->num_rows > 0) {
+                        $assignedEmployee = $assignedNameResult->fetch_assoc();
+                        $assignedRecipientName = $assignedEmployee['first_name'] . ' ' . $assignedEmployee['last_name'];
+                    } else {
+                        // Handle the case where the assigned employee is not found
+                        $assignedRecipientName = "Unknown"; // or any default value
+                        error_log("Assigned employee with ID $assignedTo not found.");
+                    }
+
+                    // Close the assigned_to statement
+                    $assigned_to_name_result->close();
+                } else {
+                    error_log("Failed to prepare assigned_to statement: " . $conn->error);
+                }
+
+                // Send the email with the full name of the CAPA owner and assigned employee
+                $emailSender->sendEmail(
+                    $capaOwnerEmail,
+                    $recipientName,
+                    'New CAPA Document Added',
+                    "
+                        <p>Dear $recipientName,</p>
+                        <p>This is a reminder that a new CAPA document has been added.</p>
+                        <p><strong>Details:</strong></p>
+                        <ul>
+                            <li><strong>CAPA Document ID:</strong> <b>$capaDocumentId</b></li>
+                            <li><strong>Date Raised:</strong> <b>$dateRaised</b></li>
+                            <li><strong>Severity:</strong> <b>$severity</b></li>
+                            <li><strong>Raised Against:</strong> <b>$raisedAgainst</b></li>
+                            <li><strong>Capa Owner:</strong> <b>$recipientName</b></li>
+                            <li><strong>Assigned To:</strong> <b>$assignedRecipientName</b></li>
+                            <li><strong>Target Closed Date:</strong> <b>$targetCloseDate</b></li>
+                        </ul>
+                        <p>Please take the necessary actions regarding this document.</p>
+                        <p>This email is sent automatically. Please do not reply.</p>
+                        <p>Best regards,<br></p>
+                    "
+                );
+            } else {
+                error_log("Employee with ID $capaOwner not found.");
+            }
+
+            // Close the CAPA owner statement
+            $capa_owner_name_result->close();
+        } else {
+            error_log("Failed to prepare CAPA owner statement: " . $conn->error);
+        }
+
+
+        $assigned_to_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $assigned_to_name_result = $conn->prepare($assigned_to_name_sql);
+
+        if ($assigned_to_name_result) {
+            $assigned_to_name_result->bind_param("i", $assignedTo);
+
+            // Execute the prepared statement
+            $assigned_to_name_result->execute();
+
+            // Get the result set from the executed statement
+            $fullName = $assigned_to_name_result->get_result();
+
+            if ($fullName && $fullName->num_rows > 0) {
+                $employee = $fullName->fetch_assoc();
+
+                // Combine first_name and last_name to form the $recipientName
+                $recipientName = $employee['first_name'] . ' ' . $employee['last_name'];
+
+                // Code for fetching capa owner employee name
+                $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+                $capa_owner_name_result = $conn->prepare($assigned_to_name_sql);
+
+                if ($capa_owner_name_result) {
+                    $capa_owner_name_result->bind_param("i", $capaOwner);
+                    $capa_owner_name_result->execute();
+                    $capaOwnerNameResult = $capa_owner_name_result->get_result();
+
+                    if($capaOwnerNameResult && $capaOwnerNameResult->num_rows > 0) {
+                        $capaOwnerEmployee = $capaOwnerNameResult->fetch_assoc();
+                        $capaOwnerName = $capaOwnerEmployee['first_name'] . ' ' . $capaOwnerEmployee['last_name'];  
+                    } else {
+                        // Hanle the case there the capa owner empoyee is not found
+                        $capaOwnerName = "Unknown";
+                        error_log("CAPA owner employee with ID $capaOwner not found.");
+                    }
+
+                    // Close the capa_owner statement
+                    $capa_owner_name_result->close();
+                } else {
+                    error_log("Failed to prepare capa_owner to statement: " . $conn->error);
+                }
+
+                // Send the emaul with the full name of the assigned to
+                $emailSender->sendEmail(
+                    $assignedToEmail, // Recipient email
+                    $recipientName, // Recipient name
+                    'A new CAPA has been assigned to you!', // Subject
+                    "
+                    <p>Dear $recipientName,</p>
+                    
+                    <p>This is a reminder that the CAPA document with ID <b>$capaDocumentId</b> has been assigned to you.</p>
+                    
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID:</strong> <b>$capaDocumentId</b></li>
+                        <li><strong>Date Raised:</strong> <b>$dateRaised</b></li>
+                        <li><strong>Target Closed Date:</strong> <b>$targetCloseDate</b></li>
+                        <li><strong>CAPA Owner: </strong><b>$capaOwnerName</b></li> 
+                    </ul>
+        
+                    <p>Please take the necessary actions regarding this document.</p>
+        
+                    <p>This email is sent automatically. Please do not reply.</p>
+        
+                    <p>Best regards,<br></p>
+                    "
+                );
+            }
+        }
 
         echo "<script>alert('Document added successfully')</script>";
         // Redirect to the same URL with parameters
@@ -133,18 +274,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="capaOwner" class="fw-bold">CAPA Owner</label>
-            <select name="capaOwner" aria-label="employeeId" class="form-select" id="employeeId" required
-                onchange="updateEmail()">
+            <select name="capaOwner" class="form-select" id="capaOwner" required onchange="updateCapaOwnerEmail()">
+                <option disabled selected hidden></option>
                 <?php
-                echo '<option disabled selected hidden></option>';
-                while ($row = $employees_result->fetch_assoc()) {
-                    echo '<option value="' . $row['employee_id'] . '" data-email="' . htmlspecialchars($row['email']) . '">' .
+                foreach ($employees as $row) {
+                    echo '<option value="' . $row['employee_id'] . '" data-owner-email="' . htmlspecialchars($row['email']) . '"> ' .
                         htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
                         htmlspecialchars($row['employee_id']) . ')</option>';
                 }
                 ?>
             </select>
-            <input type="hidden" name="capaOwnerEmail" id="capaOwnerEmail">
+            <input type="text" name="capaOwnerEmail" id="capaOwnerEmail" readonly>
             <div class="invalid-feedback">
                 Please provide the CAPA owner.
             </div>
@@ -163,7 +303,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         <input type="hidden" name="status" value="Open">
         <div class="form-group col-md-6 mt-3">
             <label for="assignedTo" class="fw-bold">Assigned To</label>
-            <input type="text" name="assignedTo" class="form-control" required>
+            <select name="assignedTo" class="form-select" id="assignedTo" required onchange="updateAssignedToEmail()">
+                <option disabled selected hidden></option>
+                <?php
+
+                foreach ($employees as $row) {
+                    echo '<option value="' . $row['employee_id'] . '" data-assigned-to-email="' . htmlspecialchars($row['email']) . '"> ' .
+                        htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
+                        htmlspecialchars($row['employee_id']) . ')</option>';
+                }
+                ?>
+            </select>
+            <!-- <input type="text" name="assignedTo" class="form-control" required> -->
+            <input type="text" name="assignedToEmail" id="assignedToEmail" readonly>
             <div class="invalid-feedback">
                 Please provide the assigned to.
             </div>
@@ -301,12 +453,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
 </script>
 
 <script>
-    function updateEmail() {
-        const select = document.getElementById('employeeId');
+    function updateCapaOwnerEmail() {
+        const select = document.getElementById('capaOwner');
         const emailInput = document.getElementById('capaOwnerEmail');
         const selectedOption = select.options[select.selectedIndex];
 
         // Set the hidden input value to the email of the selected employee
-        emailInput.value = selectedOption.getAttribute('data-email');
+        emailInput.value = selectedOption.getAttribute('data-owner-email');
+    }
+
+    function updateAssignedToEmail() {
+        const select = document.getElementById('assignedTo');
+        const emailInput = document.getElementById('assignedToEmail');
+        const selectedOption = select.options[select.selectedIndex];
+
+        // Set the hidden input value to the email of the selected employee
+        emailInput.value = selectedOption.getAttribute('data-assigned-to-email');
     }
 </script>

@@ -14,6 +14,12 @@ if (!$emailSender) {
 $employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
 $employees_result = $conn->query($employees_sql);
 
+// Fetch all results into an array
+$employees = [];
+while ($row = $employees_result->fetch_assoc()) {
+    $employees[] = $row;
+}
+
 // ========================= E D I T  D O C U M E N T ( OPEN FORM ) =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"]) && isset($_POST["editCapaDocument"])) {
     $capaIdToEdit = $_POST["capaIdToEdit"];
@@ -64,20 +70,102 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"]) && is
             $current_url .= '?' . urlencode($_SERVER['QUERY_STRING']);
         }
 
-        $emailSender->sendEmail(
-            $capaOwnerEmail,// Recipient email
-            'Jovin Hampton', // Recipient name
-            'Your CAPA document has been edited!', // Subject
-            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
-        );
+        // Fetch CAPA owner name
+        $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $capa_owner_name_result = $conn->prepare($capa_owner_name_sql);
 
+        if ($capa_owner_name_result) {
+            $capa_owner_name_result->bind_param("i", $capaOwner);
+            $capa_owner_name_result->execute();
+            $fullName = $capa_owner_name_result->get_result();
 
-        // Redirect
-        echo "<script>window.location.replace('" . $current_url . "');</script>";
-        exit();
+            if ($fullName && $fullName->num_rows > 0) {
+                $employee = $fullName->fetch_assoc();
+                $recipientName = $employee['first_name'] . ' ' . $employee['last_name'];
+
+                // Fetch assigned employee name
+                $assigned_to_name_sql = "SELECT first_name, last_name, email FROM employees WHERE employee_id = ?";
+                $assigned_to_name_result = $conn->prepare($assigned_to_name_sql);
+
+                if ($assigned_to_name_result) {
+                    $assigned_to_name_result->bind_param("i", $assignedTo);
+                    $assigned_to_name_result->execute();
+                    $assignedNameResult = $assigned_to_name_result->get_result();
+
+                    if ($assignedNameResult && $assignedNameResult->num_rows > 0) {
+                        $assignedEmployee = $assignedNameResult->fetch_assoc();
+                        $assignedRecipientName = $assignedEmployee['first_name'] . ' ' . $assignedEmployee['last_name'];
+                        $assignedRecipientEmail = $assignedEmployee['email'];
+                    } else {
+                        // Handle case where assigned employee is not found
+                        $assignedRecipientName = "Unknown";
+                        $assignedRecipientEmail = ""; // Set to empty if not found
+                        error_log("Assigned employee with ID $assignedTo not found.");
+                    }
+
+                    // Close the assigned_to statement
+                    $assigned_to_name_result->close();
+                } else {
+                    error_log("Failed to prepare assigned_to statement: " . $conn->error);
+                }
+
+                // Send email to CAPA owner
+                $emailSender->sendEmail(
+                    $capaOwnerEmail, // Recipient email (CAPA owner)
+                    $recipientName,   // Recipient name (CAPA owner)
+                    'CAPA Document Edited!', // Subject
+                    "
+                    <p>Dear $recipientName,</p>
+                    <p>This is a notification that CAPA document <strong> $capaDocumentId </strong> has been edited</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b> $dateRaised</b></li>
+                        <li><strong>Severity:</strong><b> $severity</b></li>
+                        <li><strong>Raised Against: </strong><b>$raisedAgainst</b></li>
+                        <li><strong>CAPA Owner:</strong><b> $recipientName</b></li>
+                        <li><strong>Assigned To:</strong><b> $assignedRecipientName</b></li>
+                        <li><strong>Target Closed Date:</strong><b> $targetCloseDate</b></li>
+                    </ul>
+                    <p>Please review the changes and take any necessary actions regarding this document.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,</p>
+                "
+                );
+
+                // Send email to Assigned employee
+                $emailSender->sendEmail(
+                    $assignedRecipientEmail, // Recipient email (Assigned employee)
+                    $assignedRecipientName,   // Recipient name (Assigned employee)
+                    'CAPA Document Edited!',  // Subject
+                    "
+                    <p>Dear $assignedRecipientName,</p>
+                    <p>This is a notification that CAPA document <strong> $capaDocumentId </strong> has been edited</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b> $dateRaised</b></li>
+                        <li><strong>Severity:</strong><b> $severity</b></li>
+                        <li><strong>Raised Against: </strong><b>$raisedAgainst</b></li>
+                        <li><strong>CAPA Owner:</strong><b> $recipientName</b></li>
+                        <li><strong>Assigned To:</strong><b> $assignedRecipientName</b></li>
+                        <li><strong>Target Closed Date:</strong><b> $targetCloseDate</b></li>
+                    </ul>
+                    <p>Please review the changes and take any necessary actions regarding this document.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,</p>
+                "
+                );
+
+                // Redirect
+                echo "<script>window.location.replace('" . $current_url . "');</script>";
+                exit();
+            }
+        }
     } else {
         echo "Error updating record: " . $edit_document_result->error;
     }
+
 }
 
 // ========================= E D I T  D O C U M E N T ( CLOSE FORM ) =========================
@@ -86,6 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
     $dateClosed = $_POST["dateClosed"];
     $keyTakeaways = $_POST["keyTakeaways"];
     $additionalComments = $_POST["additionalComments"];
+    $capaOwnerEmail = $_POST["capaOwnerEmail"];
 
     // Prepare statement for closing CAPA
     $close_capa_sql = "UPDATE capa SET status = 'Closed', date_closed = ?, key_takeaways = ?, additional_comments = ? WHERE capa_id = ?";
@@ -93,6 +182,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
     $close_capa_result->bind_param("sssi", $dateClosed, $keyTakeaways, $additionalComments, $capaIdToEdit);
 
     if ($close_capa_result->execute()) {
+        $emailSender->sendEmail(
+            $capaOwnerEmail,// Recipient email
+            'Jovin Hampton', // Recipient name
+            'Your CAPA document has been edited!', // Subject
+            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
+        );
+
         // Redirect or show success message
         echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";
         exit();
@@ -104,11 +200,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
 // ========================= E D I T  C A P A  S T A T U S =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
     $capaIdToEdit = $_POST["capaIdToEdit"];
+    $capaOwnerEmail = $_POST["capaOwnerEmail"];
     $open_capa_sql = "UPDATE capa SET status = 'Open' , date_closed = NULL WHERE capa_id = ?";
     $open_capa_result = $conn->prepare($open_capa_sql);
     $open_capa_result->bind_param("i", $capaIdToEdit);
 
+
     if ($open_capa_result->execute()) {
+        $emailSender->sendEmail(
+            $capaOwnerEmail,// Recipient email
+            'Jovin Hampton', // Recipient name
+            'Your CAPA document has been edited!', // Subject
+            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
+        );
+
         // Redirect or show success message
         echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";
         exit();
@@ -185,25 +290,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
             </div>
             <div class="form-group col-md-6 mt-3">
                 <label for="capaOwnerToEdit" class="fw-bold"> CAPA Owner</label>
-                <select name="capaOwnerToEdit" aria-label="employeeId" class="form-select" id="capaOwnerToEdit" required
-                    onchange="updateEmail()">
+                <select name="capaOwnerToEdit" class="form-select" id="capaOwnerToEdit" required
+                    onchange="updateCapaOwnerEmailToEdit()">
+                    <option disabled selected hidden></option>
                     <?php
-                    echo '<option disabled selected hidden></option>';
-                    while ($row = $employees_result->fetch_assoc()) {
-                        echo '<option value="' . $row['employee_id'] . '" data-email-owner="' . htmlspecialchars($row['email']) . '">' .
+                    foreach ($employees as $row) {
+                        echo '<option value="' . $row['employee_id'] . '" data-email-owner="' . htmlspecialchars($row['email']) . '"> ' .
                             htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
                             htmlspecialchars($row['employee_id']) . ')</option>';
                     }
                     ?>
                 </select>
-                <input type="text" name="capaOwnerEmail" id="capaOwnerEmailEdit">
+                <input type="text" name="capaOwnerEmail" id="capaOwnerEmailEdit" readonly>
                 <div class="invalid-feedback">
                     Please provide CAPA Owner
                 </div>
             </div>
+
             <div class="form-group col-md-6 mt-3">
                 <label for="assignedToToEdit" class="fw-bold">Assigned To</label>
-                <input type="text" name="assignedToToEdit" class="form-control" id="assignedToToEdit">
+                <!-- <input type="text" name="assignedToToEdit" class="form-control" id="assignedToToEdit"> -->
+                <select name="assignedToToEdit" class="form-select" id="assignedToToEdit" required
+                    onchange="updateAssignedToEmailToEdit()">
+                    <option disabled selected hidden></option>
+                    <?php
+                    foreach ($employees as $row) {
+                        echo '<option value="' . $row['employee_id'] . '" data-assigned-to-email="' . htmlspecialchars($row['email']) . '"> ' .
+                            htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
+                            htmlspecialchars($row['employee_id']) . ')</option>';
+                    }
+                    ?>
+                </select>
+                <input type="text" name="assignedToEmailEdit" id="assignedToEmailEdit" readonly>
+                <div class="invalid-feedback">
+                    Please provide the assigned to.
+                </div>
             </div>
             <div class="form-group col-md-6 mt-3">
                 <label for="mainSourceTypeToEdit" class="fw-bold"> Main Source Type</label>
@@ -310,6 +431,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
 </script>
 
 <script>
+    // Load saved zoom level from localStorage or use default
+    let currentZoom = parseFloat(localStorage.getItem('zoomLevel')) || 1;
+
+    // Apply the saved zoom level
+    document.body.style.zoom = currentZoom;
+
+    function zoom(factor) {
+        currentZoom *= factor;
+        document.body.style.zoom = currentZoom;
+
+        // Save the new zoom level to localStorage
+        localStorage.setItem('zoomLevel', currentZoom);
+    }
+
+    function resetZoom() {
+        currentZoom = 1;
+        document.body.style.zoom = currentZoom;
+
+        // Remove the zoom level from localStorage
+        localStorage.removeItem('zoomLevel');
+    }
+
+    // Optional: Reset zoom level on page load
+    window.addEventListener('load', () => {
+        document.body.style.zoom = currentZoom;
+    });
+
+</script>
+
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         const editCAPADocumentForm = document.getElementById("editCAPADocumentForm");
         const capaDocumentId = document.getElementById("capaDocumentId");
@@ -360,30 +511,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
         })
     })
 </script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        function updateEmail() {
-            console.log('updateEmail called'); // Check if this line is executed
+    function updateCapaOwnerEmailToEdit() {
+        const select = document.getElementById('capaOwnerToEdit');
+        const emailInput = document.getElementById('capaOwnerEmailEdit');
+        const selectedOption = select.options[select.selectedIndex];
 
-            // Get the select dropdown and email input elements
-            const select = document.getElementById('capaOwnerToEdit');
-            const emailInput = document.getElementById('capaOwnerEmailEdit');
+        // Set the hidden input value to the email of the selected employee
+        emailInput.value = selectedOption.getAttribute('data-email-owner');
+    }
 
-            // Get the currently selected option in the dropdown
-            const selectedOption = select.options[select.selectedIndex];
+    function updateAssignedToEmailToEdit() {
+        const select = document.getElementById('assignedToToEdit');
+        const emailInput = document.getElementById('assignedToEmailEdit');
+        const selectedOption = select.options[select.selectedIndex];
 
-            // If there is a valid option selected, update the email input field
-            if (selectedOption) {
-                const email = selectedOption.getAttribute('data-email-owner'); // Get the email from the selected option
-                emailInput.value = email; // Set the email input value to the selected owner's email
-                console.log('Email updated to:', emailInput.value); // Debugging output
-            } else {
-                console.log('No option selected');
-            }
-        }
-
-        // Call updateEmail when the page loads
-        updateEmail();
-    });
-
+        // Set the hidden input value to the email of the selected employee
+        emailInput.value = selectedOption.getAttribute('data-assigned-to-email');
+    }
 </script>

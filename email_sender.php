@@ -1,17 +1,20 @@
 <?php
-require_once '/Applications/XAMPP/xamppfiles/htdocs/FUJI-Directoriess/vendor/autoload.php';// Include the Composer autoload file
+require_once '../vendor/autoload.php';// Include the Composer autoload file
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-class EmailSender {
+class EmailSender
+{
     private $mail;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->mail = new PHPMailer(true);
         $this->configureSMTP();
     }
 
-    private function configureSMTP() {
+    private function configureSMTP()
+    {
         $this->mail->isSMTP();
         $this->mail->Host = 'smtp.gmail.com';
         $this->mail->SMTPAuth = true;
@@ -21,11 +24,16 @@ class EmailSender {
         $this->mail->Port = 587;
     }
 
-    public function sendEmail($to, $toName, $subject, $body) {
+    public function sendEmail($to, $toName, $subject, $body)
+    {
         try {
             $this->mail->setFrom('jovinhampton@gmail.com', 'Jovin Hampton');
             $this->mail->addAddress($to, $toName);
             $this->mail->Subject = $subject;
+
+            // Set the email format to HTML
+            $this->mail->isHTML(true);
+
             $this->mail->Body = $body;
             $this->mail->send();
         } catch (Exception $e) {

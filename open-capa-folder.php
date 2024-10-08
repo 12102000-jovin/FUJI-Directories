@@ -1,5 +1,5 @@
 <head>
-    <title> <?php echo $folder . " - " . $employeeId ?></title>
+    <title> <?php echo $folder ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -8,12 +8,12 @@
 
 <body class="background-color">
     <?php
-    $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
+    // $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
     $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
     $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
 
-    $baseDirectory = '../../../../Employees/';
-    $directory = $baseDirectory . $employeeId . "/" . $folder;
+    $baseDirectory = 'D:\FSMBEH-Data\00 - QA\05 - CAPA';
+    $directory = $baseDirectory . "/" . $folder;
 
     $currentDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
     $fullDirectory = $directory . ($currentDir ? '/' . $currentDir : '');
@@ -42,7 +42,7 @@
 
         echo '<div class="mb-5">';
         echo '<form method="get" class="d-flex w-100">';
-        echo '<input type="hidden" name="employee_id" value="' . htmlspecialchars($employeeId) . '">';
+        // echo '<input type="hidden" name="employee_id" value="' . htmlspecialchars($employeeId) . '">';
         echo '<input type="hidden" name="folder" value="' . htmlspecialchars($folder) . '">';
         echo '<input type="hidden" name="dir" value="' . htmlspecialchars($currentDir) . '">';
         echo '<div class="input-group me-2">';
@@ -55,7 +55,7 @@
 
         if ($currentDir && $currentDir !== ".") {
             // Link to go back to the parent directory
-            echo "<a href='?employee_id=" . urlencode($employeeId) . "&folder=" . urlencode($folder) . "&dir=" . urlencode(dirname($currentDir)) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
+            echo "<a href='?folder=" . urlencode($folder) . "&dir=" . urlencode(dirname($currentDir)) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
         }
         echo "</div>";
 
@@ -66,7 +66,7 @@
                 continue;
 
             $itemPath = $fullDirectory . '/' . $item;
-            $itemUrl = '?employee_id=' . urlencode($employeeId) . '&folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery);
+            $itemUrl = '?folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery);
             $itemName = htmlspecialchars($item);
             $fileExtension = strtolower(pathinfo($item, PATHINFO_EXTENSION));
 
@@ -75,7 +75,7 @@
                 echo "<i class='fa-solid fa-folder text-warning me-2'></i><span class='me-2'>" . $itemName . "</span>";
                 echo "</a>";
             } else {
-                $fileUrl = 'open-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&employee_id=" . urlencode($employeeId) . "&dir=" . urlencode($currentDir);
+                $fileUrl = 'open-capa-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&dir=" . urlencode($currentDir);
 
                 // Determine the icon based on file extension
                 if ($fileExtension === 'pdf') {
