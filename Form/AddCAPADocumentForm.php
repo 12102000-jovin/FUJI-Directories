@@ -379,6 +379,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         <div class="d-flex justify-content-center mt-5 mb-4">
             <button class="btn btn-dark" name="addCapaDocument" type="submit">Add Document</button>
         </div>
+        
     </div>
 </form>
 

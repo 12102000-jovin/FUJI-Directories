@@ -116,7 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"]) && is
                     'CAPA Document Edited!', // Subject
                     "
                     <p>Dear $recipientName,</p>
-                    <p>This is a notification that CAPA document <strong> $capaDocumentId </strong> has been edited</p>
+                    <p>This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been edited</p>
                     <p><strong>Details:</strong></p>
                     <ul>
                         <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
@@ -140,7 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"]) && is
                     'CAPA Document Edited!',  // Subject
                     "
                     <p>Dear $assignedRecipientName,</p>
-                    <p>This is a notification that CAPA document <strong> $capaDocumentId </strong> has been edited</p>
+                    <p>This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been edited</p>
                     <p><strong>Details:</strong></p>
                     <ul>
                         <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
@@ -174,7 +174,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
     $dateClosed = $_POST["dateClosed"];
     $keyTakeaways = $_POST["keyTakeaways"];
     $additionalComments = $_POST["additionalComments"];
+    $capaOwner = $_POST["capaOwnerToEdit"];
     $capaOwnerEmail = $_POST["capaOwnerEmail"];
+    $assignedTo = $_POST["assignedTo"];
+
+    $capaDocumentId = $_POST["capaDocumentIdToEdit"];
+    $dateRaised = $_POST["dateRaisedToEdit"];
+    $capaDescription = $_POST["capaDescriptionToEdit"];
+    $severity = $_POST["severityToEdit"];
+    $raisedAgainst = $_POST["raisedAgainstToEdit"];
+    $assignedTo = $_POST["assignedToToEdit"];
+    $mainSourceType = $_POST["mainSourceTypeToEdit"];
+    $productOrService = $_POST["productOrServiceToEdit"];
+    $mainFaultCategory = $_POST["mainFaultCategoryToEdit"];
+    $targetCloseDate = $_POST["targetCloseDateToEdit"];
 
     // Prepare statement for closing CAPA
     $close_capa_sql = "UPDATE capa SET status = 'Closed', date_closed = ?, key_takeaways = ?, additional_comments = ? WHERE capa_id = ?";
@@ -182,12 +195,103 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
     $close_capa_result->bind_param("sssi", $dateClosed, $keyTakeaways, $additionalComments, $capaIdToEdit);
 
     if ($close_capa_result->execute()) {
-        $emailSender->sendEmail(
-            $capaOwnerEmail,// Recipient email
-            'Jovin Hampton', // Recipient name
-            'Your CAPA document has been edited!', // Subject
-            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
-        );
+        // Build current URL
+        $current_url = htmlspecialchars($_SERVER['PHP_SELF']);
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . urlencode($_SERVER['QUERY_STRING']);
+        }
+
+        // Fetch CAPA owner name
+        $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $capa_owner_name_result = $conn->prepare($capa_owner_name_sql);
+
+        if ($capa_owner_name_result) {
+            $capa_owner_name_result->bind_param("i", $capaOwner);
+            $capa_owner_name_result->execute();
+            $fullName = $capa_owner_name_result->get_result();
+
+            if ($fullName && $fullName->num_rows > 0) {
+                $employee = $fullName->fetch_assoc();
+                $recipientName = $employee['first_name'] . ' ' . $employee['last_name'];
+
+                // Fetch assigned employee name
+                $assigned_to_name_sql = "SELECT first_name, last_name, email FROM employees WHERE employee_id = ?";
+                $assigned_to_name_result = $conn->prepare($assigned_to_name_sql);
+
+                if ($assigned_to_name_result) {
+                    $assigned_to_name_result->bind_param("i", $assignedTo);
+                    $assigned_to_name_result->execute();
+                    $assignedNameResult = $assigned_to_name_result->get_result();
+
+                    if ($assignedNameResult && $assignedNameResult->num_rows > 0) {
+                        $assignedEmployee = $assignedNameResult->fetch_assoc();
+                        $assignedRecipientName = $assignedEmployee['first_name'] . ' ' . $assignedEmployee['last_name'];
+                        $assignedRecipientEmail = $assignedEmployee['email'];
+                    } else {
+                        // Handle case where assigned employee is not found
+                        $assignedEmployee = "Unknown";
+                        $assignedRecipientEmail = ""; // Set to empty if not found
+                        error_log("Assigned employee with ID $assignedTo not found");
+                    }
+
+                    // Close the assigned_to statement
+                    $assigned_to_name_result->close();
+                } else {
+                    error_log("Failed to prepared assigned_to statement: " . $conn->error);
+                }
+
+                // Send email to the CAPA owner
+                $emailSender->sendEmail(
+                    $capaOwnerEmail, // Recipient email (CAPA Owner)
+                    $recipientName, // Recipient name (CAPA Owner)
+                    'CAPA Document Closed!', // Subject
+                    "
+                    <p>Dear $recipientName, </p>
+                    <p>This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been closed!</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b> $dateRaised</b></li>
+                        <li><strong>Severity: </strong><b> $severity </b></li>
+                        <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
+                        <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
+                        <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
+                        <li><strong>Target Closed Date: </strong> <b> $targetCloseDate </b></li>
+                        <li><strong>Date Closed: </strong> <b> $dateClosed </b></li>
+                    </ul>
+                    <p>Please review the changes and take any necessary actions regarding this document.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,</p>
+                    "
+                );
+
+                // Send email to Assigned employee
+                $emailSender->sendEmail(
+                    $assignedRecipientEmail, // Recipient email (Assigned employee)
+                    $assignedRecipientName, // Recipient name (Assigned employee)
+                    'CAPA Document Closed!', // Subject
+                    "
+                    <p>Dear $assignedRecipientName,</p>
+                    <p>This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been closed!</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b> $dateRaised </b></li>
+                        <li><strong>Severity: </strong><b> $severity </b></li>
+                        <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
+                        <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
+                        <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
+                        <li><strong>Target Closed Date: </strong><b> $targetCloseDate </b></li>
+                        <li><strong>Date Closed: </strong> <b> $dateClosed </b></li>
+                    </ul>
+                    <p> Please review the changes and take any necessary actions regarding this document.</p>
+                    <p> This email is sent automatically. Please do not reply.</p>
+                    <p> Best regards, </p>
+                    "
+                );
+            }
+        }
+
 
         // Redirect or show success message
         echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";
@@ -197,22 +301,129 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["closeCAPAbtn"])) {
     }
 }
 
-// ========================= E D I T  C A P A  S T A T U S =========================
+// ========================= E D I T  C A P A  S T A T U S ( RE-OPEN CAPA ) =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
     $capaIdToEdit = $_POST["capaIdToEdit"];
+    $dateClosed = $_POST["dateClosed"];
+    $keyTakeaways = $_POST["keyTakeaways"];
+    $additionalComments = $_POST["additionalComments"];
+    $capaOwner = $_POST["capaOwnerToEdit"];
     $capaOwnerEmail = $_POST["capaOwnerEmail"];
+    $assignedTo = $_POST["assignedTo"];
+
+    $capaDocumentId = $_POST["capaDocumentIdToEdit"];
+    $dateRaised = $_POST["dateRaisedToEdit"];
+    $capaDescription = $_POST["capaDescriptionToEdit"];
+    $severity = $_POST["severityToEdit"];
+    $raisedAgainst = $_POST["raisedAgainstToEdit"];
+    $assignedTo = $_POST["assignedToToEdit"];
+    $mainSourceType = $_POST["mainSourceTypeToEdit"];
+    $productOrService = $_POST["productOrServiceToEdit"];
+    $mainFaultCategory = $_POST["mainFaultCategoryToEdit"];
+    $targetCloseDate = $_POST["targetCloseDateToEdit"];
+
     $open_capa_sql = "UPDATE capa SET status = 'Open' , date_closed = NULL WHERE capa_id = ?";
     $open_capa_result = $conn->prepare($open_capa_sql);
     $open_capa_result->bind_param("i", $capaIdToEdit);
 
 
     if ($open_capa_result->execute()) {
-        $emailSender->sendEmail(
-            $capaOwnerEmail,// Recipient email
-            'Jovin Hampton', // Recipient name
-            'Your CAPA document has been edited!', // Subject
-            "Reminder: The CAPA document with ID $capaDocumentId has been edited!" // Body
-        );
+        // Build current URL
+        $current_url = htmlspecialchars($_SERVER['QUERY_STRING']);
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . urlencode($_SERVER['QUERY_STRING']);
+        }
+
+        // Fetch CAPA owner name 
+        $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $capa_owner_name_result = $conn->prepare($capa_owner_name_sql);
+
+        if ($capa_owner_name_result) {
+            $capa_owner_name_result->bind_param("i", $capaOwner);
+            $capa_owner_name_result->execute();
+            $fullName = $capa_owner_name_result->get_result();
+
+            if ($fullName && $fullName->num_rows > 0) {
+                $employee = $fullName->fetch_assoc();
+                $recipientName = $employee['first_name'] . ' ' . $employee['last_name'];
+
+                // Fetch assigned employee name
+                $assigned_to_name_sql = "SELECT first_name, last_name, email FROM employees WHERE employee_id = ?";
+                $assigned_to_name_result = $conn->prepare($assigned_to_name_sql);
+
+                if ($assigned_to_name_result) {
+                    $assigned_to_name_result->bind_param("i", $assignedTo);
+                    $assigned_to_name_result->execute();
+                    $assignedNameResult = $assigned_to_name_result->get_result();
+
+                    if ($assignedNameResult && $assignedNameResult->num_rows > 0) {
+                        $assignedEmployee = $assignedNameResult->fetch_assoc();
+                        $assignedRecipientName = $assignedEmployee['first_name'] . ' ' . $assignedEmployee['last_name'];
+                        $assignedRecipientEmail = $assignedEmployee['email'];
+                    } else {
+                        // Handle case where assigned employee is not found
+                        $assignedEmployee = "Unknown";
+                        $assignedRecipientEmail = ""; // Set to empty if not found
+                        error_log("Assigned employee with ID $assignedTo not found");
+                    }
+
+                    // Close the assigned_to statement
+                    $assigned_to_name_result->close();
+                } else {
+                    error_log("Failed to prepared assigned_to statement: " . $conn->error);
+                }
+
+                // Send email to the CAPA owner
+                $emailSender->sendEmail(
+                    $capaOwnerEmail, // Recipient email (CAPA Owner)
+                    $recipientName, // Recipient name (CAPA Owner)
+                    'CAPA Document Re-Opened!', // Subject
+                    " 
+                    <p> Dear $recipientName, </p>
+                    <p> This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been re-opened! </p>
+                    <p> <strong>Details: </strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b> $dateRaised </b></li>
+                        <li><strong>Severity: </strong><b> $severity </b></li>
+                        <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
+                        <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
+                        <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
+                        <li><strong>Target Closed Date: </strong><b> $targetCloseDate </b></li>
+                        <li><strong>Date Closed: </strong><b> $dateClosed </b></li>
+                    </ul>
+                    <p>Please review the changes and take any necessary actions regarding this document.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,</p>
+                    "
+                );
+
+                // Send email to Assigned employee
+                $emailSender->sendEmail(
+                    $assignedRecipientEmail, // Recipient email (Assigned employee)
+                    $assignedRecipientName, // Recipient name (Assigned employee)
+                    'CAPA Document Re-Opened!', // Subject
+                    "
+                    <p>Dear $assignedRecipientName,</p>
+                    <p>This is a notification that the CAPA document <strong> $capaDocumentId </strong> has been re-opened! </p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>CAPA Document ID: </strong><b> $capaDocumentId </b></li>
+                        <li><strong>Date Raised: </strong><b>$dateRaised</b></li>
+                        <li><strong>Severity: </strong><b>$severity</b></li>
+                        <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
+                        <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
+                        <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
+                        <li><strong>Target Closed Date: </strong><b> $targetCloseDate </b></li>
+                        <li><strong>Date Closed: </strong><b> $dateClosed </b></li>
+                    </ul>
+                    <p> Please review the changes and take any necessary actions regarding this document.</p>
+                    <p> This email is sent automatically. Please do not reply</p>
+                    <p> Best regards, </p>
+                    "
+                );
+            }
+        }
 
         // Redirect or show success message
         echo "<script>window.location.replace('" . htmlspecialchars($_SERVER['PHP_SELF']) . "');</script>";

@@ -137,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['visaNameToEdit'])) {
                                     </td>
                                     <td class="py-2 align-middle text-center">
                                         <button class="btn edit-btn text-primary view-mode" type="button">
-                                            <i class=" fa-regular fa-pen-to-square m-1 tooltips" data-bs-toggle="tooltip"
+                                            <i class="fa-regular fa-pen-to-square m-1 tooltips" data-bs-toggle="tooltip"
                                                 data-bs-placement="top" title="Edit Visa"></i>
                                         </button>
                                         <button class="btn text-danger view-mode" id="deleteVisaBtn" type="button"
