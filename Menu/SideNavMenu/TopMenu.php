@@ -5,7 +5,7 @@ error_reporting(E_ALL);
 
 require_once("./../db_connect.php");
 require_once("./../status_check.php");
-require_once ("../system_role_check.php");
+require_once("../system_role_check.php");
 
 $config = include('./../config.php');
 $serverAddress = $config['server_address'];
@@ -123,6 +123,9 @@ $user_details_result->free();
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-credential.php?employee_id=<?php echo $employeeId ?>">Manage
                         Credential</a></li>
+                <li><a class="dropdown-item"
+                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-allowances.php">Manage
+                        Allowances</a></li>
                 <?php if ($systemRole === "admin"): ?>
                     <li class="dropdown-submenu">
                         <a class="dropdown-item dropdown-toggle" href="#">Manage Form Options</a>
@@ -137,8 +140,8 @@ $user_details_result->free();
                                     href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-position.php">Manage
                                     Position</a></li>
                         </ul>
-                    </li> 
-                    <?php endif; ?>
+                    </li>
+                <?php endif; ?>
                 <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"
                         data-bs-target="#logoutModal">Logout</a></li>
             </ul>

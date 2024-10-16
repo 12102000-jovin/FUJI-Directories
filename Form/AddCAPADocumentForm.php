@@ -114,22 +114,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                     $recipientName,
                     'New CAPA Document Added',
                     "
-                        <p>Dear $recipientName,</p>
-                        <p>This is a reminder that a new CAPA document has been added.</p>
-                        <p><strong>Details:</strong></p>
-                        <ul>
-                            <li><strong>CAPA Document ID:</strong> <b>$capaDocumentId</b></li>
-                            <li><strong>Date Raised:</strong> <b>$dateRaised</b></li>
-                            <li><strong>Severity:</strong> <b>$severity</b></li>
-                            <li><strong>Raised Against:</strong> <b>$raisedAgainst</b></li>
-                            <li><strong>Capa Owner:</strong> <b>$recipientName</b></li>
-                            <li><strong>Assigned To:</strong> <b>$assignedRecipientName</b></li>
-                            <li><strong>Target Closed Date:</strong> <b>$targetCloseDate</b></li>
-                        </ul>
-                        <p>Please take the necessary actions regarding this document.</p>
-                        <p>This email is sent automatically. Please do not reply.</p>
-                        <p>Best regards,<br></p>
-                    "
+            <p>Dear $recipientName,</p>
+            <p>This is a reminder that a new CAPA document has been added.</p>
+            <p><strong>Details:</strong></p>
+            <ul>
+                <li><strong>CAPA Document ID:</strong> <b>$capaDocumentId</b></li>
+                <li><strong>Date Raised:</strong> <b>$dateRaised</b></li>
+                <li><strong>Severity:</strong> <b>$severity</b></li>
+                <li><strong>Raised Against:</strong> <b>$raisedAgainst</b></li>
+                <li><strong>Capa Owner:</strong> <b>$recipientName</b></li>
+                <li><strong>Assigned To:</strong> <b>$assignedRecipientName</b></li> <!-- Updated to display the assigned person's name -->
+                <li><strong>Target Closed Date:</strong> <b>$targetCloseDate</b></li>
+            </ul>
+            <p>Please take the necessary actions regarding this document.</p>
+            <p>This email is sent automatically. Please do not reply.</p>
+            <p>Best regards,<br></p>
+            "
                 );
             } else {
                 error_log("Employee with ID $capaOwner not found.");
@@ -169,11 +169,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                     $capa_owner_name_result->execute();
                     $capaOwnerNameResult = $capa_owner_name_result->get_result();
 
-                    if($capaOwnerNameResult && $capaOwnerNameResult->num_rows > 0) {
+                    if ($capaOwnerNameResult && $capaOwnerNameResult->num_rows > 0) {
                         $capaOwnerEmployee = $capaOwnerNameResult->fetch_assoc();
-                        $capaOwnerName = $capaOwnerEmployee['first_name'] . ' ' . $capaOwnerEmployee['last_name'];  
+                        $capaOwnerName = $capaOwnerEmployee['first_name'] . ' ' . $capaOwnerEmployee['last_name'];
                     } else {
-                        // Hanle the case there the capa owner empoyee is not found
+                        // Handle the case there the capa owner employee is not found
                         $capaOwnerName = "Unknown";
                         error_log("CAPA owner employee with ID $capaOwner not found.");
                     }
@@ -184,7 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                     error_log("Failed to prepare capa_owner to statement: " . $conn->error);
                 }
 
-                // Send the emaul with the full name of the assigned to
+                // Send the email with the full name of the assigned to
                 $emailSender->sendEmail(
                     $assignedToEmail, // Recipient email
                     $recipientName, // Recipient name
@@ -306,7 +306,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
             <select name="assignedTo" class="form-select" id="assignedTo" required onchange="updateAssignedToEmail()">
                 <option disabled selected hidden></option>
                 <?php
-
                 foreach ($employees as $row) {
                     echo '<option value="' . $row['employee_id'] . '" data-assigned-to-email="' . htmlspecialchars($row['email']) . '"> ' .
                         htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
@@ -379,7 +378,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         <div class="d-flex justify-content-center mt-5 mb-4">
             <button class="btn btn-dark" name="addCapaDocument" type="submit">Add Document</button>
         </div>
-        
     </div>
 </form>
 

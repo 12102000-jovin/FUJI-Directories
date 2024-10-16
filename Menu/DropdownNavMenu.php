@@ -151,7 +151,9 @@ $folders_result->free();
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-credential.php?employee_id=<?php echo $employeeId ?>">Manage
                         Credential</a></li>
-
+                <li><a class="dropdown-item"
+                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-allowances.php">Manage
+                        Allowances</a></li>
                 <?php if ($systemRole === "admin"): ?>
                     <li class="dropdown-submenu">
                         <a class="dropdown-item dropdown-toggle" href="#">Manage Form Options</a>

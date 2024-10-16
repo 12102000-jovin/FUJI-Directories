@@ -4,9 +4,9 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("./../db_connect.php");
+require_once("./../db_connect.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -248,6 +248,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['departmentNameToEdit'
                 });
             });
         })
+    })
+</script>
+
+<script>
+    // Enabling the tooltip
+    const tooltips = document.querySelectorAll('.tooltips');
+    tooltips.forEach(t => {
+        new bootstrap.Tooltip(t);
     })
 </script>
 

@@ -153,6 +153,33 @@ foreach ($salariesData as $row) {
 // Get current date in the desired format
 $currentDate = date("Y-m-d");
 
+//  ========================= E M P L O Y E E S ( A L L O W A N C E S ) [ T O O L ]  =========================
+// SQL to get the allowances data
+$employee_tool_allowance_sql = "SELECT * FROM allowances WHERE allowance = 'Tool'";
+$employee_tool_allowance_result = $conn->query($employee_tool_allowance_sql);
+
+$toolAllowanceData = []; // Initialize an empty array to store results
+
+if ($employee_tool_allowance_result->num_rows > 0) {
+    while ($row = $employee_tool_allowance_result->fetch_assoc()) {
+        $toolAllowanceData[] = $row;
+    }
+}
+
+//  ========================= E M P L O Y E E S ( A L L O W A N C E S ) [ F I R S T  A I D ]  =========================
+// SQL to get the allowances data
+$employee_first_aid_allowance_sql = "SELECT * FROM allowances WHERE allowance = 'First Aid'";
+$employee_first_aid_allowance_result = $conn->query($employee_first_aid_allowance_sql);
+
+$firstAidAllowanceData = []; // Initialize an empty array to store results
+
+if ($employee_first_aid_allowance_result->num_rows > 0) {
+    while ($row = $employee_first_aid_allowance_result->fetch_assoc()) {
+        $firstAidAllowanceData[] = $row;
+    }
+}
+
+
 // ========================= A D D   N E W   W A G E =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newWage'])) {
     $newWage = $_POST["newWage"];
@@ -834,6 +861,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $positionName = $row['position_name'];
                         $payrollType = $row['payroll_type'];
                         $email = $row['email'];
+                        $personalEmail = $row['personal_email'];
                         $isActive = $row['is_active'];
                         $bankBuildingSociety = $row['bank_building_society'];
                         $bsb = $row['bsb'];
@@ -1018,9 +1046,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <?php echo (isset($address) && $address !== "" ? $address : "N/A"); ?>
                                     </h5>
                                 </div>
-                                <div class="col-lg-6 col-xl-4 d-flex flex-column">
+                                <div class="col-lg-4 col-xl-4 d-flex flex-column">
                                     <small>Email</small>
                                     <h5 class="fw-bold text-break"><?php echo isset($email) ? $email : "N/A"; ?></h5>
+                                </div>
+                                <div class="col-lg-4 col-xl-4 d-flex flex-column">
+                                    <small>Personal Email</small>
+                                    <h5 class="fw-bold text-break">
+                                        <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
+                                    </h5>
                                 </div>
                                 <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                     <small>Phone Number</small>
@@ -1922,6 +1956,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body p-5">
+                                    <h4>Current Total Wage: $XX.XX</h4>
                                     <div class="table-responsive border rounded-3">
                                         <table class="table table-hover mb-0 pb-0">
                                             <thead class="table-primary">
@@ -1997,6 +2032,81 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <h6 class="fw-bold signature-color text-decoration-underline  mt-3"><button
+                                            class="btn btn-danger" data-bs-toggle="collapse"
+                                            data-bs-target="#allowanceCollapse" aria-expanded="false"
+                                            aria-controls="allowanceCollapse">Allowances <i
+                                                class="fa-solid fa-caret-down"></i></button></h6>
+                                    <div class="collapse" id="allowanceCollapse">
+                                        <div class="table-responsive border rounded-3">
+                                            <table class="table table-hover mb-0 pb-0">
+                                                <thead class="table-primary">
+                                                    <tr class="text-center">
+                                                        <th></th>
+                                                        <th class="py-3">Allowances</th>
+                                                        <th class="py-3">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Tool</td>
+                                                        <td class="col-5">
+                                                            <?php echo isset($toolAllowanceData[0]['amount']) ? '$' . $toolAllowanceData[0]['amount'] : 'N/A'; ?>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">First Aid</td>
+                                                        <td class="col-5">
+                                                            <?php echo isset($firstAidAllowanceData[0]['amount']) ? '$' . $firstAidAllowanceData[0]['amount'] : 'N/A'; ?>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Team Leader</td>
+                                                        <td class="col-5"> $XX.XX</td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Trainer</td>
+                                                        <td class="col-5">$XX.XX</td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Supervisor</td>
+                                                        <td class="col-5">$XX.XX</td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Painter</td>
+                                                        <td class="col-5">$XX.XX</td>
+                                                    </tr>
+                                                    <tr class="text-center">
+                                                        <td class="col-2">
+                                                            <input class="form-check-input" type="checkbox">
+                                                        </td>
+                                                        <td class="col-5">Machine Maintenance</td>
+                                                        <td class="col-5">$XX.XX</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
                                     <div class="d-flex flex-grow-1 mt-4">
                                         <form method="POST" class="col-md-12" id="addNewWageForm" novalidate>
                                             <div class="row g-3">
@@ -2025,6 +2135,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         Please provide the date of the wage update.
                                                     </div>
                                                 </div>
+
+
 
                                                 <!-- Submit Button -->
                                                 <div class="col-12 text-center">

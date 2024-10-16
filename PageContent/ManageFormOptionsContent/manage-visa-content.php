@@ -247,4 +247,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['visaNameToEdit'])) {
     })
 </script>
 
+<script>
+    // Enabling the tooltip
+    const tooltips = document.querySelectorAll('.tooltips');
+    tooltips.forEach(t => {
+        new bootstrap.Tooltip(t);
+    })
+</script>
+
 </html>

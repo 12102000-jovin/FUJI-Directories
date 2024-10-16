@@ -466,7 +466,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
             </div>
             <div class="form-group col-md-6 mt-md-0 mt-3">
                 <label for="dateRaisedToEdit" class="fw-bold">Date Raised</label>
-                <input type="text" name="dateRaisedToEdit" class="form-control" id="dateRaisedToEdit" required>
+                <input type="date" name="dateRaisedToEdit" class="form-control" id="dateRaisedToEdit" required>
                 <div class="invalid-feedback">
                     Please provide Date Raised
                 </div>
@@ -581,6 +581,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
 
             <div class="d-flex justify-content-center mt-5 mb-4">
                 <button class="btn btn-dark" name="editCapaDocument" type="submit">Edit Document</button>
+            </div>
+            <div id="processingMessage" class="alert alert-warning d-none" style="text-align: center;">
+                <strong>Please do not close the window. Processing your request...</strong>
             </div>
         </div>
     </div>
@@ -711,6 +714,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["openCapaBtn"])) {
                     if (isValid) {
                         // Now submit the form
                         editCAPADocumentForm.submit();
+                        // Show the processing message
+                        document.getElementById('processingMessage').classList.remove('d-none');
+
+                        // Optionally disable the submit button to prevent multiple submissions
+                        document.querySelector('button[type="submit"]').disabled = true;
                     } else {
                         // Add was-validated class and show alert for duplicate ID
                         editCAPADocumentForm.classList.add('was-validated');

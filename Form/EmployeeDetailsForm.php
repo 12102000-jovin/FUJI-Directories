@@ -106,13 +106,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $address = $_POST["address"];
     }
 
-    if (empty($_POST["email"])) {
-        $errors['email'] = "Email is required";
-    } elseif (!filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = "Invalid email format";
-    } else {
-        $email = $_POST["email"];
-    }
+    $email = isset($_POST['email']) && $_POST['email'] !== "" ? $_POST['email'] : null;
+
+    $personalEmail = isset($_POST['personalEmail']) && $_POST['personalEmail'] !== "" ? $_POST['personalEmail'] : null;
 
     if (empty($_POST["phoneNumber"])) {
         $errors['phoneNumber'] = "Phone Number is required";
@@ -145,7 +141,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $errors['employeeId'] = "Employee ID is required";
     } else {
         $employeeId = str_pad($_POST["employeeId"], 3, "0", STR_PAD_LEFT); // Ensures 3 digits
-    }    
+    }
 
     if (empty($_POST["startDate"])) {
         $errors['startDate'] = "Start Date is required";
@@ -316,6 +312,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $financialSupplementDebt = $_POST["financialSupplementDebt"];
     }
 
+    // Tool allowance
+    if (isset($_POST['toolAllowance'])) {
+        $toolAllowance = 1;
+    } else {
+        $toolAllowance = 0;
+    }
+
     // Validate file upload
     if (isset($_FILES["profileImage"]) && $_FILES["profileImage"]["error"] == 0) {
         $profileImage = $_FILES["profileImage"];
@@ -359,10 +362,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     } else if (empty($errors)) {
         // If there are no errors, proceed with database insertion
         // Prepare and execute SQL statement to insert data into 'employees' table
-        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssssssssssssssisssssssssiiss", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType);
+        $stmt->bind_param("ssssssssssssssssssisssssssssiissi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance );
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -579,9 +582,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
                         <div class="form-group col-md-12 mt-3">
                             <label for="email" class="fw-bold"><small>Email</small></label>
-                            <input type="text" class="form-control" id="email" name="email" required>
+                            <input type="text" class="form-control" id="email" name="email">
                             <div class="invalid-feedback">
                                 Please provide a valid email address.
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-12 mt-3">
+                            <label for="personalEmail" class="fw-bold"><small>Personal Email</small></label>
+                            <input type="text" class="form-control" id="personalEmail" name="personalEmail" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid personal email address.
                             </div>
                         </div>
 
@@ -776,6 +787,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                                     Please provide the Pay Rate.
                                 </div>
                             </div>
+
+                            <input class="form-check-input" type="checkbox" id="toolAllowanceCheckbox" name="toolAllowance">
+                            <label for="form-check-label mb-0 pb-0">
+                                <small class="mt-2">Tool Allowance</small>
+                            </label>
                         </div>
 
                         <div class="form-group col-md-6 mt-3 d-none" id="salaryInput">
@@ -924,6 +940,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             const profileImageInvalidFeedback = document.getElementById("profileImageInvalidFeedback");
 
             const emailInput = document.getElementById("email");
+            const personalEmailInput = document.getElementById("personalEmail");
             const employeeIdInput = document.getElementById("employeeId");
             const duplicateErrorMessage = document.getElementById('duplicateErrorMessage');
 
@@ -970,16 +987,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             function checkEmailInput() {
                 const emailInputValue = emailInput.value;
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailInputValue !== "") {
+                    if (emailPattern.test(emailInputValue)) {
+                        console.log('Valid email address');
+                        emailInput.classList.remove('is-invalid');
+                        emailInput.classList.add('is-valid');
+                        return true;
+                    } else {
+                        console.log('Invalid email address');
+                        emailInput.classList.remove('is-valid');
+                        emailInput.classList.add('is-invalid');
+                        return false;
+                    }
+                }
+                return true;
+            }
 
-                if (emailPattern.test(emailInputValue)) {
-                    console.log('Valid email address');
-                    emailInput.classList.remove('is-invalid');
-                    emailInput.classList.add('is-valid');
+            function checkPersonalEmailInput() {
+                const personalEmailInputValue = personalEmailInput.value;
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (emailPattern.test(personalEmailInputValue)) {
+                    personalEmailInput.classList.remove('is-invalid');
+                    personalEmailInput.classList.add('is-valid');
                     return true;
                 } else {
-                    console.log('Invalid email address');
-                    emailInput.classList.remove('is-valid');
-                    emailInput.classList.add('is-invalid');
+                    personalEmailInput.classList.remove('is-valid');
+                    personalEmailInput.classList.add('is-invalid');
                     return false;
                 }
             }
@@ -1046,6 +1080,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     isValid = false;
                 }
 
+                // Check if the personal email is valid
+                if (!checkPersonalEmailInput()) {
+                    isValid = false;
+                }
+
                 // Check if the profile image is valid
                 if (!checkProfileImageInput()) {
                     isValid = false;
@@ -1091,6 +1130,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             higherEducationLoanProgrammeYes.addEventListener('change', checkHigherEducationLoanProgrammeRadioSelection);
             higherEducationLoanProgrammeNo.addEventListener('change', checkHigherEducationLoanProgrammeRadioSelection);
             emailInput.addEventListener('input', checkEmailInput);
+            personalEmailInput.addEventListener('input', checkPersonalEmailInput);
             profileImageInput.addEventListener('change', checkProfileImageInput);
         });
 
@@ -1237,13 +1277,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         })
     </script>
 
-    <script>
+    <!-- <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const employeeIdInput = document.getElementById("employeeId");
+            const toolAllowanceCheckbox = document.getElementById("toolAllowanceCheckbox");
 
-            employeeIdInput.addEventListener('blur', function () {
-                console.log("clicked away");
+            toolAllowanceCheckbox.addEventListener("change", function () {
+                if (toolAllowanceCheckbox.checked === true) {
+                    console.log("True");
+                } else if (toolAllowanceCheckbox.checked === false) {
+                    console.log("False");
+                }
             })
         })
-    </script>
+    </script> -->
+
+
 </div>

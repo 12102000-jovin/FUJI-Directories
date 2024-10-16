@@ -58,6 +58,7 @@
             $visaExpiryDate = $_POST['visaExpiryDate'];
             $address = $_POST['address'];
             $email = $_POST['email'];
+            $personalEmail = $_POST['personalEmail'];
             $phoneNumber = $_POST['phoneNumber'];
             $vehicleNumberPlate = isset($_POST['vehicleNumberPlate']) && $_POST['vehicleNumberPlate'] !== "" ? $_POST['vehicleNumberPlate'] : null;
             $emergencyContactName = $_POST['emergencyContactName'];
@@ -168,9 +169,9 @@
             $higherEducationLoanProgramme = $_POST['higherEducationLoanProgramme'];
             $financialSupplementDebt = $_POST['financialSupplementDebt'];
 
-            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ? WHERE employee_id = ?";
+            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ? WHERE employee_id = ?";
             $edit_employee_detail_result = $conn->prepare($edit_employee_detail_sql);
-            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
+            $edit_employee_detail_result->bind_param("sssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
 
             if ($edit_employee_detail_result->execute()) {
                 echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id= ' . $employeeIdToEdit . '");</script>';
@@ -389,6 +390,11 @@
                                         <div class="invalid-feedback">
                                             Please provide a valid email address
                                         </div>
+                                    </div>
+                                    <div class="form-group col-md-12 mt-3">
+                                        <label for="personalEmail" class="fw-bold">Personal Email</label>
+                                        <input type="text" class="form-control" id="personalEmail" name="personalEmail"
+                                            value="<?php echo (isset($personalEmail) && $personalEmail !== "" ? $personalEmail : "" )?>">
                                     </div>
                                     <div class="form-group col-md-6 mt-3">
                                         <label for="phoneNumber" class="fw-bold">Mobile</label>

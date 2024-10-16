@@ -4,9 +4,9 @@ ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Connect to the database
-require_once ("./../db_connect.php");
+require_once("./../db_connect.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -133,8 +133,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['positionNameToEdit'])
                                 <form method="POST">
                                     <td class="py-2 text-center align-middle">
                                         <span class="view-mode"> <?php echo htmlspecialchars($row['position_name']); ?></span>
-                                        <input type="hidden" name="positionIdToEdit" value="<?php echo htmlspecialchars($row['position_id']); ?>">
-                                        <input type="text" class="form-control edit-mode d-none mx-auto" name="positionNameToEdit" value="<?php echo htmlspecialchars($row['position_name']); ?>">
+                                        <input type="hidden" name="positionIdToEdit"
+                                            value="<?php echo htmlspecialchars($row['position_id']); ?>">
+                                        <input type="text" class="form-control edit-mode d-none mx-auto"
+                                            name="positionNameToEdit"
+                                            value="<?php echo htmlspecialchars($row['position_name']); ?>">
                                     </td>
                                     <td class="py-2 align-middle text-center">
                                         <button class="btn edit-btn text-primary view-mode" type="button">
@@ -169,11 +172,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['positionNameToEdit'])
     </div>
 </body>
 
-<div class="modal fade" id="addPositionModal" tabindex="-1" role="dialog" aria-labelledby="addPositionModalLabel" aria-hidden="true">
+<div class="modal fade" id="addPositionModal" tabindex="-1" role="dialog" aria-labelledby="addPositionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-            <h5 class="modal-title" id="addPositionModalLabel">Add Position</h5>
+                <h5 class="modal-title" id="addPositionModalLabel">Add Position</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -230,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['positionNameToEdit'])
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         // Edit button click event handler
         document.querySelectorAll('.edit-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -245,5 +249,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['positionNameToEdit'])
                 })
             })
         })
+    })
+</script>
+
+<script>
+    // Enabling the tooltip
+    const tooltips = document.querySelectorAll('.tooltips');
+    tooltips.forEach(t => {
+        new bootstrap.Tooltip(t);
     })
 </script>
