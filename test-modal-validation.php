@@ -1,123 +1,133 @@
 <?php
 ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('diaplay_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once("./../db_connect.php");
+// Connect to the database
+require_once("./../db_connect");
 
 $config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
+// Get user's role from login session
 $employeeId = $_SESSION['employee_id'];
 
-$position_sql = "SELECT * FROM position";
-$position_result = $conn->query($position_sql);
+// SQL Query to retrieve users details
+$user_details_sql = "SELECT e.*, u.username, u.password, u.role
+                    FROM employees e
+                    JOIN users u ON e.employee_id = u.employee_id";
+$user_details_result = $conn->query($user_details_sql);
 
-if ($_SERVER["REQUEST_METHODs"] === "POST" && isset($_POST['newPosition'])) {
-    $newPosition = $_POST['newPosition'];
+// SQL QUERY to retrieve employee not in users
+$employee_sql = "SELECT first_names, last_name, employee_id FROM employees NOT IN (SELECT employee_id FROM users)";
+$employee_result = $conn->query($employee_sql);
 
-    // Check if the position name already exists
-    $check_position_sql = "SELECT COUNT(*) FROM position WHERE position_name = ?";
-    $check_position_result = $conn->prepare($check_position_sql);
-    $check_position_result->bind_param("s", $newPosition);
-    $check_position_result->execute();
-    $check_position_result->bind_result($positionCount);
-    $check_position_result->fetch();
-    $check_position_result->close();
+// SQL QUERY to retrieve employee
+$employees_sql = "SELECT * FROM employees";
+$employees_result = $conn->query($employee_sql);
 
-    if ($positionCount > 0) {
-        echo "<script> alert('Position already exist.')</script>";
+$error_message = ""; //Initialize error message variable
+
+// SQL Query to add user
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username'])) {
+    $employeeId = $_POST["employeeId"];
+    $username = $_POST["username"];
+    $password = $_POST["password"];
+    $role = $_POST['role'];
+
+    // Check if the username already exists in the users table
+    $check_existing_username_sql = "SELECT COUNT (*) AS count FROM users WHERE username = ?";
+    $check_existing_username_result = $conn->prepare($check_existing_username_sql);
+    $check_existing_username_result->bind_param("s", $username);
+    $check_existing_username_result->execute();
+    $existing_username_data = $check_existing_username_result->get_result()->fetch_assoc();
+
+    if ($existing_username_data['count'] > 0) {
+        $error_message = "Error: Username already exists.";
     } else {
-        $add_position_sql = "INSERT INTO position (position_name) VALUES (?)";
-        $add_position_result = $conn->prepare($add_position_sql);
-        $add_position_result->bind_param("s", $newPosition);
+        // Check if the employee ID already exists in the users table
+        $check_existing_user_sql = "SELECT COUNT(*) AS count FROM users WHERE employee_id = ?";
+        $check_existing_user_result = $conn->prepare($check_existing_user_sql);
+        $check_existing_user_result->bind_param("s", $employeeId);
+        $check_existing_user_result->execute();
+        $existing_user_data = $check_existing_user_result->get_result()->fetch_assoc();
 
-        if ($add_position_result->execute()) {
-            echo '<script> window.location.replace("' . $_SERVER['PHP_SELF'] . '")</script>';
-            exit();
+        if ($existing_user_data['count'] > 0) {
+            $error_message = "Error: User with employee ID $employeeId already exists.";
         } else {
-            echo "Error: " . $add_position_result . "<br>" . $conn->error;
+            // Proceed with inserting the new user
+            $add_user_sql = "INSERT INTO users (employee_id, username, password, role) VALUES (?,?,?,?)";
+            $add_user_result = $conn->prepare($add_user_sql);
+            $add_user_result->bind_param("ssss", $employeeId, $username, $password, $role);
+
+            // Execute the prepared statement 
+            if ($add_user_result->execute()) {
+                echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '");</script>';
+                exit(); // Ensure script execution stops after redirection
+            } else {
+                $error_message = "Error: " . $add_user_result . "<br>" . $conn->error;
+            }
         }
-        $add_position_result->close();
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['positionIdToDelete'])) {
-    $positionIdToDelete = $_POST['positionIdToDelete'];
+// SQL Query to edit user
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToEdit'])) {
+    $employeeIdToEdit = $_POST['employeeIdToEdit'];
+    $editUsername = $_POST['editUsername'];
+    $editPassword = $_POST['editPassword'];
+    $editRole = $_POST['editRole'];
 
-    $delete_position_sql = "DELETE FROM position WHERE position_id = ?";
-    $delete_position_result = $conn->prepare($delete_position_sql);
-    $delete_position_result->bind_param("i", $positionIdToDelete);
+    $edit_user_sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE employee_id = ?";
+    $edit_user_result = $conn->prepare($edit_user_sql);
+    $edit_user_result->bind_param("sssi", $editUsername, $editPassword, $editRole, $employeeIdToEdit);
 
-    if ($delete_position_result->execute()) {
-        echo '<script> window.location.replace("' . $_SERVER['PHP_SELF'] . '");</script>';
+    // Execute prepared statement
+    if ($edit_user_result->execute()) {
+        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '"); </script>';
         exit();
     } else {
-        echo "Error: " . $delete_position_result . "<br>" . $conn->error;
+        echo "Error: " . $edit_user_result . "<br>" . $conn->error;
     }
+
+    // Close Statement
+    $edit_user_result->close();
 }
-?>
 
-<!DOCTYPE html>
-<html>
+// SQL Query to delete user
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])) {
+    $employeeIdToEdit = $_POST['employeeIdToEdit'];
+    $editUsername = $_POST['editUsername'];
+    $editPassword = $_POST['editPassword'];
+    $editRole = $_POST['editRole'];
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="shortcut icon" type="image/x-icon" href="Images/FE-logo-icon.ico">
-    <style>
-        .table thead th {
-            background-color: #043f9d;
-            color: white;
-            border: 1px solid #043f9d !important;
-        }
-    </style>
-</head>
+    $edit_user_sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE employee_id = ?";
+    $edit_user_result = $conn->prepare($edit_user_sql);
+    $edit_user_result->bind_param("sssi", $editUsername, $editPassword, $editRole, $employeeIdToEdit);
 
-<body class="background-color">
-    <div class="container-fluid">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
-                </li>
-                <li class="breadcrumb-item fe-bold signature-color">Manage Position</li>
-            </ol>
-        </nav>
-        <div class="d-flex justify-content-start">
-            <button class="btn btn-dark mb-2" data-bs-toggle="modal" data-bs-target="#addPositionModal"> <i
-                    class="fa-solid fa-plus me-1"></i>Add Position</button>
-        </div>
+    // Execute prepared statement
+    if ($edit_user_result->execute()) {
+        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '")</script>';
+        exit();
+    } else {
+        echo "Error: " . $edit_user_result . "<br>" . $conn->error;
+    }
 
-        <?php if ($position_result->num_rows > 0) { ?>
-            <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
-                <table class="table table-hover mb-0 pb-0">
-                    <thead>
-                        <tr class="text-center">
-                            <th class="py-4 align-middle">Position</th>
-                            <th class="py-4 align-middle">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = $position_result->fetch_assoc()) { ?>
-                            <tr>
-                                <form method="POST">
-                                    <td class="py-2 text-center align-middle">
-                                        <span class="view-modes"><?php echo htmlspecialchars($row['position_name']); ?></span>
-                                        <input type="hidden" name="positionIdToEdit" value="<?php echo htmlspecialchars($['position_id'])?>">
-                                    </td>
-                                </form>
-                            </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php } ?>
-    </div>
-</body>
+    // Close Statement
+    $edit_user_result->close();
+}
 
-</html>
+// SQL Query to delte user
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])) {
+    $employeeIdToDelete = $_POST['employeeIdToDelete'];
+
+    // Check if the user is part of any group
+    $check_user_group_sql = "SELECT * FROM users_groups
+                            JOIN users ON users_groups.user_id = users.user_id
+                            WHERE users.employee_id = ?";
+    $check_user_group_stmt = $conn->prepare($check_user_group_sql);
+    $check_user_group_stmt->bind_param("i", $employeeIdToDelete);
+    $check_user_group_stmt->execute();
+    $result = $check_user_group_stmt->get_result();
+}

@@ -79,7 +79,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToEdit'])) 
     $editPassword = $_POST['editPassword'];
     $editRole = $_POST['editRole'];
 
-
     $edit_user_sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE employee_id = ?";
     $edit_user_result = $conn->prepare($edit_user_sql);
     $edit_user_result->bind_param("sssi", $editUsername, $editPassword, $editRole, $employeeIdToEdit);

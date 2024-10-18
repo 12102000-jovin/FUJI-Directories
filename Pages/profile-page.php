@@ -872,6 +872,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $taxFileNumber = $row['tax_file_number'];
                         $higherEducationLoanProgramme = $row['higher_education_loan_programme'];
                         $financialSupplementDebt = $row['financial_supplement_debt'];
+                        $toolAllowance = $row['tool_allowance'];
+                        $firstAidAllowance = $row['first_aid_allowance'];
+                        $teamLeaderAllowance = $row['team_leader_allowance'];
                     }
                     ?>
                     <div class="row g-0">
@@ -1956,194 +1959,264 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body p-5">
-                                    <h4>Current Total Wage: $XX.XX</h4>
-                                    <div class="table-responsive border rounded-3">
-                                        <table class="table table-hover mb-0 pb-0">
-                                            <thead class="table-primary">
-                                                <tr class="text-center">
-                                                    <th class="py-3">Date</th>
-                                                    <th class="py-3">Amount</th>
-                                                    <th class="py-3">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php if (!empty($wagesData)) { ?>
-                                                    <?php foreach ($wagesData as $row) { ?>
-                                                        <tr class="text-center align-middle">
-                                                            <form method="POST">
-                                                                <!-- Hidden input for wages_id -->
-                                                                <input type="hidden" name="wages_id"
-                                                                    value="<?php echo $row['wages_id']; ?>">
-                                                                <td class="align-middle col-md-6">
-                                                                    <span
-                                                                        class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
-                                                                    <input type="date" max="9999-12-31"
-                                                                        class="form-control edit-mode d-none mx-auto"
-                                                                        name="editDate"
-                                                                        value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
-                                                                        style="width: 80%">
-                                                                </td>
-                                                                <td class="align-middle col-md-3">
-                                                                    <span class="view-mode">$<?php echo $row['amount']; ?></span>
-                                                                    <input type="text" class="form-control edit-mode d-none mx-auto"
-                                                                        name="editWage" value="<?php echo $row['amount']; ?>">
-                                                                </td>
-                                                                <td class="align-middle">
-                                                                    <!-- Edit form -->
-                                                                    <div class="view-mode">
-                                                                        <button type="button" class="btn btn-sm edit-btn p-0"><i
-                                                                                class="fa-regular fa-pen-to-square signature-color m-1"></i></button>
-                                                                        <div class="btn" id="#openDeleteConfirmation"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#deleteConfirmationModal"
-                                                                            data-wageamount="<?php echo $row['amount']; ?>"
-                                                                            data-wagedate="<?php echo date("j F Y", strtotime($row['date'])); ?>"
-                                                                            data-wages-id="<?php echo $row['wages_id']; ?>">
-                                                                            <i class="fa-solid fa-trash-can text-danger m-1"></i>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="edit-mode d-none d-flex justify-content-center">
-                                                                        <button type="submit"
-                                                                            class="btn btn-sm px-2 btn-success mx-1">
-                                                                            <div class="d-flex justify-content-center"><i
-                                                                                    role="button"
-                                                                                    class="fa-solid fa-check text-white m-1"></i>
-                                                                                Save </div>
-                                                                        </button>
-                                                                        <button type="button"
-                                                                            class="btn btn-sm px-2 btn-danger mx-1 edit-btn">
-                                                                            <div class="d-flex justify-content-center"> <i
-                                                                                    role="button"
-                                                                                    class="fa-solid fa-xmark  text-white m-1"></i>Cancel
-                                                                            </div>
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                            </form>
+                                    <?php
+                                    // Initialise total wage with the latest wage amount
+                                    $totalWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0;
 
-                                                        </tr>
-                                                    <?php } ?>
-                                                <?php } else { ?>
-                                                    <tr class=" text-center align-middle">
-                                                        <td colspan="3">No records found</td>
-                                                    </tr>
-                                                <?php } ?>
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <h6 class="fw-bold signature-color text-decoration-underline  mt-3"><button
-                                            class="btn btn-danger" data-bs-toggle="collapse"
-                                            data-bs-target="#allowanceCollapse" aria-expanded="false"
-                                            aria-controls="allowanceCollapse">Allowances <i
-                                                class="fa-solid fa-caret-down"></i></button></h6>
-                                    <div class="collapse" id="allowanceCollapse">
+                                    ?>
+                                    <div id="wageDetailTable">
                                         <div class="table-responsive border rounded-3">
                                             <table class="table table-hover mb-0 pb-0">
                                                 <thead class="table-primary">
                                                     <tr class="text-center">
-                                                        <th></th>
-                                                        <th class="py-3">Allowances</th>
+                                                        <th class="py-3">Date</th>
                                                         <th class="py-3">Amount</th>
+                                                        <th class="py-3">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Tool</td>
-                                                        <td class="col-5">
-                                                            <?php echo isset($toolAllowanceData[0]['amount']) ? '$' . $toolAllowanceData[0]['amount'] : 'N/A'; ?>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">First Aid</td>
-                                                        <td class="col-5">
-                                                            <?php echo isset($firstAidAllowanceData[0]['amount']) ? '$' . $firstAidAllowanceData[0]['amount'] : 'N/A'; ?>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Team Leader</td>
-                                                        <td class="col-5"> $XX.XX</td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Trainer</td>
-                                                        <td class="col-5">$XX.XX</td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Supervisor</td>
-                                                        <td class="col-5">$XX.XX</td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Painter</td>
-                                                        <td class="col-5">$XX.XX</td>
-                                                    </tr>
-                                                    <tr class="text-center">
-                                                        <td class="col-2">
-                                                            <input class="form-check-input" type="checkbox">
-                                                        </td>
-                                                        <td class="col-5">Machine Maintenance</td>
-                                                        <td class="col-5">$XX.XX</td>
-                                                    </tr>
+                                                    <?php if (!empty($wagesData)) { ?>
+                                                        <?php foreach ($wagesData as $row) { ?>
+                                                            <tr class="text-center align-middle">
+                                                                <form method="POST">
+                                                                    <!-- Hidden input for wages_id -->
+                                                                    <input type="hidden" name="wages_id"
+                                                                        value="<?php echo $row['wages_id']; ?>">
+                                                                    <td class="align-middle col-md-6">
+                                                                        <span
+                                                                            class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
+                                                                        <input type="date" max="9999-12-31"
+                                                                            class="form-control edit-mode d-none mx-auto"
+                                                                            name="editDate"
+                                                                            value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
+                                                                            style="width: 80%">
+                                                                    </td>
+                                                                    <td class="align-middle col-md-3">
+                                                                        <span
+                                                                            class="view-mode">$<?php echo $row['amount']; ?></span>
+                                                                        <input type="text"
+                                                                            class="form-control edit-mode d-none mx-auto"
+                                                                            name="editWage" value="<?php echo $row['amount']; ?>">
+                                                                    </td>
+                                                                    <td class="align-middle">
+                                                                        <!-- Edit form -->
+                                                                        <div class="view-mode">
+                                                                            <button type="button" class="btn btn-sm edit-btn p-0"><i
+                                                                                    class="fa-regular fa-pen-to-square signature-color m-1"></i></button>
+                                                                            <div class="btn" id="#openDeleteConfirmation"
+                                                                                data-bs-toggle="modal"
+                                                                                data-bs-target="#deleteConfirmationModal"
+                                                                                data-wageamount="<?php echo $row['amount']; ?>"
+                                                                                data-wagedate="<?php echo date("j F Y", strtotime($row['date'])); ?>"
+                                                                                data-wages-id="<?php echo $row['wages_id']; ?>">
+                                                                                <i
+                                                                                    class="fa-solid fa-trash-can text-danger m-1"></i>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="edit-mode d-none d-flex justify-content-center">
+                                                                            <button type="submit"
+                                                                                class="btn btn-sm px-2 btn-success mx-1">
+                                                                                <div class="d-flex justify-content-center"><i
+                                                                                        role="button"
+                                                                                        class="fa-solid fa-check text-white m-1"></i>
+                                                                                    Save </div>
+                                                                            </button>
+                                                                            <button type="button"
+                                                                                class="btn btn-sm px-2 btn-danger mx-1 edit-btn">
+                                                                                <div class="d-flex justify-content-center"> <i
+                                                                                        role="button"
+                                                                                        class="fa-solid fa-xmark text-white m-1"></i>Cancel
+                                                                                </div>
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </form>
+                                                            </tr>
+                                                        <?php } ?>
+                                                        <tr class="bg-dark">
+                                                            <td colspan="2"
+                                                                class="align-middle text-end bg-dark text-white fw-bold">
+                                                                Hourly Wage </td>
+                                                            <td class="align-middle text-center bg-dark text-white fw-bold">
+                                                                $<?php echo number_format($totalWage, 2); ?></td>
+                                                        </tr>
+                                                    <?php } else { ?>
+                                                        <tr class=" text-center align-middle">
+                                                            <td colspan="3">No records found</td>
+                                                        </tr>
+                                                    <?php } ?>
+
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        <?php
+                                        // Initialize total allowance
+                                        $totalAllowance = 0;
+
+                                        // Check if the tool allowance should be included
+                                        $toolAllowanceChecked = isset($toolAllowance) && $toolAllowance == 1;
+
+                                        // Check if the first aid allowance should be included
+                                        $firstAidAllowanceChecked = isset($firstAidAllowance) && $firstAidAllowance == 1;
+
+                                        // Add Tool Allowance if checked
+                                        if ($toolAllowanceChecked) {
+                                            $totalAllowance += isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0;
+                                        }
+
+                                        // Add First Aid Allowance if checked
+                                        if ($firstAidAllowanceChecked) {
+                                            $totalAllowance += isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0;
+                                        }
+                                        ?>
+
+                                        <div class="table-responsive rounded-3 shadow-lg bg-light mt-2">
+                                            <table class="table m-0 p-0" data-bs-toggle="collapse"
+                                                data-bs-target="#allowanceCollapse" aria-expanded="false"
+                                                aria-controls="allowanceCollapse" style="cursor: pointer">
+                                                <tr class="bg-dark rounded-3">
+                                                    <td class="bg-dark"></td>
+                                                    <td class="col-md-6 bg-dark text-white">
+                                                        <div class="d-flex justify-content-end fw-bold">
+                                                            Total Allowances
+                                                        </div>
+                                                    </td>
+                                                    <td class="col-md-3 bg-dark">
+                                                        <p class="mb-0 pb-0 fw-bold text-center  text-white">
+                                                            $<span id="currentTotalAllowance"
+                                                                class="fw-bold"><?php echo number_format($totalAllowance, 2); ?></span>
+                                                            <i class="fa-sharp fa-solid fa-caret-down"></i>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                        <div class="collapse" id="allowanceCollapse">
+                                            <div class="table-responsive border rounded-3">
+                                                <table class="table table-hover mb-0 pb-0">
+                                                    <thead class="table-primary">
+                                                        <tr class="text-center">
+                                                            <th></th>
+                                                            <th class="py-3">Allowances</th>
+                                                            <th class="py-3">Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    onchange="toolAllowanceCheckbox(this, <?php echo $employeeId ?>, <?php echo isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0; ?>)"
+                                                                    <?php if (isset($toolAllowance) && $toolAllowance == 1) {
+                                                                        echo 'checked';
+                                                                    } ?>>
+                                                            </td>
+                                                            <td class="col-5">Tool</td>
+                                                            <td class="col-5">
+                                                                <?php echo isset($toolAllowanceData[0]['amount']) ? '$' . $toolAllowanceData[0]['amount'] : 'N/A'; ?>
+                                                            </td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="firstAidAllowanceCheckbox"
+                                                                    onchange="firstAidAllowanceCheckbox(this, <?php echo $employeeId; ?>)"
+                                                                    <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'checked' : ''; ?>>
+                                                            </td>
+                                                            <td class="col-5">First Aid</td>
+                                                            <td class="col-5">
+                                                                <?php echo isset($firstAidAllowanceData[0]['amount']) ? '$' . $firstAidAllowanceData[0]['amount'] : 'N/A'; ?>
+                                                            </td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="teamLeaderAllowanceCheckbox" onchange="teamLeaderAllowanceCheckbox()"
+                                                                    <?php echo isset($teamLeaderAllowance) && $teamLeaderAllowance != 0 ? 'checked' : ''?>>
+                                                            </td>
+                                                            <td class="col-5">Team Leader</td>
+                                                            <td class="col-5"> $<?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : '00.00'?></td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox">
+                                                            </td>
+                                                            <td class="col-5">Trainer</td>
+                                                            <td class="col-5">$00.00</td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox">
+                                                            </td>
+                                                            <td class="col-5">Supervisor</td>
+                                                            <td class="col-5">$00.00</td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox">
+                                                            </td>
+                                                            <td class="col-5">Painter</td>
+                                                            <td class="col-5">$00.00</td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox">
+                                                            </td>
+                                                            <td class="col-5">Machine Maintenance</td>
+                                                            <td class="col-5">$00.00</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-center">
+                                            <button class="btn btn-secondary mt-4 me-1" data-bs-dismiss="modal"
+                                                aria-label="Close">Close</button>
+                                            <button class="btn btn-dark mt-4" id="showUpdateForm">Update Wage</button>
+                                        </div>
                                     </div>
 
-                                    <div class="d-flex flex-grow-1 mt-4">
-                                        <form method="POST" class="col-md-12" id="addNewWageForm" novalidate>
-                                            <div class="row g-3">
-                                                <!-- New Wage Input -->
-                                                <div class="col-6">
-                                                    <label for="newWage" class="form-label fw-bold">New Wage</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
-                                                        <input type="number" min="0" step="any"
-                                                            class="form-control rounded-end" id="newWage" name="newWage"
-                                                            placeholder="Enter new wage" required>
-                                                        <div class="invalid-feedback">
-                                                            Please provide new wage amount.
+                                    <div class="d-none" id="updateWageForm">
+                                        <button class="btn btn-sm btn-secondary" id="cancelUpdateWageBtn"> <i
+                                                class="fa-solid fa-arrow-left me-1"></i>Cancel </button>
+                                        <div class="d-flex flex-grow-1 mt-4">
+                                            <form method="POST" class="col-md-12" id="addNewWageForm" novalidate>
+                                                <div class="row g-3">
+                                                    <!-- New Wage Input -->
+                                                    <div class="col-6">
+                                                        <label for="newWage" class="form-label fw-bold">New Wage</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" min="0" step="any"
+                                                                class="form-control rounded-end" id="newWage" name="newWage"
+                                                                placeholder="Enter new wage" required>
+                                                            <div class="invalid-feedback">
+                                                                Please provide new wage amount.
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <!-- Update Date Input -->
-                                                <div class="col-6">
-                                                    <label for="updateWageDate" class="form-label fw-bold">Update
-                                                        Date</label>
-                                                    <input type="date" max="9999-12-31" class="form-control"
-                                                        id="updateWageDate" name="updateWageDate"
-                                                        value="<?php echo date('Y-m-d'); ?>" required>
-                                                    <div class="invalid-feedback">
-                                                        Please provide the date of the wage update.
+                                                    <!-- Update Date Input -->
+                                                    <div class="col-6">
+                                                        <label for="updateWageDate" class="form-label fw-bold">Update
+                                                            Date</label>
+                                                        <input type="date" max="9999-12-31" class="form-control"
+                                                            id="updateWageDate" name="updateWageDate"
+                                                            value="<?php echo date('Y-m-d'); ?>" required>
+                                                        <div class="invalid-feedback">
+                                                            Please provide the date of the wage update.
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Submit Button -->
+                                                    <div class="col-12 text-center">
+                                                        <button type="submit" class="btn btn-dark rounded">Confirm</button>
                                                     </div>
                                                 </div>
-
-
-
-                                                <!-- Submit Button -->
-                                                <div class="col-12 text-center">
-                                                    <button type="submit" class="btn btn-dark rounded">Update Wage</button>
-                                                </div>
-                                            </div>
-                                        </form>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3039,6 +3112,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             // Delay adding the d-none class by 40 milliseconds on page load
             document.addEventListener('DOMContentLoaded', function () {
+                3
                 setTimeout(function () {
                     salaryPayRaiseHistoryChart.classList.add('d-none')
                 }, 40);
@@ -3067,6 +3141,122 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             showSalaryPayRaiseHistoryChartBtns.forEach(btn => {
                 btn.addEventListener('click', toggleSalaryPayRaiseHistory);
             })
+        </script>
+
+        <script>
+            // Initialize totalAllowance from PHP
+            let totalAllowance = 0;
+
+            // Track the state of both checkboxes
+            let toolAllowanceChecked = <?php echo isset($toolAllowance) && $toolAllowance == 1 ? 'true' : 'false'; ?>;
+            let firstAidAllowanceChecked = <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'true' : 'false'; ?>;
+
+            // Get the allowance amounts from PHP
+            const toolAllowanceAmount = <?php echo isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0; ?>;
+            const firstAidAllowanceAmount = <?php echo isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0; ?>;
+
+            // Function to handle the checkbox change for Tool Allowance
+            function toolAllowanceCheckbox(checkbox, employeeId) {
+                toolAllowanceChecked = checkbox.checked;
+
+                // Prepare the data to send
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('tool_allowance', toolAllowanceChecked ? 1 : 0);
+
+                // Use fetch to send the data to the server
+                fetch('../AJAXphp/update_tool_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Tool allowance updated successfully.");
+                            // Update the total allowance display
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update tool allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating tool allowance:", error);
+                    });
+            }
+
+            // Function to handle the checkbox change for First Aid Allowance
+            function firstAidAllowanceCheckbox(checkbox, employeeId) {
+                firstAidAllowanceChecked = checkbox.checked;
+
+                // Prepare the data to send
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('first_aid_allowance', firstAidAllowanceChecked ? 1 : 0);
+
+                // Use fetch to send the data to the server
+                fetch('../AJAXphp/update_first_aid_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("First aid allowance updated successfully.");
+                            // Update the total allowance display
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update first aid allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating first aid allowance:", error);
+                    });
+            }
+
+            // Function to update the total allowance based on the state of both checkboxes
+            function updateTotalAllowance() {
+                // Reset the totalAllowance
+                totalAllowance = 0;
+
+                // Add tool allowance if checked
+                if (toolAllowanceChecked) {
+                    totalAllowance += toolAllowanceAmount;
+                }
+
+                // Add first aid allowance if checked
+                if (firstAidAllowanceChecked) {
+                    totalAllowance += firstAidAllowanceAmount;
+                }
+
+                // Update the displayed total allowance
+                document.getElementById('currentTotalAllowance').innerText = `${totalAllowance.toFixed(2)}`;
+            }
+        </script>
+
+
+        <script>
+            document.getElementById('showUpdateForm').addEventListener('click', function () {
+                var form = document.getElementById('updateWageForm');
+                var button = document.getElementById('showUpdateForm');
+                var wageDetailTable = document.getElementById('wageDetailTable');
+                var cancelUpdateWageBtn = document.getElementById('cancelUpdateWageBtn');
+
+                // Toggle the form's visibility by toggling 'd-none'
+                form.classList.toggle('d-none');
+
+                // Change button text based on the form's visibility
+                if (form.classList.contains('d-none')) {
+                    button.classList.remove('btn-danger');
+
+                } else {
+                    wageDetailTable.classList.add('d-none');
+                }
+
+                cancelUpdateWageBtn.addEventListener('click', function () {
+                    wageDetailTable.classList.remove('d-none');
+                    form.classList.add('d-none');
+                })
+            });
         </script>
 </body>
 

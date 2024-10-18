@@ -885,7 +885,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
     <script>
         document.querySelectorAll('.dropdown-menu .dropdown-status-item').forEach(item => {
             item.addEventListener('click', function (event) {
-                event.preventDefault(); // Preveb default anchor click behavior
+                event.preventDefault(); // Prevent default anchor click behavior
                 let status = this.getAttribute('data-status-filter');
                 if (status === "All Status") {
                     document.getElementById('selectedStatusFilter').value = "";
