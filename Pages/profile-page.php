@@ -875,6 +875,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $toolAllowance = $row['tool_allowance'];
                         $firstAidAllowance = $row['first_aid_allowance'];
                         $teamLeaderAllowance = $row['team_leader_allowance'];
+                        $teamLeaderAllowanceCheck = $row['team_leader_allowance_check'];
+                        $trainerAllowance = $row['trainer_allowance'];
+                        $trainerAllowanceCheck = $row['trainer_allowance_check'];
+                        $supervisorAllowance = $row['supervisor_allowance'];
+                        $supervisorAllowanceCheck = $row['supervisor_allowance_check'];
+                        $painterAllowance = $row['painter_allowance'];
+                        $painterAllowanceCheck = $row['painter_allowance_check'];
+                        $machineMaintenanceAllowance = $row['machine_maintenance_allowance'];
+                        $machineMaintenanceAllowanceCheck = $row['machine_maintenance_allowance_check'];
                     }
                     ?>
                     <div class="row g-0">
@@ -2060,6 +2069,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         // Check if the first aid allowance should be included
                                         $firstAidAllowanceChecked = isset($firstAidAllowance) && $firstAidAllowance == 1;
 
+                                        // Check if the team leader allowance should be included
+                                        $teamLeaderAllowanceChecked = isset($teamLeaderAllowanceCheck) && $teamLeaderAllowanceCheck == 1;
+
+                                        // Check if the trainer allowance should be included
+                                        $trainerAllowanceChecked = isset($trainerAllowanceCheck) && $trainerAllowanceCheck == 1;
+
+                                        // Check if the supervisor allowance should be included
+                                        $supervisorAllowanceChecked = isset($supervisorAllowanceCheck) && $supervisorAllowanceCheck == 1;
+
+                                        // Check if the painter allowance should be included
+                                        $painterAllowanceChecked = isset($painterAllowanceCheck) && $painterAllowanceCheck == 1;
+
+                                        // Check if the machine maintenance allowance should be included
+                                        $machineMaintenanceAllowanceChecked = isset($machineMaintenanceAllowanceCheck) && $machineMaintenanceAllowanceCheck == 1;
+
+
                                         // Add Tool Allowance if checked
                                         if ($toolAllowanceChecked) {
                                             $totalAllowance += isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0;
@@ -2068,6 +2093,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         // Add First Aid Allowance if checked
                                         if ($firstAidAllowanceChecked) {
                                             $totalAllowance += isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0;
+                                        }
+
+                                        // Add Team Leader Allowance if checked
+                                        if ($teamLeaderAllowanceChecked) {
+                                            $totalAllowance += $teamLeaderAllowance;
+                                        }
+
+                                        // Add Trainer Allowance if checked
+                                        if ($trainerAllowanceChecked) {
+                                            $totalAllowance += $trainerAllowance;
+                                        }
+
+                                        // Add Supervisor Allowance if checked
+                                        if ($supervisorAllowanceChecked) {
+                                            $totalAllowance += $supervisorAllowance;
+                                        }
+
+                                        // Add Painter Allowance if checked
+                                        if ($painterAllowanceChecked) {
+                                            $totalAllowance += $painterAllowance;
+                                        }
+
+                                        // Add Machine Maintenance Allowance if checked
+                                        if ($machineMaintenanceAllowanceChecked) {
+                                            $totalAllowance += $machineMaintenanceAllowance;
                                         }
                                         ?>
 
@@ -2083,7 +2133,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         </div>
                                                     </td>
                                                     <td class="col-md-3 bg-dark">
-                                                        <p class="mb-0 pb-0 fw-bold text-center  text-white">
+                                                        <p class="mb-0 pb-0 fw-bold text-center text-white">
                                                             $<span id="currentTotalAllowance"
                                                                 class="fw-bold"><?php echo number_format($totalAllowance, 2); ?></span>
                                                             <i class="fa-sharp fa-solid fa-caret-down"></i>
@@ -2132,39 +2182,240 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <tr class="text-center">
                                                             <td class="col-2">
                                                                 <input class="form-check-input" type="checkbox"
-                                                                    id="teamLeaderAllowanceCheckbox" onchange="teamLeaderAllowanceCheckbox()"
-                                                                    <?php echo isset($teamLeaderAllowance) && $teamLeaderAllowance != 0 ? 'checked' : ''?>>
+                                                                    id="teamLeaderAllowanceCheckbox"
+                                                                    onchange="teamLeaderAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($teamLeaderAllowanceChecked) && $teamLeaderAllowanceChecked == 1 ? 'checked' : '' ?>>
                                                             </td>
                                                             <td class="col-5">Team Leader</td>
-                                                            <td class="col-5"> $<?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : '00.00'?></td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-team-leader d-flex justify-content-center align-items-center">
+                                                                    <p class="teamLeaderAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($teamLeaderAllowance) ? number_format($teamLeaderAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Team Leader Allowance" role="button"
+                                                                        id="editTeamLeaderAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-team-leader d-none">
+                                                                    <input type="text" class="form-control mx-auto"
+                                                                        name="teamLeaderAllowanceToEdit"
+                                                                        value="<?php echo $teamLeaderAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveTeamLeaderBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-team-leader-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelTeamLeaderEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                         </tr>
+
                                                         <tr class="text-center">
                                                             <td class="col-2">
-                                                                <input class="form-check-input" type="checkbox">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="trainerAllowanceCheckbox"
+                                                                    onchange="trainerAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($trainerAllowanceChecked) && $trainerAllowanceChecked == 1 ? 'checked' : '' ?>>
                                                             </td>
                                                             <td class="col-5">Trainer</td>
-                                                            <td class="col-5">$00.00</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-trainer d-flex justify-content-center align-items-center">
+                                                                    <p class="trainerAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($trainerAllowance) ? number_format($trainerAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Trainer Allowance" role="button"
+                                                                        id="editTrainerAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-trainer d-none">
+                                                                    <input type="text" class="form-control mx-auto"
+                                                                        name="trainerAllowanceToEdit"
+                                                                        value="<?php echo $trainerAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveTrainerBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-trainer-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelTrainerEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                         <tr class="text-center">
                                                             <td class="col-2">
-                                                                <input class="form-check-input" type="checkbox">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="supervisorAllowanceCheckbox"
+                                                                    onchange="supervisorAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($supervisorAllowanceChecked) && $supervisorAllowanceChecked == 1 ? 'checked' : '' ?>>
                                                             </td>
                                                             <td class="col-5">Supervisor</td>
-                                                            <td class="col-5">$00.00</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-supervisor d-flex justify-content-center align-items-center">
+                                                                    <p class="supervisorAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($supervisorAllowance) ? number_format($supervisorAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Supervisor Allowance" role="button"
+                                                                        id="editSupervisorAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-supervisor d-none">
+                                                                    <input type="text" class="form-control mx-auto"
+                                                                        name="supervisorAllowanceToEdit"
+                                                                        value="<?php echo $supervisorAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveSupervisorBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-supervisor-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelSupervisorEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                         <tr class="text-center">
                                                             <td class="col-2">
-                                                                <input class="form-check-input" type="checkbox">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="painterAllowanceCheckbox"
+                                                                    onchange="painterAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($painterAllowanceChecked) && $painterAllowanceChecked == 1 ? 'checked' : '' ?>>
                                                             </td>
                                                             <td class="col-5">Painter</td>
-                                                            <td class="col-5">$00.00</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-painter d-flex justify-content-center align-items-center">
+                                                                    <p class="painterAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($painterAllowance) ? number_format($painterAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Painter Allowance" role="button"
+                                                                        id="editPainterAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-painter d-none">
+                                                                    <input type="text" class="form-control mx-auto"
+                                                                        name="painterAllowanceToEdit"
+                                                                        value="<?php echo $painterAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="savePainterBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-painter-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelPainterEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                         <tr class="text-center">
                                                             <td class="col-2">
-                                                                <input class="form-check-input" type="checkbox">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="machineMaintenanceAllowanceCheckbox"
+                                                                    onchange="machineMaintenanceAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($machineMaintenanceAllowanceChecked) && $machineMaintenanceAllowanceChecked == 1 ? 'checked' : '' ?>>
                                                             </td>
                                                             <td class="col-5">Machine Maintenance</td>
-                                                            <td class="col-5">$00.00</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-machine-maintenance d-flex justify-content-center align-items-center">
+                                                                    <p
+                                                                        class="machineMaintenanceAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($machineMaintenanceAllowance) ? number_format($machineMaintenanceAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Machine Maintenance Allowance"
+                                                                        role="button"
+                                                                        id="editMachineMaintenanceAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-machine-maintenance d-none">
+                                                                    <input type="text" class="form-control mx-auto"
+                                                                        name="machineMaintenanceAllowanceToEdit"
+                                                                        value="<?php echo $machineMaintenanceAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveMachineMaintenanceBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-machine-maintenance-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelMachineMaintenanceEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -3147,24 +3398,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             // Initialize totalAllowance from PHP
             let totalAllowance = 0;
 
-            // Track the state of both checkboxes
+            // Track the state of all checkboxes
             let toolAllowanceChecked = <?php echo isset($toolAllowance) && $toolAllowance == 1 ? 'true' : 'false'; ?>;
             let firstAidAllowanceChecked = <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'true' : 'false'; ?>;
+            let teamLeaderAllowanceChecked = <?php echo isset($teamLeaderAllowanceChecked) && $teamLeaderAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+            let trainerAllowanceChecked = <?php echo isset($trainerAllowanceChecked) && $trainerAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+            let supervisorAllowanceChecked = <?php echo isset($supervisorAllowanceChecked) && $supervisorAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+            let painterAllowanceChecked = <?php echo isset($painterAllowanceChecked) && $painterAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+            let machineMaintenanceAllowanceChecked = <?php echo isset($machineMaintenanceAllowanceChecked) && $machineMaintenanceAllowanceChecked == 1 ? 'true' : 'false'; ?>;
 
             // Get the allowance amounts from PHP
             const toolAllowanceAmount = <?php echo isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0; ?>;
             const firstAidAllowanceAmount = <?php echo isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0; ?>;
+            let teamLeaderAllowanceAmount = <?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : 0; ?>; // Ensure this is set properly
+            let trainerAllowanceAmount = <?php echo isset($trainerAllowance) ? $trainerAllowance : 0; ?>;
+            let supervisorAllowanceAmount = <?php echo isset($supervisorAllowance) ? $supervisorAllowance : 0; ?>;
+            let painterAllowanceAmount = <?php echo isset($painterAllowance) ? $painterAllowance : 0; ?>;
+            let machineMaintenanceAllowanceAmount = <?php echo isset($machineMaintenanceAllowance) ? $machineMaintenanceAllowance : 0; ?>;
 
             // Function to handle the checkbox change for Tool Allowance
             function toolAllowanceCheckbox(checkbox, employeeId) {
                 toolAllowanceChecked = checkbox.checked;
-
-                // Prepare the data to send
                 const formData = new FormData();
                 formData.append('employeeId', employeeId);
                 formData.append('tool_allowance', toolAllowanceChecked ? 1 : 0);
 
-                // Use fetch to send the data to the server
                 fetch('../AJAXphp/update_tool_allowance.php', {
                     method: 'POST',
                     body: formData
@@ -3173,7 +3431,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     .then(data => {
                         if (data.success) {
                             console.log("Tool allowance updated successfully.");
-                            // Update the total allowance display
                             updateTotalAllowance();
                         } else {
                             console.error("Failed to update tool allowance.");
@@ -3187,13 +3444,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             // Function to handle the checkbox change for First Aid Allowance
             function firstAidAllowanceCheckbox(checkbox, employeeId) {
                 firstAidAllowanceChecked = checkbox.checked;
-
-                // Prepare the data to send
                 const formData = new FormData();
                 formData.append('employeeId', employeeId);
                 formData.append('first_aid_allowance', firstAidAllowanceChecked ? 1 : 0);
 
-                // Use fetch to send the data to the server
                 fetch('../AJAXphp/update_first_aid_allowance.php', {
                     method: 'POST',
                     body: formData
@@ -3202,7 +3456,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     .then(data => {
                         if (data.success) {
                             console.log("First aid allowance updated successfully.");
-                            // Update the total allowance display
                             updateTotalAllowance();
                         } else {
                             console.error("Failed to update first aid allowance.");
@@ -3213,26 +3466,162 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     });
             }
 
-            // Function to update the total allowance based on the state of both checkboxes
+            // Function to handle the checkbox change for Team Leader Allowance
+            function teamLeaderAllowanceCheckbox(checkbox, employeeId) {
+                teamLeaderAllowanceChecked = checkbox.checked;
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('team_leader_allowance_check', teamLeaderAllowanceChecked ? 1 : 0);
+
+                fetch('../AJAXphp/update_team_leader_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Team Leader allowance updated successfully.");
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update team leader allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating team leader allowance:", error);
+                    });
+            }
+
+            // Function to handle the checkbox change for Trainer Allowance
+            function trainerAllowanceCheckbox(checkbox, employeeId) {
+                trainerAllowanceChecked = checkbox.checked;
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('trainer_allowance_check', trainerAllowanceChecked ? 1 : 0);
+
+                fetch('../AJAXphp/update_team_leader_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Trainer allowance updated successfully.");
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update trainer allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating trainer allowance:", error);
+                    });
+            }
+
+            // Function to handle the checkbox change for Supervisor Allowance
+            function supervisorAllowanceCheckbox(checkbox, employeeId) {
+                supervisorAllowanceChecked = checkbox.checked;
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('supervisor_allowance_check', supervisorAllowanceChecked ? 1 : 0);
+
+                fetch('../AJAXphp/update_team_leader_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Supervisor allowance updated successfully.");
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update supervisor allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating supervisor allowance:", error);
+                    });
+            }
+
+            // Function to handle the checkbox change for Painter Allowance
+            function painterAllowanceCheckbox(checkbox, employeeId) {
+                painterAllowanceChecked = checkbox.checked;
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('painter_allowance_check', painterAllowanceChecked ? 1 : 0);
+
+                fetch('../AJAXphp/update_team_leader_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Painter allowance updated successfully.");
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update painter allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating painter allowance:", error);
+                    });
+            }
+
+            // Function to handle the checkbox change for Machine Maintenance Allowance
+            function machineMaintenanceAllowanceCheckbox(checkbox, employeeId) {
+                machineMaintenanceAllowanceChecked = checkbox.checked;
+                const formData = new FormData();
+                formData.append('employeeId', employeeId);
+                formData.append('machine_maintenance_allowance_check', machineMaintenanceAllowanceChecked ? 1 : 0);
+
+                fetch('../AJAXphp/update_team_leader_allowance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log("Machine maintenance allowance updated successfully.");
+                            updateTotalAllowance();
+                        } else {
+                            console.error("Failed to update machine maintenance allowance.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating machine maintenance allowance:", error);
+                    });
+            }
+
+            // Function to update the total allowance based on the state of all checkboxes
             function updateTotalAllowance() {
-                // Reset the totalAllowance
                 totalAllowance = 0;
 
-                // Add tool allowance if checked
                 if (toolAllowanceChecked) {
                     totalAllowance += toolAllowanceAmount;
                 }
-
-                // Add first aid allowance if checked
                 if (firstAidAllowanceChecked) {
                     totalAllowance += firstAidAllowanceAmount;
                 }
+                if (teamLeaderAllowanceChecked) {
+                    totalAllowance += parseFloat(teamLeaderAllowanceAmount) || 0;
+                }
+                if (trainerAllowanceChecked) {
+                    totalAllowance += parseFloat(trainerAllowanceAmount) || 0;
+                }
+                if (supervisorAllowanceChecked) {
+                    totalAllowance += parseFloat(supervisorAllowanceAmount) || 0;
+                }
+                if (painterAllowanceChecked) {
+                    totalAllowance += parseFloat(painterAllowanceAmount) || 0;
+                }
+                if (machineMaintenanceAllowanceChecked) {
+                    totalAllowance += parseFloat(machineMaintenanceAllowanceAmount) || 0;
+                }
 
-                // Update the displayed total allowance
                 document.getElementById('currentTotalAllowance').innerText = `${totalAllowance.toFixed(2)}`;
             }
-        </script>
 
+            document.addEventListener('DOMContentLoaded', updateTotalAllowance);
+        </script>
 
         <script>
             document.getElementById('showUpdateForm').addEventListener('click', function () {
@@ -3258,6 +3647,404 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 })
             });
         </script>
+
+
+        <!-- Tool Allowance -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Edit button click event handler
+                document.getElementById('editTeamLeaderAllowanceBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                });
+
+                // Cancel button click event handler
+                document.getElementById('cancelTeamLeaderEditBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle back to view mode (exit edit mode)
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+
+                // Edit team leader button
+                document.getElementById('saveTeamLeaderBtn').addEventListener('click', function () {
+                    var button = document.getElementById('saveTeamLeaderBtn');
+                    var employeeId = button.getAttribute('data-employee-id');
+                    var teamLeaderAllowance = document.querySelector('input[name="teamLeaderAllowanceToEdit"]').value;
+
+                    // Prepare the data to send
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('team_leader_allowance', teamLeaderAllowance);
+
+                    // Use fetch to send the data to the server
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team leader allowance rate updated successfully.");
+
+
+                                // Update the display of the team leader allowance in the modal
+                                const formattedAllowance = parseFloat(teamLeaderAllowance).toFixed(2); // Format to 2 decimal places
+                                document.querySelector('.teamLeaderAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                // Optionally, hide the edit mode and show the view mode
+                                document.querySelector('.edit-mode-team-leader').classList.add('d-none');
+                                document.querySelector('.view-mode-team-leader').classList.remove('d-none');
+
+                                teamLeaderAllowanceAmount = teamLeaderAllowance;
+
+                                console.log(teamLeaderAllowanceAmount);
+
+                                // Update the total allowance display
+                                updateTotalAllowance();
+
+                            } else {
+                                console.error("Failed to update team leader allowance rate.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating team leader allowance:", error);
+                        });
+                });
+
+            });
+        </script>
+
+        <!-- Trainer Allowance -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Edit button click event handler
+                document.getElementById('editTrainerAllowanceBtn').addEventListener('click', function () {
+                    // Get the parent rows
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                });
+
+                // Cancel button click event handler
+                document.getElementById('cancelTrainerEditBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle back to view mode (exit edit mode)
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+
+                // Edit trainer button
+                document.getElementById('saveTrainerBtn').addEventListener('click', function () {
+                    var button = document.getElementById('saveTrainerBtn');
+                    var employeeId = button.getAttribute('data-employee-id');
+                    var trainerAllowance = document.querySelector('input[name="trainerAllowanceToEdit"]').value;
+
+                    // Prepare the data to send
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('trainer_allowance', trainerAllowance);
+
+                    // Use fetch to send the data to the server
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team leader allowance rate updated successfully.");
+
+
+                                // Update the display of the trainer allowance in the modal
+                                const formattedAllowance = parseFloat(trainerAllowance).toFixed(2); // Format to 2 decimal places
+                                document.querySelector('.trainerAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                // Optionally, hide the edit mode and show the view mode
+                                document.querySelector('.edit-mode-trainer').classList.add('d-none');
+                                document.querySelector('.view-mode-trainer').classList.remove('d-none');
+
+                                trainerAllowanceAmount = trainerAllowance;
+
+                                console.log(trainerAllowanceAmount);
+
+                                // Update the total allowance display
+                                updateTotalAllowance();
+
+                            } else {
+                                console.error("Failed to update trainer allowance rate.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating trainer allowance:", error);
+                        });
+                });
+            });
+        </script>
+
+        <!-- Supervisor Allowance -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Edit button click event handler
+                document.getElementById('editSupervisorAllowanceBtn').addEventListener('click', function () {
+                    // Get the parent rows
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                });
+
+                // Cancel button click event handler
+                document.getElementById('cancelSupervisorEditBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle back to view mode (exit edit mode)
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+
+                // Edit supervisor button
+                document.getElementById('saveSupervisorBtn').addEventListener('click', function () {
+                    var button = document.getElementById('saveSupervisorBtn');
+                    var employeeId = button.getAttribute('data-employee-id');
+                    var supervisorAllowance = document.querySelector('input[name="supervisorAllowanceToEdit"]').value;
+
+                    // Prepare the data to send
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('supervisor_allowance', supervisorAllowance);
+
+                    // Use fetch to send the data to the server
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team leader allowance rate updated successfully.");
+
+
+                                // Update the display of the supervisor allowance in the modal
+                                const formattedAllowance = parseFloat(supervisorAllowance).toFixed(2); // Format to 2 decimal places
+                                document.querySelector('.supervisorAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                // Optionally, hide the edit mode and show the view mode
+                                document.querySelector('.edit-mode-supervisor').classList.add('d-none');
+                                document.querySelector('.view-mode-supervisor').classList.remove('d-none');
+
+                                supervisorAllowanceAmount = supervisorAllowance;
+
+                                console.log(supervisorAllowanceAmount);
+
+                                // Update the total allowance display
+                                updateTotalAllowance();
+
+                            } else {
+                                console.error("Failed to update supervisor allowance rate.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating supervisor allowance:", error);
+                        });
+                });
+            });
+        </script>
+
+        <!-- Painter Allowance -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Edit button click event handler
+                document.getElementById('editPainterAllowanceBtn').addEventListener('click', function () {
+                    // Get the parent rows
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                });
+
+                // Cancel button click event handler
+                document.getElementById('cancelPainterEditBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle back to view mode (exit edit mode)
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+
+                // Edit painter button
+                document.getElementById('savePainterBtn').addEventListener('click', function () {
+                    var button = document.getElementById('savePainterBtn');
+                    var employeeId = button.getAttribute('data-employee-id');
+                    var painterAllowance = document.querySelector('input[name="painterAllowanceToEdit"]').value;
+
+                    // Prepare the data to send
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('painter_allowance', painterAllowance);
+
+                    // Use fetch to send the data to the server
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team leader allowance rate updated successfully.");
+
+
+                                // Update the display of the painter allowance in the modal
+                                const formattedAllowance = parseFloat(painterAllowance).toFixed(2); // Format to 2 decimal places
+                                document.querySelector('.painterAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                // Optionally, hide the edit mode and show the view mode
+                                document.querySelector('.edit-mode-painter').classList.add('d-none');
+                                document.querySelector('.view-mode-painter').classList.remove('d-none');
+
+                                painterAllowanceAmount = painterAllowance;
+
+                                console.log(painterAllowanceAmount);
+
+                                // Update the total allowance display
+                                updateTotalAllowance();
+
+                            } else {
+                                console.error("Failed to update painter allowance rate.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating painter allowance:", error);
+                        });
+                });
+            });
+        </script>
+
+        <!-- Machine Maintenance Allowance -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Edit button click event handler
+                document.getElementById('editMachineMaintenanceAllowanceBtn').addEventListener('click', function () {
+                    // Get the parent rows
+                    var row = this.closest('tr');
+
+                    // Toggle edit mode
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                });
+
+                // Cancel button click event handler
+                document.getElementById('cancelMachineMaintenanceEditBtn').addEventListener('click', function () {
+                    // Get the parent row
+                    var row = this.closest('tr');
+
+                    // Toggle back to view mode (exit edit mode)
+                    row.classList.toggle('editing');
+
+                    // Toggle visibility of view and edit elements
+                    row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
+                        elem.classList.toggle('d-none');
+                    });
+                })
+
+                // Edit machine maintenance button
+                document.getElementById('saveMachineMaintenanceBtn').addEventListener('click', function () {
+                    var button = document.getElementById('saveMachineMaintenanceBtn');
+                    var employeeId = button.getAttribute('data-employee-id');
+                    var machineMaintenanceAllowance = document.querySelector('input[name="machineMaintenanceAllowanceToEdit"]').value;
+
+                    // Prepare the data to send
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('machine_maintenance_allowance', machineMaintenanceAllowance);
+
+                    // Use fetch to send the data to the server
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team leader allowance rate updated successfully.");
+
+
+                                // Update the display of the machine maintenance allowance in the modal
+                                const formattedAllowance = parseFloat(machineMaintenanceAllowance).toFixed(2); // Format to 2 decimal places
+                                document.querySelector('.machineMaintenanceAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                // Optionally, hide the edit mode and show the view mode
+                                document.querySelector('.edit-mode-machine-maintenance').classList.add('d-none');
+                                document.querySelector('.view-mode-machine-maintenance').classList.remove('d-none');
+
+                                machineMaintenanceAllowanceAmount = machineMaintenanceAllowance;
+
+                                console.log(machineMaintenanceAllowanceAmount);
+
+                                // Update the total allowance display
+                                updateTotalAllowance();
+
+                            } else {
+                                console.error("Failed to update machine maintenance allowance rate.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating machine maintenance allowance:", error);
+                        });
+                });
+            });
+        </script>
+
 </body>
 
 </html>
