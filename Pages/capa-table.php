@@ -739,6 +739,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
             </div>
         </div>
     </div>
+
+    <?php require_once("../logout.php") ?>
+    
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <script>
@@ -816,6 +819,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
 
                 // Update the modal's content with the extracted data
                 var modalCapaId = myModalEl.querySelector('#capaIdToEdit');
+                var modalCapaId2 = myModalEl.querySelector('#capaIdToEdit2');
+                var modalCapaId3 = myModalEl.querySelector('#capaIdToEdit3');
                 var modalCapaDocumentId = myModalEl.querySelector('#capaDocumentIdToEdit');
                 var modalDateRaised = myModalEl.querySelector('#dateRaisedToEdit');
                 var modalCapaDescription = myModalEl.querySelector('#capaDescriptionToEdit');
@@ -836,6 +841,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
 
                 // Assign the extracted values to the modal input fields
                 modalCapaId.value = capaId;
+                modalCapaId2.value = capaId;
+                modalCapaId3.value = capaId;
                 modalCapaDocumentId.value = capaDocumentId;
                 modalDateRaised.value = dateRaised;
                 modalCapaDescription.value = capaDescription;
@@ -982,6 +989,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 }
             });
         });
+
         function resetColumnFilter() {
             // Get all checkboxes
             document.querySelectorAll('.form-check-input').forEach(checkbox => {

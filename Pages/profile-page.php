@@ -24,7 +24,7 @@ $get_payroll_type_stmt->bind_result($employee_payroll_type);
 $get_payroll_type_stmt->fetch();
 $get_payroll_type_stmt->close();
 
-// Get login employee id from SESSION
+// Get login employee id from SESSION 
 $loginEmployeeId = $_SESSION["employee_id"];
 
 if ($role === "general" && $employee_payroll_type === "salary" && $employeeId != $loginEmployeeId) {
@@ -637,7 +637,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             body {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-
             }
 
             .col-lg-6,
@@ -657,7 +656,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             h5 {
-                font-size: 0.8rem;
+                font-size: 0.8rem !important;
             }
 
             small {
@@ -666,10 +665,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             p {
                 font-size: 0.8rem;
-            }
-
-            .mt-print {
-                padding-top: 100px;
             }
 
             .print-name {
@@ -685,9 +680,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             .mt-print-contact {
-                padding-top: 5px !important;
+                margin-top: 0px !important;
+                padding-top: 0px !important;
                 padding-bottom: 0px !important;
-                margin-bottom: 0 !important;
+                margin-bottom: 0px !important;
             }
 
             .mt-print-bank {
@@ -697,31 +693,92 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 margin-bottom: 0 !important;
             }
 
+            .mt-print-personal-information {
+                padding-top: 0px !important;
+                margin-top: 0 !important;
+                padding-bottom: 0px !important;
+                margin-bottom: 0 !important;
+            }
+
+            .mt-emergency-contact {
+                margin-top: 30px !important;
+                padding-top: 0px !important;
+            }
+
+            .mt-print-employment-details {
+                padding-top: 60px !important;
+            }
+
             .address-print {
                 width: 100%;
             }
 
+            .machineCompetencyPrint {
+                display: block !important;
+                margin-top: 80px !important;
+                margin-left: 20px !important;
+                margin-right: 20px !important;
+                background-color: white !important;
+                /* Force white background */
+                color: black !important;
+                /* Set text color */
+            }
+
+            .card {
+                background-color: white !important;
+                /* Ensure card background prints */
+                border: none !important;
+            }
+
             #chartContainer,
             #chartContainer2 {
-                height: 150px !important;
-                /* Reduce the height for printing */
-                width: 100% !important;
+                height: 240px !important;
                 /* Ensure it takes the full width */
                 box-shadow: none;
             }
 
             /* You can also adjust margins, padding, and other styles for print */
             .payRaiseHistoryPrint {
-                margin: 0;
-                padding: 0px;
+                margin: 0 auto !important;
+                padding: 0px !important;
                 box-shadow: none;
+                width: 95% !important;
+                background-color: white;
+            }
+
+            .allowanceTablePrint {
+                display: table !important;
+                width: 95% !important;
+                page-break-before: always;
+                position: relative;
+                margin: auto;
+                /* Add this line */
+                top: 40px;
+                /* Adjust this value as needed */
+            }
+
+            .currentWagePrint {
+                display: table !important;
+            }
+
+            .currentSalaryPrint {
+                display: table !important;
+            }
+
+            .hideWageSalaryEdit {
+                display: none;
             }
 
             .card {
                 page-break-inside: avoid;
             }
 
+            .image-print-width {
+                margin-left: 30px !important;
+            }
+
             @page {
+                margin-top: 0;
                 margin-bottom: 0;
                 margin-left: 0;
                 margin-right: 0;
@@ -783,10 +840,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                 // Listen for the print event to adjust the chart size
                 window.addEventListener("beforeprint", function () {
-                    chart.options.height = chart.container.clientHeight * 0.5;  // Reduce height by 50% for printing
-                    chart2.options.height = chart2.container.clientHeight * 0.5;
-                    chart.options.width = chart.container.clientWidth * 0.5;
-                    chart2.options.width = chart2.container.clientWidth * 0.5;
+                    chart.options.height = 250; // Fixed height in pixels
+                    chart2.options.height = 250; // Fixed height in pixels
+                    chart.options.width = 650;  // Fixed width in pixels
+                    chart2.options.width = 650; // Fixed width in pixels
                     chart.render();
                     chart2.render();
                 });
@@ -886,7 +943,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $machineMaintenanceAllowanceCheck = $row['machine_maintenance_allowance_check'];
                     }
                     ?>
-                    <div class="row g-0">
+                    <div class="row g-0 image-print-width">
                         <div class="d-flex align-items-center justify-content-between flex-wrap">
                             <div class="d-flex align-items-center flex-wrap">
                                 <?php if (!empty($profileImage)) { ?>
@@ -954,9 +1011,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                             <div class="hide-print">
                                 <div class="d-flex flex-sm-row align-items-center mt-4 mt-sm-0">
-                                    <button class="btn btn-secondary me-2" onclick="window.print()">
+                                    <button class="btn btn-secondary me-2" onclick="toggleAndPrint()">
                                         <i class="fa-solid fa-print"></i>
                                     </button>
+
 
                                     <?php if ($role === "admin") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
@@ -968,7 +1026,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
-                    <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print">
+                    <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-personal-information">
                         <div class="p-3">
                             <p class="fw-bold signature-color">Personal Information</p>
                             <div class="row">
@@ -1079,7 +1137,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 </div>
                             </div>
 
-                            <p class="fw-bold signature-color mt-4">Emergency Contact</p>
+                            <p class="fw-bold signature-color mt-4 mt-emergency-contact">Emergency Contact</p>
                             <div class="row">
                                 <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                     <small>Emergency Contact Name</small>
@@ -1101,7 +1159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
-                    <div class="mt-print">
+                    <div class="mt-print-employment-details">
                         <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print">
                             <div class="p-3">
                                 <p class="fw-bold signature-color">Employment Details</p>
@@ -1218,7 +1276,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                 <div class="col-lg-4">
                     <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
-                        <div class="p-3">
+                        <div class="p-3 hide-print">
                             <p class="fw-bold signature-color">Files</p>
                             <!-- 00 - Employee Documents -->
                             <div class="d-flex justify-content-center">
@@ -1586,25 +1644,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             <?php } ?>
                         </div>
                     </div>
+
+
+                    <!-- ================= Pay Raise History Chart (Wage) ================= -->
+                    <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
                     <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
+                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-wage <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
                         <div class="p-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <p class="fw-bold signature-color mb-0 d-flex align-items-center">
                                     Pay Raise History
                                     <span class="badge rounded-pill signature-btn mx-1">Wage</span>
-                                    <span class="mx-2">|</span>
-                                    <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn"
+                                    <span class="mx-2 hideWageSalaryEdit">|</span>
+                                    <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn hideWageSalaryEdit"
                                         role="button"></i>
-                                    <small class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn">
+                                    <small
+                                        class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn hideWageSalaryEdit">
                                         <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
                                     </small>
                                 </p>
 
                                 <?php if ($role === "admin") { ?>
                                     <i id="payRaiseEditIconWage" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                        data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                        class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                        data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
                                 <?php } ?>
                             </div>
                             <div class="px-4 py-2">
@@ -1612,25 +1675,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
+
+                    <!-- ================= Pay Raise History Chart (Salary) ================= -->
+                    <?php $latestSalary = !empty($salariesData) ? $salariesData[array_key_last($salariesData)]['amount'] : 0; ?>
                     <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
+                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-salary <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
                         <div class="p-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <p class="fw-bold signature-color mb-0 d-flex align-items-center">
                                     Pay Raise History
                                     <span class="badge rounded-pill signature-btn mx-1">Salary</span>
-                                    <span class="mx-2">|</span>
-                                    <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn"
+                                    <span class="mx-2 hideWageSalaryEdit">|</span>
+                                    <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit"
                                         role="button"></i>
-                                    <small class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn">
+                                    <small
+                                        class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit">
                                         <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
                                     </small>
                                 </p>
 
                                 <?php if ($role === "admin") { ?>
                                     <i id="payRaiseEditIconSalary" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color" data-bs-toggle="modal"
-                                        data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                        class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                        data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
                                 <?php } ?>
                             </div>
                             <div class="px-4 py-2">
@@ -1638,6 +1705,123 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
+
+                    <?php if ($payrollType === "wage") { ?>
+                        <div class="container-fluid px-3 currentWagePrint" style="display:none">
+                            <table class="table table-hover table-bordered">
+                                <tr class="text-center">
+                                    <td class="bg-dark text-white fw-bold col-5">Current Wage</td>
+                                    <td class="bg-dark text-white fw-bold col-5">$<?php echo number_format($latestWage, 2); ?>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    <?php } else if ($payrollType === "salary") { ?>
+                            <div class="container-fluid px-3 currentSalaryPrint" style="display:none">
+                                <table class="table table-hover table-bordered">
+                                    <tr class="text-center">
+                                        <td class="bg-dark text-white fw-bold col-5">Current Salary</td>
+                                        <td class="bg-dark text-white fw-bold col-5">$<?php echo number_format($latestSalary, 2); ?>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                    <?php } ?>
+                    <!-- ======================================= A L L O W A N C E  T A B L E ( P R I N T) ======================================= -->
+                    <?php if ($payrollType === "wage") { ?>
+                        <div class="allowanceTablePrint" style="display: none">
+                            <table class="table table-hover table-bordered mb-0 pb-0">
+                                <p class="fw-bold signature-color">Allowances</p>
+                                <thead class="table-primary">
+                                    <tr class="text-center">
+                                        <th class="py-3">Allowances</th>
+                                        <th class="py-3">Amount</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <?php
+                                    // Initialize total variable
+                                    $totalAllowances = 0;
+
+                                    // Tool Allowance
+                                    $toolAmount = isset($toolAllowanceData[0]['amount']) && $toolAllowance == 1 ? $toolAllowanceData[0]['amount'] : 0;
+                                    $totalAllowances += $toolAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Tool</td>
+                                        <td class="col-5"><?php echo '$' . number_format($toolAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // First Aid Allowance
+                                    $firstAidAmount = isset($firstAidAllowanceData[0]['amount']) && $firstAidAllowance == 1 ? $firstAidAllowanceData[0]['amount'] : 0;
+                                    $totalAllowances += $firstAidAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">First Aid</td>
+                                        <td class="col-5"><?php echo '$' . number_format($firstAidAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Team Leader Allowance
+                                    $teamLeaderAmount = isset($teamLeaderAllowance) && $teamLeaderAllowanceCheck == 1 ? $teamLeaderAllowance : 0;
+                                    $totalAllowances += $teamLeaderAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Team Leader</td>
+                                        <td class="col-5"><?php echo '$' . number_format($teamLeaderAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Trainer Allowance
+                                    $trainerAmount = isset($trainerAllowance) && $trainerAllowanceCheck == 1 ? $trainerAllowance : 0;
+                                    $totalAllowances += $trainerAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Trainer</td>
+                                        <td class="col-5"><?php echo '$' . number_format($trainerAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Supervisor Allowance
+                                    $supervisorAmount = isset($supervisorAllowance) && $supervisorAllowanceCheck == 1 ? $supervisorAllowance : 0;
+                                    $totalAllowances += $supervisorAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Supervisor</td>
+                                        <td class="col-5"><?php echo '$' . number_format($supervisorAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Painter Allowance
+                                    $painterAmount = isset($painterAllowance) && $painterAllowanceCheck == 1 ? $painterAllowance : 0;
+                                    $totalAllowances += $painterAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Painter</td>
+                                        <td class="col-5"><?php echo '$' . number_format($painterAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Machine Maintenance Allowance
+                                    $machineMaintenanceAmount = isset($machineMaintenanceAllowance) && $machineMaintenanceAllowanceCheck == 1 ? $machineMaintenanceAllowance : 0;
+                                    $totalAllowances += $machineMaintenanceAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Machine Maintenance</td>
+                                        <td class="col-5"><?php echo '$' . number_format($machineMaintenanceAmount, 2); ?></td>
+                                    </tr>
+                                    <tr class="text-center">
+                                        <td class="bg-dark text-white fw-bold">Total Allowances</td>
+                                        <td class="bg-dark text-white fw-bold col-5">
+                                            <?php echo '$' . number_format($totalAllowances, 2); ?>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php } ?>
 
                     <div class="hide-print">
                         <?php if (isset($employmentType) && $employmentType == "Casual") {
@@ -1904,10 +2088,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 Smoking and Vaping Policy </a>
                         </div>
                     </div> -->
+
                         <div class="card bg-white border-0 rounded shadow-lg mt-4">
                             <div class="p-3">
                                 <p class="fw-bold signature-color">Access</p>
-
                                 <?php
                                 // Check if there are any results
                                 if ($employee_group_access_result->num_rows > 0) {
@@ -1955,7 +2139,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 ?>
                             </div>
                         </div>
+
+
                     </div>
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
+                        <div class="p-3">
+                            <p class="fw-bold signature-color">Machine Competency</p>
+                            <?php require_once("../open-machine-competency.php") ?>
+                        </div>
+                    </div>
+
                     <!-- ================== Pay History Modal (Wage) ================== -->
                     <div class="modal fade" id="wagePayRaiseHistoryModal" tabindex="-2"
                         aria-labelledby="payRaiseHistoryModalLabel" aria-hidden="true">
@@ -1970,7 +2163,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 <div class="modal-body p-5">
                                     <?php
                                     // Initialise total wage with the latest wage amount
-                                    $totalWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0;
+                                    $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0;
 
                                     ?>
                                     <div id="wageDetailTable">
@@ -2045,9 +2238,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <tr class="bg-dark">
                                                             <td colspan="2"
                                                                 class="align-middle text-end bg-dark text-white fw-bold">
-                                                                Hourly Wage </td>
+                                                                Current Wage </td>
                                                             <td class="align-middle text-center bg-dark text-white fw-bold">
-                                                                $<?php echo number_format($totalWage, 2); ?></td>
+                                                                $<?php echo number_format($latestWage, 2); ?></td>
                                                         </tr>
                                                     <?php } else { ?>
                                                         <tr class=" text-center align-middle">
@@ -3094,6 +3287,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+
+
+
+        <script>
+            // Reload the page when the modal is hidden
+            $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
+                location.reload(); // Refresh the page
+            });
+        </script>
+
+        <script>
+            // Function to detect and prevent the default print action
+            document.addEventListener('keydown', function (event) {
+                // Check if Ctrl+P or Cmd+P is pressed
+                if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+                    event.preventDefault(); // Prevent the print dialog
+                    alert("Command + P / Ctrl + P is not allowed in this page.");
+                }
+            });
+
+            function toggleAndPrint() {
+                if (document.getElementById('chartContainer').classList.contains('d-none')) {
+                    toggleWagePayRaiseHistory(); // Toggle the wagePayHistory first
+                }
+
+                if (document.getElementById('chartContainer2').classList.contains('d-none')) {
+                    toggleSalaryPayRaiseHistory(); // Toggle the wagePayHistory first
+                }
+
+                // Delay the print slightly to ensure the toggle is complete
+                setTimeout(function () {
+                    window.print(); // Show the print dialog after toggling
+                }, 300); // 300ms delay to ensure the toggle is visible before printing
+            }
+        </script>
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {

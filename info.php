@@ -22,6 +22,9 @@ if ($currentFile) {
         case '03':
             $directory = 'D:/FSMBEH-Data/03 - AC/01 - Documents PDF';
             break;
+        case '04':
+            $directory = 'D:/FSMBEH-Data/04 - PJ/01 - Documents PDF';
+            break;
         case '05':
             $directory = 'D:/FSMBEH-Data/05 - EN/01 - Documents PDF';
             break;
@@ -36,7 +39,7 @@ if ($currentFile) {
             break;
         case '09':
             $directory = 'D:/FSMBEH-Data/09 - HR/01 - Documents PDF';
-        break;
+            break;
         case '10':
             $directory = 'D:/FSMBEH-Data/10 - RD/01 - Documents PDF';
             break;

@@ -224,6 +224,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
 
 ?>
 
+<style>
+    .overlay {
+        position: fixed;
+        /* Cover the entire viewport */
+        top: 0;
+        left: 0;
+        width: 100%;
+        /* Full width */
+        height: 100%;
+        /* Full height */
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Semi-transparent background */
+        display: flex;
+        /* Center the content */
+        justify-content: center;
+        /* Center horizontally */
+        align-items: center;
+        /* Center vertically */
+        z-index: 9999;
+        /* Make sure it is on top of other content */
+        text-align: center;
+        /* Center text within the spinner */
+    }
+
+    #loadingSpinner {
+        color: white;
+        /* Change text color for visibility */
+    }
+
+    .loading-text {
+        color: white;
+        /* Set text color to white */
+        font-size: 1.5rem;
+        /* Increase font size for better visibility */
+        margin-top: 10px;
+        /* Add some space between the spinner and text */
+    }
+</style>
+
 <form method="POST" id="addCAPADocumentForm" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
         id="result">
@@ -376,8 +415,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         </div>
 
         <div class="d-flex justify-content-center mt-5 mb-4">
-            <button class="btn btn-dark" name="addCapaDocument" type="submit">Add Document</button>
+            <button class="btn btn-dark" name="addCapaDocument" type="submit" id="addCapaBtn">Add Document</button>
         </div>
+    </div>
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="d-none overlay">
+        <div class="spinner-border me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="loading-text mt-3 fw-bold">Please wait while the CAPA is being added and notifications are sent to the assigned employee and the CAPA owner...</p>
     </div>
 </form>
 
@@ -386,6 +432,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         const addCAPADocumentForm = document.getElementById("addCAPADocumentForm");
         const capaDocumentId = document.getElementById("capaDocumentId");
         const errorMessage = document.getElementById("result");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const addCapaBtn = document.getElementById("addCapaBtn");
 
         function checkDuplicateDocument() {
             return fetch('../AJAXphp/check-capa-duplicate.php', {
@@ -393,11 +441,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ capaDocumentId: capaDocumentId.value })
             })
-                .then(response => response.text()) // Get the plain text response
+                .then(response => response.text())
                 .then(data => {
-                    console.log('Server Response:', data); // Log response for debugging
-                    return data === '0'; // Return true id no duplicate (0), false if duplicate (1)
-                })
+                    console.log('Server Response:', data);
+                    return data === '0'; // Return true if no duplicate (0), false if duplicate (1)
+                });
         }
 
         function validateForm() {
@@ -407,7 +455,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         }
 
         addCAPADocumentForm.addEventListener('submit', function (event) {
-            // Prevent default form submission
             event.preventDefault();
             event.stopPropagation();
 
@@ -431,25 +478,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
 
             // Check validity of the form
             if (addCAPADocumentForm.checkValidity() === false) {
-                // Add was-validated class to show validation feedback
                 addCAPADocumentForm.classList.add('was-validated');
             } else {
                 // Perform your duplicate document validation if the form is valid
                 validateForm().then(isValid => {
                     if (isValid) {
-                        // Now submit the form
-                        addCAPADocumentForm.submit();
+                        // Show loading spinner
+                        loadingSpinner.classList.remove('d-none');
+                        addCapaBtn.disabled = true;
+
+                        // Perform AJAX submission instead of standard form submission
+                        fetch(addCAPADocumentForm.action, {
+                            method: 'POST',
+                            body: new FormData(addCAPADocumentForm)
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text(); // or response.json() depending on your server response
+                                } else {
+                                    throw new Error('Network response was not ok');
+                                }
+                            })
+                            .then(data => {
+                                loadingSpinner.classList.add('d-none'); // Hide loading spinner after submission
+                                // Handle the server response (you may want to show a success message or update the UI)
+                                location.reload();
+                            })
+                            .catch(error => {
+                                loadingSpinner.classList.add('d-none'); // Hide loading spinner on error
+                                errorMessage.classList.remove('d-none');
+                                errorMessage.innerHTML = "An error occurred: " + error.message; // Show error message
+                            });
                     } else {
-                        // Add was-validated class and show alert for duplicate ID
                         addCAPADocumentForm.classList.add('was-validated');
                         errorMessage.classList.remove('d-none');
                         errorMessage.innerHTML = "Duplicate document found.";
                     }
-                })
+                });
             }
-        })
-    })
+        });
+    });
+
 </script>
+
 
 <script>
     function updateCapaOwnerEmail() {

@@ -334,7 +334,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupFolderIdToRemove
                                             <td class="py-4 align-middle text-center">
                                                 <form method="POST">
                                                     <input type="hidden" name="groupFolderIdToRemove"
-                                                        value="<?= $group_row['group_folder_id'] ?>" />
+                                                        value="<?= $group_row['group_folder_id'] ?>" /> 
                                                     <button class="btn btn-danger btn-sm"> Remove Folder Access </button>
                                                 </form>
                                             </td>

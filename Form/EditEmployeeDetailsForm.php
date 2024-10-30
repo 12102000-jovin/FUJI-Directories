@@ -386,7 +386,7 @@
                                         <label for="email" class="fw-bold">Email</label>
                                         <input type="text" class="form-control" id="email" name="email"
                                             value="<?php echo (isset($email) && $email !== "" ? $email : "") ?>"
-                                            required>
+                                            >
                                         <div class="invalid-feedback">
                                             Please provide a valid email address
                                         </div>

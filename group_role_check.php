@@ -1,5 +1,11 @@
-<?php 
+<?php
 $user_id = $_SESSION['user_id'];
+$employeeId = $_GET["employee_id"] ?? null;
+$loginEmployeeId = $_SESSION["employee_id"];
+
+// echo "This is the user id: " . $user_id;
+// echo "This is the employee_id: ", $employeeId . "<br>";
+// echo "This is the login employee_id: " . $loginEmployeeId;
 
 // Prepare the SQL statement with joins
 $sql = "
@@ -35,16 +41,29 @@ if ($stmt->error) {
 $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
-    // Echo the role
+    // Get the user's role
     $role = $row['role'];
 
+    // Check the role and employee ID conditions
     if ($role === "restricted") {
+        // Check if employeeId is set and not null
+        if (!isset($employeeId) || $employeeId === null) {
+            // Redirect if employeeId is null
+            header("Location: http://$serverAddress/$projectName/access_restricted.php");
+            exit();
+        } else if ($employeeId !== $loginEmployeeId) {
+            // Redirect if employeeId does not match loginEmployeeId
+            header("Location: http://$serverAddress/$projectName/access_restricted.php");
+            exit();
+        }
+        // If employeeId matches loginEmployeeId, do nothing (pass)
+    } 
+} else {
+    $role = null;
+    if ($employeeId !== $loginEmployeeId) {
+        // Redirect if employeeId does not match loginEmployeeId
         header("Location: http://$serverAddress/$projectName/access_restricted.php");
         exit();
     }
-} else {
-    echo "No role found for this user in the specified folder.";
-    header("Location: http://$serverAddress/$projectName/access_restricted.php");
-    exit();
 }
 ?>
