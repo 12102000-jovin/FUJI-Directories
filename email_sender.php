@@ -18,8 +18,8 @@ class EmailSender
         $this->mail->isSMTP();
         $this->mail->Host = 'smtp.gmail.com';
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = 'jovinhampton@gmail.com'; // SMTP username
-        $this->mail->Password = 'qurp ubnx zcnl ldxl'; // SMTP password
+        $this->mail->Username = 'qa.smbeharwal@gmail.com'; // SMTP username
+        $this->mail->Password = 'chut cion lgel eumi'; // SMTP password
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mail->Port = 587;
     }
@@ -27,7 +27,7 @@ class EmailSender
     public function sendEmail($to, $toName, $subject, $body)
     {
         try {
-            $this->mail->setFrom('jovinhampton@gmail.com', 'Jovin Hampton');
+            $this->mail->setFrom('qa.smbeharwal@gmail.com', 'Quality Assurances');
             $this->mail->addAddress($to, $toName);
             $this->mail->Subject = $subject;
 

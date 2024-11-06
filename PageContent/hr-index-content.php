@@ -30,7 +30,7 @@ $department_counts = [];
 $total_employees_count = 0;
 
 foreach ($departments as $department_id => $department_name) {
-    $count_sql = "SELECT COUNT(*) AS department_count FROM employees WHERE department='$department_id'";
+    $count_sql = "SELECT COUNT(*) AS department_count FROM employees WHERE department='$department_id' AND is_active = 1";
     $count_result = $conn->query($count_sql);
 
     if ($count_result) {

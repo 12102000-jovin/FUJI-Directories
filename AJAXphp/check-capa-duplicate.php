@@ -10,9 +10,11 @@ if ($conn->connect_error) {
     exit();
 }
 
+
+
 // Get the CAPA Document ID and CAPA ID from the request
 $capaDocumentId = isset($_POST['capaDocumentId']) ? $_POST['capaDocumentId'] : '';
-$capaId = isset($_POST['capa_id']) ? $_POST['capa_id'] : '';
+$capaId = isset($_POST['capaId']) ? $_POST['capaId'] : '';
 
 // Prepare SQL statement to check for duplicates
 $check_document_sql = "SELECT COUNT(*) FROM capa WHERE capa_document_id = ? AND capa_id != ?";

@@ -10,21 +10,71 @@ require_once 'db_connect.php';
 require_once 'email_sender.php';
 
 // ========================= Get the employees ========================= 
-$employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
+$employees_sql = "SELECT employee_id, first_name, last_name, email, visa_expiry_date FROM employees";
 $employees_result = $conn->query($employees_sql);
 
 $employees = [];
 
 // Store employee data in an associative array with employee_id as the key
 while ($employee_row = $employees_result->fetch_assoc()) {
+    // Check if visa_expiry_date is not null or empty
+    $visa_expiry_date = !empty($employee_row['visa_expiry_date']) ? new DateTime($employee_row['visa_expiry_date']) : null;
+
     $employees[$employee_row['employee_id']] = [
         'first_name' => $employee_row['first_name'],
         'last_name' => $employee_row['last_name'],
-        'email' => $employee_row['email']
+        'email' => $employee_row['email'],
+        'visa_expiry_date' => $visa_expiry_date
     ];
 }
 
+// Display loaded employees
+echo "<h2>Loaded Employees:</h2>";
+foreach ($employees as $id => $employee) {
+    echo "ID: $id, Name: {$employee['first_name']} {$employee['last_name']}, Email: {$employee['email']}, Visa Expiry: " . ($employee['visa_expiry_date'] ? $employee['visa_expiry_date']->format('Y-m-d') : 'N/A') . "<br>";
+}
+
 $emailSender = new emailSender();
+
+// ========================= Check Visa Expiry Dates =========================
+$currentDate = new DateTime();
+foreach ($employees as $employee_id => $employee) {
+    $expiryDate = $employee['visa_expiry_date'];
+
+    // Check if $expiryDate is a valid DateTime object
+    if ($expiryDate instanceof DateTime) {
+        $interval = $currentDate->diff($expiryDate);
+        $daysLeft = $interval->format('%r%a');
+
+        echo "Days left for employee ID $employee_id: $daysLeft<br>";
+
+        // Check if the expiry date is within 30 days
+        if ($daysLeft < 30) {
+            echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
+            $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
+            $recipientName = 'Thi Tran';
+
+            // Send the email notification
+            $emailSender->sendEmail(
+                to: $recipientEmail,
+                toName: $recipientName,
+                subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                body: "
+                <p> Dear $recipientName,</p>
+
+                <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
+
+                <p>Please take the necessary actions.</p>
+                <p>This email is sent automatically. Please do not reply.</p>
+
+                <p>Best regards,<br></p>
+                "
+            );
+        }
+    }
+}
+
+// ========================= Check CAPA Expiry Dates ========================= 
 
 // Retrieve CAPA data
 $capa_sql = "SELECT * FROM capa";
@@ -288,3 +338,5 @@ if ($capa_result->num_rows > 0) {
         }
     }
 }
+
+

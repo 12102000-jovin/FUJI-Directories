@@ -365,7 +365,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssssssisssssssssiissi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance );
+        $stmt->bind_param("ssssssssssssssssssisssssssssiissi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -553,6 +553,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <label for="visaExpiryDate" class="fw-bold"><small>Visa Expiry Date</small></label>
                             <input type="date" max="9999-12-31" name="visaExpiryDate" class="form-control"
                                 id="visaExpiryDate">
+                            <p class="text-danger d-none" id="visaNote"></p>
                             <div class="invalid-feedback">
                                 Please provide a visa expiry date.
                             </div>
@@ -788,7 +789,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                                 </div>
                             </div>
 
-                            <input class="form-check-input" type="checkbox" id="toolAllowanceCheckbox" name="toolAllowance">
+                            <input class="form-check-input" type="checkbox" id="toolAllowanceCheckbox"
+                                name="toolAllowance">
                             <label for="form-check-label mb-0 pb-0">
                                 <small class="mt-2">Tool Allowance</small>
                             </label>
@@ -1175,6 +1177,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             const visaExpiryDate = document.getElementById("visaExpiryDate");
             const otherVisaStatusInput = document.querySelector("#otherVisaStatusInput");
             const otherVisaStatus = document.querySelector("#otherVisaStatus");
+            const bridgingVisaNote = document.querySelector("#bridgingVisaNote");
+            const dateHired = document.querySelector("#startDate");
+            const visaNote = document.querySelector("#visaNote");
 
             // Function to update visa expiry and other visa status input based on selected option
             function updateVisaFields() {
@@ -1188,6 +1193,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     otherVisaStatus.value = "";
                     otherVisaStatusInput.classList.add("d-none");
                     otherVisaStatusInput.classList.remove("d-block");
+                    visaNote.classList.add("d-none");
+                    visaNote.classList.remove("d-block");
+                } else if (selectedOptionText === "Bridging") {
+                    visaExpiryDate.required = true;
+                    visaNote.innerHTML = "<small><sup>*</sup><b>Bridging visa</b> need to be checked every six months.</small>";
+                    visaNote.classList.remove("d-none");
+                    visaNote.classList.add("d-block");
+                    visaExpiryDate.disabled = false;
+                    visaExpiryDate.required = true;
+                    otherVisaStatus.required = false;
+                    visaExpiryDate.value = "";
+                    otherVisaStatus.value = "";
+                    otherVisaStatusInput.classList.add("d-none");
+                    otherVisaStatusInput.classList.remove("d-block");
+                } else if (selectedOptionText === "Working Holiday") {
+                    visaExpiryDate.required = true;
+                    visaNote.innerHTML = "<small><sup>*</sup><b>Working Holiday visa</b> need to be checked every six months.</small>";
+                    visaNote.classList.remove("d-none");
+                    visaNote.classList.add("d-block");
+                    visaExpiryDate.disabled = false;
+                    visaExpiryDate.required = true;
+                    otherVisaStatus.required = false;
+                    visaExpiryDate.value = "";
+                    otherVisaStatus.value = "";
+                    otherVisaStatusInput.classList.add("d-none");
+                    otherVisaStatusInput.classList.remove("d-block");
                 } else if (selectedOptionText === "Other") {
                     visaExpiryDate.disabled = false;
                     visaExpiryDate.required = true;
@@ -1196,6 +1227,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     otherVisaStatus.value = "";
                     otherVisaStatusInput.classList.remove("d-none");
                     otherVisaStatusInput.classList.add("d-block");
+                    visaNote.classList.add("d-none");
+                    visaNote.classList.remove("d-block");
                 } else {
                     visaExpiryDate.disabled = false;
                     visaExpiryDate.required = true;
@@ -1204,15 +1237,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     otherVisaStatus.value = "";
                     otherVisaStatusInput.classList.add("d-none");
                     otherVisaStatusInput.classList.remove("d-block");
+                    visaNote.classList.add("d-none");
+                    visaNote.classList.remove("d-block");
                 }
             }
-
             // Attach change event listener
             visaStatusSelect.addEventListener('change', updateVisaFields);
 
             // Initialize fields based on the currently selected option
             updateVisaFields();
+
+            function updateVisaExpiryDateFields() {
+                const selectedOptionText = visaStatusSelect.options[visaStatusSelect.selectedIndex].text;
+                const hiredDate = new Date(dateHired.value)
+                if (selectedOptionText === "Bridging" || selectedOptionText === "Working Holiday") {
+                    // Add 6 months to the date
+                    hiredDate.setMonth(hiredDate.getMonth() + 6);
+
+                    // Format the date as "YYYY-MM-DD" to set it as input value
+                    const formattedExpiryDate = hiredDate.toISOString().split("T")[0];
+                    visaExpiryDate.value = formattedExpiryDate;
+                }
+            }
+
+            // Attach change event listener
+            dateHired.addEventListener('input', updateVisaExpiryDateFields);
+
+            // Initialize visa expiry fields based on the currently selected option
+            updateVisaExpiryDateFields();
         });
+
     </script>
 
     <script>

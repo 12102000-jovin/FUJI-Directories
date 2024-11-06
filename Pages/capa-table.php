@@ -10,6 +10,9 @@ require_once("../db_connect.php");
 require_once("../status_check.php");
 require_once "../email_sender.php";
 
+$folder_name = "Quality Assurances";
+require_once("../group_role_check.php");
+
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
@@ -199,17 +202,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                         </div>
                     </form>
                 </div>
-                <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
-                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
-                            class="fa-solid fa-plus"></i> Add CAPA Document</button>
-                </div>
+                <?php if ($role === "admin") { ?>
+                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
+                                class="fa-solid fa-plus"></i> Add CAPA Document</button>
+                    </div>
+                <?php } ?>
             </div>
         </div>
         <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <th></th>
+                        <?php if ($role === "admin") { ?>
+                            <th></th>
+                        <?php } ?>
                         <th class="py-4 align-middle text-center capaDocumentIdColumn" style="min-width:120px">
                             <a onclick="updateSort('capa_document_id', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
@@ -312,35 +319,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                     <?php if ($capa_result->num_rows > 0) { ?>
                         <?php while ($row = $capa_result->fetch_assoc()) { ?>
                             <tr>
-                                <td class="py-2 align-middle text-center ">
-                                    <div class="d-flex">
-                                        <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
-                                            data-capa-id="<?= $row['capa_id'] ?>"
-                                            data-capa-document-id="<?= $row['capa_document_id'] ?>"
-                                            data-date-raised="<?= $row['date_raised'] ?>"
-                                            data-capa-description="<?= $row['capa_description'] ?>"
-                                            data-severity="<?= $row['severity'] ?>" data-capa-status="<?= $row['status'] ?>"
-                                            data-raised-against="<?= $row['raised_against'] ?>"
-                                            data-capa-owner="<?= $row['capa_owner'] ?>"
-                                            data-assigned-to="<?= $row['assigned_to'] ?>"
-                                            data-main-source-type="<?= $row['main_source_type'] ?>"
-                                            data-product-or-service="<?= $row['product_or_service'] ?>"
-                                            data-main-fault-category="<?= $row['main_fault_category'] ?>"
-                                            data-target-close-date="<?= $row['target_close_date'] ?>"
-                                            data-date-closed="<?= $row['date_closed'] ?>"
-                                            data-key-takeaways="<?= $row['key_takeaways'] ?>"
-                                            data-additional-comments="<?= $row['additional_comments'] ?>"
-                                            data-capa-owner-email="<?= $row['capa_owner_email'] ?>"
-                                            data-assigned-to-email="<?= $row['assigned_to_email'] ?>">
-                                            <i class="fa-regular fa-pen-to-square"></i>
-                                        </button>
+                                <?php if ($role === "admin") { ?>
+                                    <td class="py-2 align-middle text-center ">
+                                        <div class="d-flex">
+                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
+                                                data-capa-id="<?= $row['capa_id'] ?>"
+                                                data-capa-document-id="<?= $row['capa_document_id'] ?>"
+                                                data-date-raised="<?= $row['date_raised'] ?>"
+                                                data-capa-description="<?= $row['capa_description'] ?>"
+                                                data-severity="<?= $row['severity'] ?>" data-capa-status="<?= $row['status'] ?>"
+                                                data-raised-against="<?= $row['raised_against'] ?>"
+                                                data-capa-owner="<?= $row['capa_owner'] ?>"
+                                                data-assigned-to="<?= $row['assigned_to'] ?>"
+                                                data-main-source-type="<?= $row['main_source_type'] ?>"
+                                                data-product-or-service="<?= $row['product_or_service'] ?>"
+                                                data-main-fault-category="<?= $row['main_fault_category'] ?>"
+                                                data-target-close-date="<?= $row['target_close_date'] ?>"
+                                                data-date-closed="<?= $row['date_closed'] ?>"
+                                                data-key-takeaways="<?= $row['key_takeaways'] ?>"
+                                                data-additional-comments="<?= $row['additional_comments'] ?>"
+                                                data-capa-owner-email="<?= $row['capa_owner_email'] ?>"
+                                                data-assigned-to-email="<?= $row['assigned_to_email'] ?>">
+                                                <i class="fa-regular fa-pen-to-square"></i>
+                                            </button>
 
-                                        <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
-                                            data-capa-id="<?= $row["capa_id"] ?>"
-                                            data-capa-document-id="<?= $row["capa_document_id"] ?>"><i
-                                                class="fa-regular fa-trash-can text-danger"></i></button>
-                                    </div>
-                                </td>
+                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
+                                                data-capa-id="<?= $row["capa_id"] ?>"
+                                                data-capa-document-id="<?= $row["capa_document_id"] ?>"><i
+                                                    class="fa-regular fa-trash-can text-danger"></i></button>
+                                        </div>
+                                    </td>
+                                <?php } ?>
                                 <td class="py-2 align-middle text-center capaDocumentIdColumn"><a
                                         href="../open-capa-folder.php?folder=<?= $row["capa_document_id"] ?>"
                                         target="_blank"><?= $row['capa_document_id'] ?></a></td>
@@ -432,7 +441,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     <?= isset($row['main_fault_category']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['main_fault_category']) ? $row['main_fault_category'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center targetCloseDateColumn"><?= $row['target_close_date'] ?></td>
+                                <td class="py-2 align-middle text-center targetCloseDateColumn"><?= $row['target_close_date'] ?>
+                                </td>
                                 <td class="py-2 align-middle text-center daysLeftColumn
                                 <?php
                                 // Define the class based on the value of daysLeft
@@ -448,14 +458,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     } else if ($daysLeft <= 30) {
                                         echo 'text-white bg-warning';
                                     }
-                                    // if ($daysLeft == 30) {
-                                    //     $emailSender->sendEmail(
-                                    //         'jovin.hampton@smbeharwal.fujielectric.com', // Recipient email
-                                    //         'Jovin Hampton', // Recipient name
-                                    //         'CAPA Reminder: 30 Days Left', // Subject
-                                    //         "Reminder: The CAPA document with ID {$row['capa_document_id']} has 30 days left before its target close date." // Body
-                                    //     );
-                                    // }
+
                                 }
                                 ?>
                                 " <?php if ($row['status'] === "Closed") {
@@ -481,7 +484,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 <td class="py-2 align-middle text-center keyTakeawayColumn" <?= isset($row['key_takeaways']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['key_takeaways']) ? $row['key_takeaways'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center additionalCommentColumn" <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-2 align-middle text-center additionalCommentColumn"
+                                    <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['additional_comments']) ? $row['additional_comments'] : "N/A" ?>
                                 </td>
                             </tr>
@@ -741,7 +745,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
     </div>
 
     <?php require_once("../logout.php") ?>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <script>

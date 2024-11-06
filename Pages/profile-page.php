@@ -659,6 +659,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 font-size: 0.8rem !important;
             }
 
+
             small {
                 font-size: 0.6rem;
             }
@@ -3291,9 +3292,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
 
         <script>
-            // Reload the page when the modal is hidden
+            // Reload the page when wagePayRaiseHistoryModal is hidden
             $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
                 location.reload(); // Refresh the page
+            });
+
+            // Override behavior to prevent wagePayRaiseHistoryModal from hiding when deleteConfirmationModal opens
+            $('#deleteConfirmationModal').on('show.bs.modal', function (e) {
+                // Temporarily detach the event that hides wagePayRaiseHistoryModal
+                $('#wagePayRaiseHistoryModal').off('hidden.bs.modal');
+            });
+
+            // Restore reload functionality when deleteConfirmationModal is closed
+            $('#deleteConfirmationModal').on('hidden.bs.modal', function () {
+                // Reattach the hidden event to wagePayRaiseHistoryModal with reload behavior
+                $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
+                    location.reload(); // Refresh the page
+                });
             });
         </script>
 

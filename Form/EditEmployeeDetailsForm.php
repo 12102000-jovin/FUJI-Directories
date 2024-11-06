@@ -57,8 +57,8 @@
             }
             $visaExpiryDate = $_POST['visaExpiryDate'];
             $address = $_POST['address'];
-            $email = $_POST['email'];
-            $personalEmail = $_POST['personalEmail'];
+            $email = !empty($_POST['email']) ? $_POST['email'] : null;
+            $personalEmail = !empty($_POST['personalEmail']) ? $_POST['personalEmail'] : null;
             $phoneNumber = $_POST['phoneNumber'];
             $vehicleNumberPlate = isset($_POST['vehicleNumberPlate']) && $_POST['vehicleNumberPlate'] !== "" ? $_POST['vehicleNumberPlate'] : null;
             $emergencyContactName = $_POST['emergencyContactName'];
@@ -358,17 +358,25 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-2 mt-3">
+                                    <div class="form-group col-md-4 mt-3">
                                         <label for="visaExpiryDate" class="fw-bold">Visa Expiry
                                             Date</label>
-                                        <input type="date" max="9999-12-31" name="visaExpiryDate" class="form-control"
-                                            id="visaExpiryDate"
-                                            value="<?php echo (isset($visaExpiryDate) ? $visaExpiryDate : "") ?>"
-                                            required>
-                                        <div class="invalid-feedback">
-                                            Please provide a visa expiry date.
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <input type="date" max="9999-12-31" name="visaExpiryDate" class="form-control"
+                                                    id="visaExpiryDate"
+                                                    value="<?php echo (isset($visaExpiryDate) ? $visaExpiryDate : "") ?>"
+                                                    required>
+                                                <div class="invalid-feedback">
+                                                    Please provide a visa expiry date.
+                                                </div>
+                                            </div>
+                                            <a href="#" class="ms-2 d-none text-white bg-danger rounded-5 ps-1 pe-2 text-decoration-none fw-bold tooltips" data-bs-toggle="tooltip" 
+                                                        data-bs-placement="right" title="Add 6 Months to expiry date" id="addVisaExpiryDateMonthBtn">
+                                                <i class="fas fa-plus"></i> <small>Add</small>
+                                            </a>
                                         </div>
-                                    </div>
+                                    </div>        
                                 </div>
                                 <div class="row">
                                     <p class="signature-color fw-bold mt-5"> Contacts</p>
@@ -926,10 +934,13 @@
         const visaExpiryDate = document.getElementById("visaExpiryDate");
         const otherVisaStatusInput = document.querySelector("#otherVisaStatusInput");
         const otherVisaStatus = document.querySelector("#otherVisaStatus");
+        const dateHired = document.querySelector("#startDate");
+        const addVisaExpiryDateMonthBtn = document.getElementById("addVisaExpiryDateMonthBtn"); 
 
         // Function to update visa expiry and other visa status input based on selected option
         function updateVisaFields() {
             const selectedOptionText = visaStatusSelect.options[visaStatusSelect.selectedIndex].text;
+           
 
             console.log(`Selected Option Text: ${selectedOptionText}`);
 
@@ -938,6 +949,15 @@
                 visaExpiryDate.required = false;
                 otherVisaStatus.required = false;
                 visaExpiryDate.value = "";
+                otherVisaStatus.value = "";
+                otherVisaStatusInput.classList.add("d-none");
+                otherVisaStatusInput.classList.remove("d-block");
+                addVisaExpiryDateMonthBtn.classList.add("d-none");
+                addVisaExpiryDateMonthBtn .classList.remove("d-block");
+            } else if (selectedOptionText === "Bridging" || selectedOptionText === "Working Holiday") {
+                visaExpiryDate.required = true;
+                addVisaExpiryDateMonthBtn.classList.remove("d-none");
+                addVisaExpiryDateMonthBtn.classList.add("d-block");
                 otherVisaStatus.value = "";
                 otherVisaStatusInput.classList.add("d-none");
                 otherVisaStatusInput.classList.remove("d-block");
@@ -957,6 +977,8 @@
                 otherVisaStatus.value = "";
                 otherVisaStatusInput.classList.add("d-none");
                 otherVisaStatusInput.classList.remove("d-block");
+                addVisaExpiryDateMonthBtn.classList.add("d-none");
+                addVisaExpiryDateMonthBtn .classList.remove("d-block");
             }
         }
 
@@ -965,6 +987,41 @@
 
         // Initialize fields based on the currently selected option
         updateVisaFields();
+
+        function updateVisaExpiryDateFields() {
+            const selectedOptionText = visaStatusSelect.options[visaStatusSelect.selectedIndex].text;
+
+            if (selectedOptionText === "Bridging" || selectedOptionText === "Working Holiday") { 
+                addVisaExpiryDateMonthBtn.classList.remove("d-none");
+                addVisaExpiryDateMonthBtn.classList.add("d-block");
+
+               addVisaExpiryDateMonthBtn.addEventListener("click", function() {
+                    const visaExpiryDateInput = document.getElementById("visaExpiryDate");
+
+                    // Create a Date object based on the current value of the input
+                    let visaExpiryDate = new Date(visaExpiryDateInput.value);
+                    
+                    if (!isNaN(visaExpiryDate)) { // Ensure it's a valid date
+                        // Add 6 months to the date
+                        visaExpiryDate.setMonth(visaExpiryDate.getMonth() + 6);
+
+                        // Format the date as "YYYY-MM-DD" to set it as input value
+                        const formattedExpiryDate = visaExpiryDate.toISOString().split("T")[0];
+                        visaExpiryDateInput.value = formattedExpiryDate;
+
+                        console.log(formattedExpiryDate);
+                    } else {
+                        console.error("Invalid date in visaExpiryDate input field");
+                    }
+                });
+
+            } else {
+                addVisaExpiryDateMonthBtn.classList.add("d-none");
+                addVisaExpiryDateMonthBtn.classList.remove("d-block");
+            }
+        }
+
+        updateVisaExpiryDateFields();
     });
 </script>
 

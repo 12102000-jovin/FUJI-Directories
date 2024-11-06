@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 $emailSender = new emailSender();
 
 // ========================= Get the employees ========================= 
-$employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
+$employees_sql = "SELECT e.employee_id, e.first_name, e.last_name, e.email, u.employee_id FROM employees e JOIN users u WHERE e.employee_id = u.employee_id";
 $employees_result = $conn->query($employees_sql);
 
 // Fetch all results into an array
@@ -45,7 +45,7 @@ if ($capa_document_id_result->num_rows > 0) {
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
     $capaDocumentId = $_POST["capaDocumentId"];
     $dateRaised = $_POST["dateRaised"];
-    $capaDescription = $_POST["capaDescription"];
+    $capaDescription = htmlspecialchars($_POST["capaDescription"], ENT_QUOTES, 'UTF-8');
     $severity = $_POST["severity"];
     $raisedAgainst = $_POST["raisedAgainst"];
     $capaOwner = $_POST["capaOwner"];
@@ -363,7 +363,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
             <select class="form-select" name="mainSourceType" aria-label="mainSourceType" required>
                 <option disabled selected hidden></option>
                 <option value="Customer Complaint">Customer Complaint</option>
-                <option value="Customer Compliment">Customer Compliment</option>
+                <option value="External Issue">External Issue</option>
                 <option value="Supplier Issue">Supplier Issue</option>
                 <option value="Internal Audit">Internal Audit</option>
                 <option value="External Audit">External Audit</option>

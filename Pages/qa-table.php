@@ -269,7 +269,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     </li>
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-index.php">Quality
-                        Assurances</a></li>
+                            Assurances</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">QA Table</li>
                 </ol>
             </nav>
@@ -331,6 +331,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 data-department-filter="Management">Management</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
                                                 data-department-filter="Operations Support">Operations Support</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Projects">Projects</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
                                                 data-department-filter="Quality Assurance">Quality Assurance</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"

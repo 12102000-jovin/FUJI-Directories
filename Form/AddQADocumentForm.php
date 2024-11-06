@@ -238,6 +238,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         <select class="form-select" aria-label="department" name="department" id="selectedDepartment">
             <option disabled selected hidden></option>
             <option value="Accounts">Accounts</option>
+            <option value="Company Compliance">Company Compliance</option>
             <option value="Electrical">Electrical</option>
             <option value="Engineering">Engineering</option>
             <option value="Estimating">Estimating</option>
@@ -266,6 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <option value="Internal Documents">Internal Documents</option>
             <option value="Job Description">Job Description</option>
             <option value="Manuals">Manuals</option>
+            <option value="Manufacturing Process">Manufacturing Process</option>
             <option value="Policy">Policy</option>
             <option value="Process/Procedure">Process/Procedure</option>
             <option value="Quiz">Quiz</option>
@@ -321,7 +323,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             "Research & Development": "10-RD",
             "Work, Health and Safety": "11-WH",
             "Quality Control": "12-QC",
-            "Special Projects": "15-SP"
+            "Special Projects": "15-SP",
+            "Company Compliance": "16-CC",
         };
 
         const typeMap = {
@@ -334,6 +337,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             "Quiz": "-QZ",
             "Policy": "-PO",
             "Manuals": "-MA",
+            "Manufacturing Process": "-MP",
             "Work Instruction": "-WI",
             "Additional Duties": "-AD",
             "Job Description": "-JD",

@@ -11,7 +11,7 @@ if (!$emailSender) {
 }
 
 // ========================= Get the employees ========================= 
-$employees_sql = "SELECT employee_id, first_name, last_name, email FROM employees";
+$employees_sql = "SELECT e.employee_id, e.first_name, e.last_name, e.email, u.employee_id FROM employees e JOIN users u WHERE e.employee_id = u.employee_id";
 $employees_result = $conn->query($employees_sql);
 
 // Fetch all results into an array
@@ -496,7 +496,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
         /* Center text within the spinner */
     }
 
-    #loadingSpinnerEdit, #loadingSpinnerClose, #loadingSpinnerReOpen {
+    #loadingSpinnerEdit,
+    #loadingSpinnerClose,
+    #loadingSpinnerReOpen {
         color: white;
         /* Change text color for visibility */
     }
@@ -525,7 +527,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                 <span></span>
                 <span>CAPA Status: <span id="capaStatus" class="text-decoration-underline text-uppercase"></span></span>
                 <div class="d-flex justify-content-end">
-                    <button type="button" class="btn btn-sm signature-btn text-white me-3" id="closeCAPAbtn">Close
+                    <button type="button" class="btn btn-sm signature-btn text-white me-3" id="closeCAPAbtn"
+                        name="closeCAPAbtn">Close
                         CAPA</button>
                 </div>
             </div>
@@ -599,7 +602,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                 <select class="form-select" name="mainSourceTypeToEdit" id="mainSourceTypeToEdit" required>
                     <option disabled selected hidden></option>
                     <option value="Customer Complaint">Customer Complaint</option>
-                    <option value="Customer Compliment">Customer Compliment</option>
+                    <option value="External Issue">External Issue</option>
                     <option value="Supplier Issue">Supplier Issue</option>
                     <option value="Internal Audit">Internal Audit</option>
                     <option value="External Audit">External Audit</option>
@@ -628,7 +631,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                 <div class="invalid-feedback">Please provide Target Close Date</div>
             </div>
             <div class="d-flex justify-content-center mt-5 mb-4">
-                <button class="btn btn-dark" name="editCapaDocument" type="submit">Edit Document</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-dark d-none ms-1" name="editCapaDocument" type="submit">Edit Document</button>
             </div>
         </div>
     </div>
@@ -716,6 +720,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
         // Variables for editing CAPA document
         const editCAPADocumentForm = document.getElementById("editCAPADocumentForm");
         const capaDocumentId = document.getElementById("capaDocumentIdToEdit");
+        const capaId = document.getElementById("capaIdToEdit");
         const errorMessage = document.getElementById("resultError");
         const loadingSpinnerEdit = document.getElementById("loadingSpinnerEdit");
         const loadingSpinnerClose = document.getElementById("loadingSpinnerClose");
@@ -725,10 +730,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
         // Function to check for duplicate documents
         function checkDuplicateDocument() {
             console.log("This", capaDocumentId.value);
+            console.log("This", capaId.value);
             return fetch('../AJAXphp/check-capa-duplicate.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ capaDocumentId: capaDocumentId.value })
+                body: new URLSearchParams({ capaDocumentId: capaDocumentId.value, capaId: capaId.value })
             })
                 .then(response => response.text())
                 .then(data => {
@@ -885,5 +891,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
         // Event listeners for email update functions
         document.getElementById('capaOwnerToEdit').addEventListener('change', updateCapaOwnerEmailToEdit);
         document.getElementById('assignedToToEdit').addEventListener('change', updateAssignedToEmailToEdit);
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get the form and the edit button
+        const form = document.getElementById("editCAPADocumentForm");
+        const editButton = form.querySelector("button[name='editCapaDocument']");
+        const closeCAPAbtn = form.querySelector("button[name='closeCAPAbtn']");
+        const modal = document.getElementById("editDocumentModal"); // Replace with your modal's actual ID
+
+        // Function to check if there is any input in the form
+        function checkInput() {
+            const inputs = form.querySelectorAll("input, textarea, select");
+            let isFilled = false;
+
+            // Check each input field for a value
+            inputs.forEach(input => {
+                if (input.value.trim() !== "") {
+                    isFilled = true; // At least one input is filled
+                }
+            });
+
+            // Show or hide the edit button based on input presence
+            if (isFilled) {
+                editButton.classList.remove("d-none"); // Show the button
+                closeCAPAbtn.classList.add("d-none");
+            } else {
+                editButton.classList.add("d-none"); // Hide the button
+                closeCAPAbtn.classList.remove("d-none");
+            }
+        }
+
+        // Add event listeners to all input fields
+        form.addEventListener("input", checkInput);
+
+        // Reset form and button visibility when the modal is closed
+        modal.addEventListener("hidden.bs.modal", function () {
+            form.reset(); // Reset all form fields to their default values
+            editButton.classList.add("d-none"); // Hide the edit button
+            closeCAPAbtn.classList.remove("d-none"); // Show the close button
+        });
+
+        // Optionally trigger checkInput on page load
+        checkInput();
     });
 </script>

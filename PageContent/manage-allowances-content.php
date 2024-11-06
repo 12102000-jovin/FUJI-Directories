@@ -110,7 +110,6 @@ if ($_SERVER["REQUEST_METHOD"] && isset($_POST["allowanceIdToEdit"])) {
                             <span class="input-group-text rounded-start">$</span>
                             <input type="number" min="0" step="any" class="form-control" name="allowanceAmountToEdit" id="allowanceAmountInput">
                         </div>
-                       
                     </div>
                     <div class="d-flex justify-content-end">
                         <button class="btn btn-dark mt-2">Edit Allowance Rate</button>
@@ -135,7 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] && isset($_POST["allowanceIdToEdit"])) {
             var allowanceAmountInput = document.getElementById('allowanceAmountInput');
 
             allowanceTypeSpan.innerHTML = allowanceType;
-            allowanceIdToEditInput.value =allowanceIdToEdit;
+            allowanceIdToEditInput.value = allowanceIdToEdit;
             allowanceAmountInput.value = allowanceAmount;
         })
     })
