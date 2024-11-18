@@ -3,10 +3,9 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
-
 
 // SQL Query to get the folders
 $folders_sql = "SELECT DISTINCT f.*
@@ -35,10 +34,9 @@ $folders_result = $conn->query($folders_sql);
             background-color: #3665b1;
             cursor: pointer;
         }
-        .card-body{
+        .card-body {
             background-color: #043f9d !important;
         }
-
         .sidebar {
             position: sticky;
             top: 0;
@@ -46,11 +44,9 @@ $folders_result = $conn->query($folders_sql);
             overflow-y: auto;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
         .sidebar::-webkit-scrollbar {
             display: none;
         }
-
         .sticky-top-menu {
             position: sticky;
             top: 0;
@@ -69,14 +65,19 @@ $folders_result = $conn->query($folders_sql);
                     $initials = '';
                     $words = explode(' ', $row['folder_name']); // Split the folder name into words
                     foreach ($words as $word) {
-                        $initials .= strtoupper(substr($word, 0, 1)); // Extract the first letter of each word
+                        if (strtolower($word) === 'project') {
+                            $initials = 'PJ'; // Set initials to 'PJ' if the word is 'project'
+                            break; // Exit the loop as initials are already set
+                        } else {
+                            $initials .= strtoupper(substr($word, 0, 1)); // Extract the first letter
+                        }
                     }
                     ?>
                     <div class="col">
                         <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/<?= strtolower($initials) ?>-index.php" class="text-decoration-none">
                             <div class="card text-white">
                                 <div class="card-body signature-bg-color text-center rounded py-4 position-relative"
-                                    role="button">                
+                                    role="button">
                                     <i class="fa-solid fa-folder fa-6x position-relative text-warning" style="z-index: 1;"></i>
                                     <h5 class="card-title position-absolute top-50 start-50 translate-middle pb-4 fw-bold"
                                         style="z-index: 2;"><?php echo $initials ?></h5>

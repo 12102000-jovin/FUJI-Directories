@@ -941,7 +941,6 @@
         function updateVisaFields() {
             const selectedOptionText = visaStatusSelect.options[visaStatusSelect.selectedIndex].text;
            
-
             console.log(`Selected Option Text: ${selectedOptionText}`);
 
             if (selectedOptionText === "Permanent Resident" || selectedOptionText === "Citizen") {
@@ -956,6 +955,7 @@
                 addVisaExpiryDateMonthBtn .classList.remove("d-block");
             } else if (selectedOptionText === "Bridging" || selectedOptionText === "Working Holiday") {
                 visaExpiryDate.required = true;
+                visaExpiryDate.disabled = false;
                 addVisaExpiryDateMonthBtn.classList.remove("d-none");
                 addVisaExpiryDateMonthBtn.classList.add("d-block");
                 otherVisaStatus.value = "";

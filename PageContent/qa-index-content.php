@@ -232,7 +232,7 @@ if ($open_capa_result->num_rows > 0) {
     $open_capa_count = 0;
 }
 
-// CAPA Status - Closed (add this if you need more statuses)
+// CAPA Status - Closed 
 $closed_capa_sql = "SELECT COUNT(*) AS closed_status FROM capa WHERE `status` = 'Closed'";
 $closed_capa_result = $conn->query($closed_capa_sql);
 if ($closed_capa_result->num_rows > 0) {
@@ -254,6 +254,68 @@ $capaDataPoints = [
 
 // Convert PHP array to JSON format for JavaScript
 $capaDataPointsJSON = json_encode($capaDataPoints);
+
+// =============================== WHS Table Chart ===============================
+
+// Initalize total count
+$total_whs_count = 0;
+
+// WHS Status - Open 
+$open_whs_sql = "SELECT COUNT(*) AS whs_open_status FROM whs WHERE `status` = 'Open'";
+$open_whs_result = $conn->query($open_whs_sql);
+if ($open_whs_result->num_rows > 0) {
+    $row = $open_whs_result->fetch_assoc();
+    $open_whs_count = $row['whs_open_status'];
+    $total_whs_count += $open_whs_count;
+} else {
+    $open_whs_count = 0;
+}
+
+// WHS Status - Closed
+$closed_whs_sql = "SELECT COUNT(*) AS whs_closed_status FROM whs WHERE `status` = 'Closed'";
+$closed_whs_result = $conn->query($closed_whs_sql);
+if ($closed_whs_result->num_rows > 0) {
+    $row = $closed_whs_result->fetch_assoc();
+    $closed_whs_count = $row['whs_closed_status'];
+    $total_whs_count += $closed_whs_count;
+} else {
+    $closed_whs_count = 0;
+}
+
+$open_whs_percentage = ($open_whs_count / $total_whs_count) * 100;
+$closed_whs_percentage = ($closed_whs_count / $total_whs_count) * 100;
+
+// Prepare data for CanvasJS
+$whsDataPoints = [
+    ['label' => 'Open', 'y' => $open_whs_percentage, 'color' => "#dc3547"],
+    ['label' => 'Closed', 'y' => $closed_whs_percentage, 'color' => "#27a745"]
+];
+
+// Convert PHP array to JSON format for JavaScript
+$whsDataPointsJSON = json_encode($whsDataPoints);
+
+// SQL query to count how many active employee for TRIR and LTIFR
+$count_active_employee_sql = "SELECT COUNT(*) AS active_employee_count FROM employees WHERE is_active = 1";
+$count_active_employee_result = $conn->query($count_active_employee_sql);
+$row = mysqli_fetch_assoc($count_active_employee_result);
+$active_employee_count = $row['active_employee_count'];
+
+$estimated_working_hours = $active_employee_count * 38 * 52 * 1.1;
+
+// SQL to count how many incident happened //ttm is trailing twelve months
+$count_incident_ttm_sql = "SELECT COUNT(*) AS ttm_incident_count FROM whs WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)";
+$count_incident_ttm_result = $conn->query($count_incident_ttm_sql);
+$row = mysqli_fetch_assoc($count_incident_ttm_result);
+$ttm_incident_count = $row['ttm_incident_count'];
+
+// SQL query to get the latest recorded WHS date
+$latest_whs_sql = "SELECT MAX(incident_date) AS latest_incident_date FROM whs WHERE recordable_incident = 1";
+$latest_whs_result = $conn->query($latest_whs_sql);
+
+if ($latest_whs_result->num_rows > 0) {
+    $row = $latest_whs_result->fetch_assoc();
+    $latest_incident_date = $row['latest_incident_date'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -387,11 +449,13 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                                     </tr>
                                     <tr>
                                         <td>Quality Assurances</td>
-                                        <td><?php echo isset($qa_quality_assurance_count) ? $qa_quality_assurance_count : '0'?></td>
+                                        <td><?php echo isset($qa_quality_assurance_count) ? $qa_quality_assurance_count : '0' ?>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>Quality Control</td>
-                                        <td><?php echo isset($qa_quality_control_count) ? $qa_quality_control_count : '0' ?></td>
+                                        <td><?php echo isset($qa_quality_control_count) ? $qa_quality_control_count : '0' ?>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>Research & Development</td>
@@ -400,7 +464,8 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                                     </tr>
                                     <tr>
                                         <td>Sheet Metal</td>
-                                        <td><?php echo isset($qa_sheet_metal_count) ? $qa_sheet_metal_count : '0' ?></td>
+                                        <td><?php echo isset($qa_sheet_metal_count) ? $qa_sheet_metal_count : '0' ?>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>Work, Health and Safety</td>
@@ -458,6 +523,85 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                     <div class="" id="chartContainer2" style="height: 370px;"></div>
                 </div>
             </div>
+            <div class="col-lg-4 mt-3 mt-lg-0">
+                <div class="bg-white p-2 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
+                            data-bs-target="#whsCollapse" aria-expanded="false" aria-controls="whsCollapse"
+                            style="cursor: pointer">
+                            WHS
+                        </h5>
+                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-table.php"
+                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a>
+                    </div>
+                    <div class="collapse" id="whsCollapse">
+                        <div class="card card-body border-0 pb-0 pt-2">
+                            <table class="table">
+                                <tbody class="pe-none">
+                                    <tr>
+                                        <td>Open WHS</td>
+                                        <td><?php echo isset($open_whs_count) ? $open_whs_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Closed WHS</td>
+                                        <td><?php echo isset($closed_whs_count) ? $closed_whs_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold" style="color:#043f9d">Total WHS Documents
+                                        </td>
+                                        <td class="fw-bold" style="color:#043f9d">
+                                            <?php echo $total_whs_count ?>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="signature-bg-color p-1 rounded-3">
+                                <div class="d-flex justify-content-between p-1 ps-2 text-white">
+                                    <tr> <?php
+                                    // Get the current month and year
+                                    $currentMonth = date('M Y'); // e.g., November 2024
+                                    $previousMonth = date('M Y', strtotime('-1 year')); // e.g., November 2023
+                                    ?>
+                                        <td>
+                                            <div class=" d-flex justify-content-between align-items-center">
+                                                <p class="fw-bold pb-0 mb-0"> TRIR
+                                                    (<?php echo $previousMonth . ' - ' . $currentMonth; ?>) :
+                                                </p>
+
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <h4 class="fw-bold pb-0 mb-0 bg-white signature-color rounded-3 p-1">
+                                                <?php echo number_format(($ttm_incident_count * 200000) / $estimated_working_hours, 2) ?>
+                                            </h4>
+                                        </td>
+                                    </tr>
+                                </div>
+                                <div
+                                    class="d-flex justify-content-between signature-bg-color rounded-3 p-1 ps-2 text-white">
+                                    <tr>
+                                        <td>
+                                            <div class=" d-flex justify-content-between align-items-center">
+                                                <p class="fw-bold pb-0 mb-0"> LTIFR
+                                                    (<?php echo $previousMonth . ' - ' . $currentMonth; ?>) :
+
+                                                </p>
+
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <h4 class="fw-bold pb-0 mb-0 bg-white signature-color rounded-3 p-1">
+                                                <?php echo number_format(($ttm_incident_count / $estimated_working_hours) * 1000000, 2) ?>
+                                            </h4>
+                                        </td>
+                                    </tr>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="" id="chartContainer3" style="height: 370px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -498,8 +642,26 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                 }]
             })
 
+            var chart3 = new CanvasJS.Chart("chartContainer3", {
+                theme: "light2",
+                animationEnabled: true,
+                title: {
+                    fontSize: 18,
+                },
+                data: [{
+                    type: "pie",
+                    indexLabel: "{label} - {y}%",
+                    yValueFormatString: "#,##0.0",
+                    showInLegend: true,
+                    legendText: "{label} : {y}",
+                    dataPoints: <?php echo json_encode($whsDataPoints, JSON_NUMERIC_CHECK); ?>,
+                    cornerRadius: 10,
+                }]
+            })
+
             chart.render();
             chart2.render();
+            chart3.render();
         }
     </script>
 

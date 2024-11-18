@@ -41,6 +41,9 @@ $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
                 case '03':
                     $directory = 'D:/FSMBEH-Data/03 - AC/00 - Documents/01 - WIP Documents';
                     break;
+                case '04':
+                    $directory = 'D:/FSMBEH-Data/04 - PJ/01 - Documents PDF';
+                    break;
                 case '05':
                     $directory = 'D:/FSMBEH-Data/05 - EN/00 - Documents/01 - WIP Documents';
                     break;
@@ -64,6 +67,12 @@ $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
                     break;
                 case '12':
                     $directory = 'D:/FSMBEH-Data/12 - QC/00 - Documents/01 - WIP Documents';
+                    break;
+                case '15':
+                    $directory = 'D:/FSMBEH-Data/15 - SP/01 - Documents PDF';
+                    break;
+                case '16':
+                    $directory = 'D:/FSMBEH-Data/16 - CC/01 - Documents PDF';
                     break;
                 default:
                     echo "<div class='alert alert-danger' role='alert'>

@@ -3,10 +3,10 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once ("./../db_connect.php");
-require_once ("./../status_check.php");
+require_once("./../db_connect.php");
+require_once("./../status_check.php");
 
-$config = include ('./../config.php');
+$config = include('./../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -76,7 +76,8 @@ $folders_result->free();
             <i class="btn fa-solid fa-xmark me-3 close-button d-none" id="close-menu" onclick="closeNav()"></i>
         </div>
         <ul class="list-unstyled mt-1" id="list-menu">
-            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php" class="text-decoration-none">
+            <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php"
+                class="text-decoration-none">
                 <li class="mx-2 py-2 p-1 rounded fw-bold text-dark d-flex justify-content-center align-items-center"
                     id="home-icon">
                     <i class="fa-solid fa-house"></i> <span class="folder-name d-none ms-1"> Home </span>
@@ -84,17 +85,29 @@ $folders_result->free();
             </a>
             <?php foreach ($folders as $row): ?>
                 <?php
-                $initials = implode('', array_map(fn($word) => strtoupper($word[0]), explode(' ', $row['folder_name'])));
+                $words = explode(' ', $row['folder_name']);
+                $initials = '';
+
+                foreach ($words as $word) {
+                    if (strtolower($word) === 'project') {
+                        $initials = 'PJ';
+                        break;
+                    } else {
+                        $initials .= strtoupper($word[0]);
+                    }
+                }
+
                 if (htmlspecialchars($row['folder_name']) == "Human Resources") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
-                } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances"){
+                } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Project") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/pj-index.php";
                 } else {
                     $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                 }
                 ?>
-                <a href="<?php echo $folder_page ?>"
-                    class="text-decoration-none text-dark">
+                <a href="<?php echo $folder_page ?>" class="text-decoration-none text-dark">
                     <li
                         class="mx-2 py-2 p-1 rounded fw-bold d-flex justify-content-center align-items-center side-menu-folder-list">
                         <span class="folder-initials"><?= htmlspecialchars($initials) ?></span>
@@ -147,15 +160,4 @@ $folders_result->free();
             folderListInitial[i].classList.remove("d-none");
         }
     }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const documentTitle = document.title;
-
-        const topMenuTitle = document.getElementById("top-menu-title");
-        topMenuTitle.textContent = documentTitle;
-
-        const topMenuTitleSmall = document.getElementById("top-menu-title-small");
-        topMenuTitleSmall.textContent = documentTitle;
-    })
-
 </script>

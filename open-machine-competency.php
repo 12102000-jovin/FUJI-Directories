@@ -19,7 +19,7 @@ if ($machine_competency_result) {
 
 // Assuming $employeeId is defined and valid
 // Set the base directory for the employee
-$baseDirectory = '../';
+$baseDirectory = '../';are
 
 // Check if the directory exists
 if (is_dir($baseDirectory)) {

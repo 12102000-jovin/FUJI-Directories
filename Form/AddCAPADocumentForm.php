@@ -323,7 +323,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                 }
                 ?>
             </select>
-            <input type="text" name="capaOwnerEmail" id="capaOwnerEmail" readonly>
+            <input type="hidden" name="capaOwnerEmail" id="capaOwnerEmail" readonly>
             <div class="invalid-feedback">
                 Please provide the CAPA owner.
             </div>
@@ -353,7 +353,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                 ?>
             </select>
             <!-- <input type="text" name="assignedTo" class="form-control" required> -->
-            <input type="text" name="assignedToEmail" id="assignedToEmail" readonly>
+            <input type="hiddens" name="assignedToEmail" id="assignedToEmail" readonly>
             <div class="invalid-feedback">
                 Please provide the assigned to.
             </div>

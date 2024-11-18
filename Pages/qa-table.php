@@ -319,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 data-department-filter="Accounts">Accounts</a>
                                         </li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Engineering">Engineering</a></li>
+                                                data-department-filter="Company Compliance">Company Compliance</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
                                                 data-department-filter="Estimating">Estimating</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"

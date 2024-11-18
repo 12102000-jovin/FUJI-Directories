@@ -159,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
             <label for="incidentDate" class="fw-bold"> Incident Date</label>
             <input type="date" name="incidentDate" class="form-control" id="incidentDate"
                 value="<?php echo date('Y-m-d') ?>">
-            <div class="invalid-feedback" required>
+            <div class="invalid-feedback">
                 Please provide the Incident Date
             </div>
         </div>
@@ -174,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
         </div>
         <div class="form-group col-md-4 mt-3">
             <label for="department" class="fw-bold">Department</label>
-            <select class="form-select" aria-label="department" name="department" id="selectedDepartment" required>
+            <select class="form-select" aria-label="department" name="department" id="department" required>
                 <option disabled selected hidden></option>
                 <option value="Electrical">Electrical</option>
                 <option value="Office">Office</option>
@@ -184,7 +184,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
             <div class="invalid-feedback">
                 Please provide the department.
             </div>
-
         </div>
 
         <div class="form-group col-md-4 mt-3">
@@ -341,21 +340,73 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById("addWHSDocumentForm");
+        const addWHSDocumentForm = document.getElementById("addWHSDocumentForm");
+        const whsDocumentId = document.getElementById("whsDocumentId");
+        const errorMessage = document.getElementById("result");
 
-        form.addEventListener('submit', function (event) {
-            // Prevent default form submission to handle validation first
+        function checkDuplicateDocument() {
+            return fetch('../AJAXphp/check-whs-duplicate.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ whsDocumentId: whsDocumentId.value })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Server Response:', data);
+                    return data === '0'; // Return true if no duplicate (0), false if duplicate (1)
+                });
+        }
+
+        function validateForm() {
+            return checkDuplicateDocument().then(isDuplicateValid => {
+                return isDuplicateValid;
+            });
+        }
+
+        addWHSDocumentForm.addEventListener('submit', function (event) {
             event.preventDefault();
             event.stopPropagation();
 
-            // Check if the form is valid
-            if (form.checkValidity()) {
-                // If the form is valid, submit the form
-                form.submit();
+            // Check validity of the form
+            if (addWHSDocumentForm.checkValidity() === false) {
+                addWHSDocumentForm.classList.add('was-validated');
             } else {
-                // If the form is invalid, add the 'was-validated' class
-                form.classList.add('was-validated');
+                // Perform your duplicate document validation if the form is valid
+                validateForm().then(isValid => {
+                    if (isValid) {
+                        // Show loading spinner
+                        // loadingSpinner.classList.remove('d-none');
+                        // addWhsBtn.disabled = true;
+
+                        // Perform AJAX submission instead of standard form submission
+                        fetch(addWHSDocumentForm.action, {
+                            method: 'POST',
+                            body: new FormData(addWHSDocumentForm)
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text(); // or response.json() depending on your server response
+                                } else {
+                                    throw new Error('Network response was not ok');
+                                }
+                            })
+                            .then(data => {
+                                // loadingSpinner.classList.add('d-none'); // Hide loading spinner after submission
+                                // Handle the server response (you may want to show a success message or update the UI)
+                                location.reload();
+                            })
+                            .catch(error => {
+                                // loadingSpinner.classList.add('d-none'); // Hide loading spinner on error
+                                errorMessage.classList.remove('d-none');
+                                errorMessage.innerHTML = "An error occurred: " + error.message; // Show error message
+                            });
+                    } else {
+                        addWHSDocumentForm.classList.add('was-validated');
+                        errorMessage.classList.remove('d-none');
+                        errorMessage.innerHTML = "Duplicate document found.";
+                    }
+                });
             }
-        });
+        })
     })
 </script>

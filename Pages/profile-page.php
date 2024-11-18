@@ -2140,8 +2140,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 ?>
                             </div>
                         </div>
-
-
                     </div>
                     <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
                         <div class="p-3">
@@ -3288,8 +3286,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
-
-
 
         <script>
             // Reload the page when wagePayRaiseHistoryModal is hidden

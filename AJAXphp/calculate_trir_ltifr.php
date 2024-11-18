@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ltifr']) && $_POST['l
         $ttm_incident_count = $row['ttm_incident_count'];
 
         // Calculate LTIFR
-        $ltifr = ($ttm_incident_count / $hoursWorked) * 1000000;
+        $ltifr = ($ttm_incident_count / $hoursWorked) * 1000000 ;
 
         // Close the database connection
         $stmt->close();

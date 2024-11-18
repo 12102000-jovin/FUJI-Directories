@@ -9,6 +9,10 @@ require_once 'vendor/autoload.php';
 require_once 'db_connect.php';
 require_once 'email_sender.php';
 
+// Set timezone to Sydney, Australia
+date_default_timezone_set('Australia/Sydney');
+
+
 // ========================= Get the employees ========================= 
 $employees_sql = "SELECT employee_id, first_name, last_name, email, visa_expiry_date FROM employees";
 $employees_result = $conn->query($employees_sql);
@@ -38,6 +42,8 @@ $emailSender = new emailSender();
 
 // ========================= Check Visa Expiry Dates =========================
 $currentDate = new DateTime();
+$currentWeek = date("N");
+
 foreach ($employees as $employee_id => $employee) {
     $expiryDate = $employee['visa_expiry_date'];
 
@@ -48,18 +54,19 @@ foreach ($employees as $employee_id => $employee) {
 
         echo "Days left for employee ID $employee_id: $daysLeft<br>";
 
-        // Check if the expiry date is within 30 days
-        if ($daysLeft < 30) {
-            echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
-            $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
-            $recipientName = 'Thi Tran';
+        if ($currentDate->format('N') == 1) {
+            // Check if the expiry date is within 30 days
+            if ($daysLeft > 0 && $daysLeft < 30) {
+                echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
+                $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
+                $recipientName = 'Thi Tran';
 
-            // Send the email notification
-            $emailSender->sendEmail(
-                to: $recipientEmail,
-                toName: $recipientName,
-                subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
-                body: "
+                // Send the email notification
+                $emailSender->sendEmail(
+                    to: $recipientEmail,
+                    toName: $recipientName,
+                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                    body: "
                 <p> Dear $recipientName,</p>
 
                 <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
@@ -69,7 +76,31 @@ foreach ($employees as $employee_id => $employee) {
 
                 <p>Best regards,<br></p>
                 "
-            );
+                );
+            } else if ($daysLeft < 0) {
+                echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
+                $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
+                $recipientName = 'Thi Tran';
+
+                $daysLeftAbs = abs($daysLeft);
+
+                // Send the email notification
+                $emailSender->sendEmail(
+                    to: $recipientEmail,
+                    toName: $recipientName,
+                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                    body: "
+                <p> Dear $recipientName,</p>
+
+                <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) has expired for <strong>$daysLeftAbs days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
+
+                <p>Please take the necessary actions.</p>
+                <p>This email is sent automatically. Please do not reply.</p>
+
+                <p>Best regards,<br></p>
+                "
+                );
+            }
         }
     }
 }
@@ -267,9 +298,6 @@ if ($capa_result->num_rows > 0) {
                     "
                 );
             } else if ($daysLeft < 0 && $status === "Open") {
-                // Set timezone to Sydney, Australia
-                date_default_timezone_set('Australia/Sydney');
-
                 // Get the current week of the year (Monday = 1, Sunday = 7)
                 $currentWeek = date("N");
 

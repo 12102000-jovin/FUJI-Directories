@@ -534,7 +534,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
             </div>
         </div>
         <div class="row">
-            <input type="text" name="capaIdToEdit" id="capaIdToEdit">
+            <input type="hidden" name="capaIdToEdit" id="capaIdToEdit">
             <div class="form-group col-md-6">
                 <label for="capaDocumentIdToEdit" class="fw-bold"> CAPA Document ID</label>
                 <input type="text" name="capaDocumentIdToEdit" class="form-control" id="capaDocumentIdToEdit" required>
@@ -579,7 +579,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <input type="text" name="capaOwnerEmail" id="capaOwnerEmailEdit" readonly>
+                <input type="hidden" name="capaOwnerEmail" id="capaOwnerEmailEdit" readonly>
                 <div class="invalid-feedback">Please provide CAPA Owner</div>
             </div>
             <div class="form-group col-md-6 mt-3">
@@ -594,7 +594,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <input type="text" name="assignedToEmailEdit" id="assignedToEmailEdit" readonly>
+                <input type="hidden" name="assignedToEmailEdit" id="assignedToEmailEdit" readonly>
                 <div class="invalid-feedback">Please provide the assigned to.</div>
             </div>
             <div class="form-group col-md-6 mt-3">
@@ -652,9 +652,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
     <button class="btn btn-sm signature-btn text-white" id="backFormBtn"><i
             class="fa-solid fa-arrow-left fa-xs me-1"></i>Back</button>
     <div class="row mt-3">
-        <input type="text" name="capaIdToEdit2" id="capaIdToEdit2">
+        <input type="hidden" name="capaIdToEdit2" id="capaIdToEdit2">
         <div class="form-group col-md-12">
-            <label for="dateClosed" class="fw-bold">Date Closed</label>
             <input type="date" name="dateClosed" class="form-control" id="dateClosed"
                 value="<?php echo date('Y-m-d'); ?>" required>
             <div class="invalid-feedback">Please provide Date Closed</div>
@@ -686,7 +685,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
     <button class="btn btn-secondary m-1 d-none" id="cancelOpenCapaBtn" data-bs-dismiss="modal"
         aria-label="Close">Cancel</button>
     <form method="POST" id="reOpenCapaForm">
-        <input type="text" name="capaIdToEdit3" id="capaIdToEdit3">
+        <input type="hidden" name="capaIdToEdit3" id="capaIdToEdit3">
         <button class="btn signature-btn d-none" id="openCapaBtn" name="openCapaBtn"> Re-Open
             CAPA</button>
     </form>
@@ -703,6 +702,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
 
 <!-- Additional Script for Form Switching -->
 <script>
+    document.getElementById('editDocumentModal').addEventListener('hidden.bs.modal', function () {
+        // Refresh the page when the modal is closed
+        location.reload();
+    })
+    
     document.getElementById('closeCAPAbtn').addEventListener('click', function () {
         document.getElementById('editCAPADocumentForm').classList.add('d-none');
         document.getElementById('closeCAPADocumentForm').classList.remove('d-none');
@@ -729,8 +733,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
 
         // Function to check for duplicate documents
         function checkDuplicateDocument() {
-            console.log("This", capaDocumentId.value);
-            console.log("This", capaId.value);
             return fetch('../AJAXphp/check-capa-duplicate.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -817,7 +819,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
 
                 // Show loading spinner
                 loadingSpinnerClose.classList.remove('d-none');
-                console.log('Loading spinner shown');
 
                 // Close the capa 
                 fetch(closeCAPADocumentForm.action, {
@@ -870,7 +871,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                     loadingSpinnerReOpen.classList.add('d-none'); // Hide spinner on error
                     console.error('Error:', error); // Log error
                 });
-
         })
 
         // Functions to update emails based on selection
@@ -900,7 +900,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
         const form = document.getElementById("editCAPADocumentForm");
         const editButton = form.querySelector("button[name='editCapaDocument']");
         const closeCAPAbtn = form.querySelector("button[name='closeCAPAbtn']");
-        const modal = document.getElementById("editDocumentModal"); // Replace with your modal's actual ID
+        const modal = document.getElementById("editDocumentModal");
 
         // Function to check if there is any input in the form
         function checkInput() {

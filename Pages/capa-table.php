@@ -290,7 +290,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                             </a>
                         </th>
                         <th class="py-4 align-middle text-center daysLeftColumn" style="min-width:200px">
-                            <a onclick="updateSort('days_left', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                            <a onclick="updateSort('target_close_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Days Left <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
