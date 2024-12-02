@@ -325,6 +325,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
                                                 data-department-filter="Electrical">Electrical</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"
+                                                data-department-filter="Engineering">Engineering</a></li>
+                                        <li><a class="dropdown-item dropdown-department-item" href="#"
                                                 data-department-filter="Human Resources">Human
                                                 Resources</a></li>
                                         <li><a class="dropdown-item dropdown-department-item" href="#"

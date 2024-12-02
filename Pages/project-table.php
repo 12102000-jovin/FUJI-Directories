@@ -10,7 +10,7 @@ require_once('../db_connect.php');
 require_once("../status_check.php");
 require_once("../email_sender.php");
 
-$folder_name = "Quality Assurances";
+$folder_name = "Project";
 require_once("../group_role_check.php");
 
 $config = include('../config.php');
@@ -106,7 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 <html lang="en">
 
 <head>
-    <title>Projects Table</title>
+    <title>Project Table</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -159,8 +159,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
                     <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php">Project Dashboard</a></li>
-                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Projects Table
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php">Project
+                            Dashboard</a></li>
+                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Project Table
                     </li>
                 </ol>
             </nav>
@@ -194,7 +195,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">
                                 Search
                             </button>
-                            <button class="btn btn-danger ms-2" onclick="clearURLParameters()">Clear</button>
+                            <button class="btn btn-danger ms-2">
+                                <a class="dropdown-item" href="#" onclick="clearURLParameters()">Clear</a>
+                            </button>
 
                             <!-- Dropdown Menu for Status -->
                             <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
@@ -220,10 +223,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         </div>
                     </form>
                 </div>
-                <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
-                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
-                            class="fa-solid fa-plus"></i> Add Project</button>
-                </div>
+                <?php if ($role === "admin") { ?>
+                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
+                                class="fa-solid fa-plus"></i> Add Project</button>
+                    </div>
+                <?php } ?>
             </div>
         </div>
 
@@ -231,7 +236,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <th></th>
+                        <?php if ($role === "admin") { ?>
+                            <th></th>
+                        <?php } ?>
                         <th class="py-4 align-middle text-center projectNoColumn" style="min-width:120px">
                             <a onclick="updateSort('project_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Project No <i
@@ -240,11 +247,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         <th class="py-4 align-middle text-center quoteNoColumn" style="min-width: 150px">
                             <a onclick="updateSort('quote_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Quote No <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></a>
-                        </th>
-                        <th class="py-4 align-middle text-center folderColumn" style="min-width: 120px">
-                            <a onclick="updateSort('project_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer"> Folder <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a>
                         </th>
                         <th class="py-4 align-middle text-center currentColumn" style="min-width: 120px">
@@ -294,7 +296,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         </th>
                         <th class="py-4 align-middle text-center customerAddressColumn" style="min-width: 200px;">
                             <a onclick="updateSort('customer_address', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer">Cutomer Address <i
+                                class="text-decoration-none text-white" style="cursor:pointer">Customer Address <i
                                     class="fa-solid fa-sort fa-ms ms-1"></i></a>
                         </th>
                     </tr>
@@ -330,33 +332,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             }
                             ?>
                             <tr>
-                                <td class="align-middle">
-                                    <div class="d-flex">
-                                        <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
-                                            data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
-                                            data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
-                                            data-current="<?= $row["current"] ?>"
-                                            data-project-name="<?= $row["project_name"] ?>"
-                                            data-project-type="<?= $row["project_type"] ?>"
-                                            data-customer="<?= $row["customer"] ?>" data-value="<?= $row["value"] ?>"
-                                            data-variation="<?= $row["variation"] ?>"
-                                            data-estimated-delivery-date="<?= $row["estimated_delivery_date"] ?>"
-                                            data-payment-terms="<?= $row["payment_terms"] ?>"
-                                            data-project-engineer="<?= $row["project_engineer"] ?>"
-                                            data-customer-address="<?= $row["customer_address"] ?>"><i
-                                                class="fa-regular fa-pen-to-square"></i></button>
-                                        <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
-                                            data-project-id="<?= $row["project_id"] ?>"
-                                            data-project-no="<?= $row["project_no"] ?>"
-                                            data-quote-no="<?= $row["quote_no"] ?>"><i
-                                                class="fa-regular fa-trash-can text-danger"></i></button>
-                                    </div>
-                                </td>
-                                <td class="py-3 align-middle text-center projectNoColumn"><?= $row["project_no"] ?></td>
+                                <?php if ($role === "admin") { ?>
+                                    <td class="align-middle">
+                                        <div class="d-flex">
+                                            <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
+                                                data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
+                                                data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
+                                                data-current="<?= $row["current"] ?>"
+                                                data-project-name="<?= $row["project_name"] ?>"
+                                                data-project-type="<?= $row["project_type"] ?>"
+                                                data-customer="<?= $row["customer"] ?>" data-value="<?= $row["value"] ?>"
+                                                data-variation="<?= $row["variation"] ?>"
+                                                data-estimated-delivery-date="<?= $row["estimated_delivery_date"] ?>"
+                                                data-payment-terms="<?= $row["payment_terms"] ?>"
+                                                data-project-engineer="<?= $row["project_engineer"] ?>"
+                                                data-customer-address="<?= $row["customer_address"] ?>"><i
+                                                    class="fa-regular fa-pen-to-square"></i></button>
+                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
+                                                data-project-id="<?= $row["project_id"] ?>"
+                                                data-project-no="<?= $row["project_no"] ?>"
+                                                data-quote-no="<?= $row["quote_no"] ?>"><i
+                                                    class="fa-regular fa-trash-can text-danger"></i></button>
+                                        </div>
+                                    </td>
+                                <?php } ?>
+                                <td class="py-3 align-middle text-center projectNoColumn"><a
+                                        href="../open-project-folder.php?folder=<?= $row["project_no"] ?>"
+                                        target="_blank"><?= $row['project_no'] ?></a></td>
                                 <td class="py-3 align-middle text-center quoteNoColumn" <?= isset($row["quote_no"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['quote_no']) ? $row['quote_no'] : "N/A" ?>
                                 </td>
-                                <td class="py-3 align-middle text-center folderColumn"><?= $row["project_no"] ?></td>
                                 <td class="py-3 align-middle text-center text-white 
                                     <?php if ($row["current"] === "Archived") {
                                         echo "bg-secondary";
@@ -377,7 +382,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     <?= "$" . number_format($row["value"], 2) ?>
                                 </td>
                                 <td class="py-3 align-middle text-center variationColumn" <?= isset($row["variation"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['variation']) ? $row['variation'] : "N/A" ?>
+                                    <?= isset($row['variation']) ? "$" . number_format($row["variation"], 2) : "N/A" ?>
                                 </td>
                                 <td class="py-3 align-middle text-center estimatedDeliveryDateColumn"
                                     <?= isset($row["estimated_delivery_date"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
@@ -550,11 +555,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             <input class="form-check-input" type="checkbox" id="quoteNoColumn"
                                 data-column="quoteNoColumn">
                             <label class="form-check-label" for="quoteNoColumn">Quote No</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="folderColumn"
-                                data-column="folderColumn">
-                            <label class="form-check-label" for="folderColumn">Folder</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="currentColumn"
@@ -842,7 +842,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 document.querySelectorAll('.form-check-input').forEach(checkbox => {
                     const columnClass = checkbox.getAttribute('data-column');
                     const columns = document.querySelectorAll(`.${columnClass}`);
-
+                    
                     // Retrieve stored visibility state and timestamp
                     const storedVisibility = localStorage.getItem(columnClass);
                     const storedTimestamp = localStorage.getItem(columnClass + '_timestamp');
@@ -866,8 +866,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     }
                 });
             });
-        </script>
-        <script>
+
             function resetColumnFilter() {
                 // Get all checkboxes
                 document.querySelectorAll('.form-check-input').forEach(checkbox => {

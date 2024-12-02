@@ -190,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
                     <option disabled selected hidden></option>
                     <?php
                     foreach ($employees as $row) {
-                        echo '<option value="' . htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . '" > ' .
+                        echo '<option value="' . htmlspecialchars($row['employee_id']) . '" > ' .
                             htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
                             htmlspecialchars($row['employee_id']) . ')</option>';
                     }
@@ -228,6 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
                     <option value="Office">Office</option>
                     <option value="Sheet Metal"> Sheet Metal</option>
                     <option value="Site"> Site</option>
+                    <option value="Store"> Store</option>
                 </select>
                 <div class="invalid-feedback">
                     Please provide the department

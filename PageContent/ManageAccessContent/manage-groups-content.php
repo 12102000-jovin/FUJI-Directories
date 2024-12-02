@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupIdToDelete'])) {
     }
 
     // Delete group from groups table
-    $delete_group_sql = "DELETE FROM groups WHERE group_id = ?";
+    $delete_group_sql = "DELETE FROM `groups` WHERE group_id = ?";
     $delete_group_stmt = $conn->prepare($delete_group_sql);
     $delete_group_stmt->bind_param("i", $groupIdToDelete);
 
@@ -144,7 +144,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
     $selectedUsers = $_POST['selectedUsersToNewGroup']; // Change the name here
 
     // SQL to add group to the groups table
-    $add_group_sql = "INSERT INTO groups (group_name) VALUES (?)";
+    $add_group_sql = "INSERT INTO `groups` (group_name) VALUES (?)";
     $add_group_result = $conn->prepare($add_group_sql);
     $add_group_result->bind_param("s", $newGroupName);
 

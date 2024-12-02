@@ -207,8 +207,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                     <?php endif; ?>
                                 </div>
                                 <h5 class="card-title fw-bold usernameCard">
-                                    <?= $row['first_name'] . ' ' . $row['last_name'] ?></h5>
-                                <h6 class="card-subtitle mb-3 text-muted userIdCard">Employee ID: <?= $row['employee_id'] ?></h6>
+                                    <?= $row['first_name'] . ' ' . $row['last_name'] ?>
+                                </h5>
+                                <h6 class="card-subtitle mb-3 text-muted userIdCard">Employee ID: <?= $row['employee_id'] ?>
+                                </h6>
                                 <div class="d-flex flex-wrap justify-content-center">
                                     <div class="col-md-4 mb-2 m-1">
                                         <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?= $row['employee_id'] ?>"
@@ -246,6 +248,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 <tr class="text-center">
                                     <th class="py-4 align-middle">Name</th>
                                     <th class="py-4 align-middle">Employee Id</th>
+                                    <th class="py-4 aling-middle">System Role</th>
                                     <th class="py-4 align-middle">Action</th>
                                 </tr>
                             </thead>
@@ -257,6 +260,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                             <?= $row['first_name'] . ' ' . $row['last_name'] ?>
                                         </td>
                                         <td class="py-4 align-middle userId"><?= $row['employee_id'] ?></td>
+                                        <td class="py-4 align-middle">
+                                            <?php if ($row['role'] === 'general'): ?>
+                                                <span class="badge rounded-pill  bg-success"><?= $row['role'] ?></span>
+                                            <?php elseif ($row['role'] === 'admin'): ?>
+                                                <span class="badge rounded-pill bg-danger"><?= $row['role'] ?></span>
+                                            <?php endif; ?>
+                                        </td>
+
                                         <td class="py-4 align-middle">
                                             <button class="btn text-warning" type="button" data-bs-toggle="modal"
                                                 data-bs-target="#showAccessModal<?= $row['employee_id'] ?>">

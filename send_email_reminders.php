@@ -9,10 +9,6 @@ require_once 'vendor/autoload.php';
 require_once 'db_connect.php';
 require_once 'email_sender.php';
 
-// Set timezone to Sydney, Australia
-date_default_timezone_set('Australia/Sydney');
-
-
 // ========================= Get the employees ========================= 
 $employees_sql = "SELECT employee_id, first_name, last_name, email, visa_expiry_date FROM employees";
 $employees_result = $conn->query($employees_sql);
@@ -40,67 +36,50 @@ foreach ($employees as $id => $employee) {
 
 $emailSender = new emailSender();
 
-// ========================= Check Visa Expiry Dates =========================
 $currentDate = new DateTime();
-$currentWeek = date("N");
+$emailSenderVisaExpiry = new emailSender();
+$emailSenderCapa = new emailSender();
+$emailSenderCapa2 = new emailSender();
+$emailSenderCapa3 = new emailSender();
+$emailSenderCapa4 = new emailSender();
+$emailSenderCapa5 = new emailSender();
+$emailSenderCapa6 = new emailSender();
+$emailSenderCapa7 = new emailSender();
+$emailSenderCapa8 = new emailSender();
+
+// ========================= Check Visa Expiry Dates =========================
 
 foreach ($employees as $employee_id => $employee) {
     $expiryDate = $employee['visa_expiry_date'];
 
-    // Check if $expiryDate is a valid DateTime object
+    // Check if expiryDate is a valida DateTime object
     if ($expiryDate instanceof DateTime) {
         $interval = $currentDate->diff($expiryDate);
         $daysLeft = $interval->format('%r%a');
 
         echo "Days left for employee ID $employee_id: $daysLeft<br>";
 
-        if ($currentDate->format('N') == 1) {
-            // Check if the expiry date is within 30 days
-            if ($daysLeft > 0 && $daysLeft < 30) {
-                echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
-                $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
-                $recipientName = 'Thi Tran';
+        // Check if the expiry date is within 30 days
+        if ($daysLeft < 30) {
+            $hrOfficerEmail = 'thi.tran@smbeharwal.fujielectric.com';
+            $recipientName = 'Thi Tran';
 
-                // Send the email notification
-                $emailSender->sendEmail(
-                    to: $recipientEmail,
-                    toName: $recipientName,
-                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
-                    body: "
-                <p> Dear $recipientName,</p>
+            // Send the email notification
+            $emailSenderVisaExpiry->sendEmail(
+                to: $hrOfficerEmail,
+                toName: $recipientName,
+                subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                body: "
+            <p> Dear $recipientName,</p>
 
-                <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
+            <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
 
-                <p>Please take the necessary actions.</p>
-                <p>This email is sent automatically. Please do not reply.</p>
+            <p>Please take the necessary actions.</p>
+            <p>This email is sent automatically. Please do not reply.</p>
 
-                <p>Best regards,<br></p>
-                "
-                );
-            } else if ($daysLeft < 0) {
-                echo "Preparing to send email to $recipientEmail for employee $employee_id.<br>";
-                $recipientEmail = 'jovin.hampton@smbeharwal.fujielectric.com';
-                $recipientName = 'Thi Tran';
-
-                $daysLeftAbs = abs($daysLeft);
-
-                // Send the email notification
-                $emailSender->sendEmail(
-                    to: $recipientEmail,
-                    toName: $recipientName,
-                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
-                    body: "
-                <p> Dear $recipientName,</p>
-
-                <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) has expired for <strong>$daysLeftAbs days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
-
-                <p>Please take the necessary actions.</p>
-                <p>This email is sent automatically. Please do not reply.</p>
-
-                <p>Best regards,<br></p>
-                "
-                );
-            }
+            <p>Best regards,<br></p>
+            "
+            );
         }
     }
 }
@@ -137,7 +116,7 @@ if ($capa_result->num_rows > 0) {
                 $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
 
                 // Send the email to the capa_owner
-                $emailSender->sendEmail(
+                $emailSenderCapa->sendEmail(
                     $ownerEmail, // Recipient email
                     $ownerName, // Recipient name
                     'CAPA Reminder: 30 Days Left', // Subject
@@ -161,7 +140,7 @@ if ($capa_result->num_rows > 0) {
                 );
 
                 // Send the email to the Assigned To
-                $emailSender->sendEmail(
+                $emailSenderCapa2->sendEmail(
                     $assignedToEmail, // Recipient email
                     $assignedName, // Recipient name
                     'CAPA Reminder: 30 Days Left', // Subject
@@ -191,7 +170,7 @@ if ($capa_result->num_rows > 0) {
                 $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
 
                 // Send the email to the capa_owner
-                $emailSender->sendEmail(
+                $emailSenderCapa3->sendEmail(
                     $ownerEmail, // Recipient email
                     $ownerName, // Recipient name
                     'CAPA Reminder: ' . $daysLeftReminder . ' Days Left', // Subject
@@ -215,7 +194,7 @@ if ($capa_result->num_rows > 0) {
                 );
 
                 // Send the email to the Assigned To
-                $emailSender->sendEmail(
+                $emailSenderCapa4->sendEmail(
                     $ownerEmail, // Recipient email
                     $ownerName, // Recipient name
                     'CAPA Reminder: ' . $daysLeftReminder . ' Days Left', // Subject
@@ -247,7 +226,7 @@ if ($capa_result->num_rows > 0) {
                 $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
 
                 // Send the email to the capa_owner
-                $emailSender->sendEmail(
+                $emailSenderCapa5->sendEmail(
                     $ownerEmail, // Recipient Email
                     $ownerName, // Recipient Name
                     'CAPA Overdue: Action Required Immediately', // Subject
@@ -273,7 +252,7 @@ if ($capa_result->num_rows > 0) {
                 );
 
                 // Send the email to the Assigned To
-                $emailSender->sendEmail(
+                $emailSenderCapa6->sendEmail(
                     $assignedToEmail, // Recipient Email
                     $assignedName, // Recipient Name
                     'CAPA Overdue: Action Required Immediately', // Subject
@@ -298,6 +277,9 @@ if ($capa_result->num_rows > 0) {
                     "
                 );
             } else if ($daysLeft < 0 && $status === "Open") {
+                // Set timezone to Sydney, Australia
+                date_default_timezone_set('Australia/Sydney');
+
                 // Get the current week of the year (Monday = 1, Sunday = 7)
                 $currentWeek = date("N");
 
@@ -312,7 +294,7 @@ if ($capa_result->num_rows > 0) {
                     $absDaysLeft = abs($daysLeft);
 
                     // Send the email to the capa_owner
-                    $emailSender->sendEmail(
+                    $emailSenderCapa7->sendEmail(
                         $ownerEmail, // Recipient email
                         $ownerName, // Recipient name
                         'CAPA Overdue: Action Required Immediately', // Subject
@@ -338,11 +320,13 @@ if ($capa_result->num_rows > 0) {
                     );
 
                     // Send the emeial to the assigned to
-                    $emailSender->sendEmail(
+                    $emailSenderCapa8->sendEmail(
                         $assignedToEmail, // Recipient email
                         $assignedName, // Recipient name
                         'CAPA Overdue: Action Required Immidiately', // Subject
                         "
+                        <p>Dear $assignedName,</p>
+
                         <p>This is a reminder that the CAPA document with ID <strong> {$row['capa_document_id']}</strong> is <strong>overdue</strong>. It was originally scheduled to be closed <strong>{$absDaysLeft} days ago</strong>.</p>
 
                         <p><strong>Details:</strong></p>

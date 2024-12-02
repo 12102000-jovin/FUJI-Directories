@@ -964,7 +964,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     const data = await response.text();
                     console.log('Server Response:', data);
 
-                    if (data.includes("Duplicate employee found.")) {
+                    if (data.includes("Duplicate employee ID found.")) {
                         duplicateErrorMessage.innerHTML = data;
                         duplicateErrorMessage.classList.remove("d-none");
                         duplicateErrorMessage.classList.add("d-block");

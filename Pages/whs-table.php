@@ -10,7 +10,7 @@ require_once("../db_connect.php");
 require_once("../status_check.php");
 require_once("../email_sender.php");
 
-$folder_name = "Quality Assurances";
+$folder_name = "Work Health and Safety";
 require_once("../group_role_check.php");
 
 $config = include('../config.php');
@@ -98,6 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
     }
     $delete_document_result->close();
 }
+
+
+
 ?>
 
 <!DOCTYPE html>
@@ -158,8 +161,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
                     <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-index.php">Quality
-                            Assurances</a></li>
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php">Work Health and Safety</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">WHS Table</li>
                 </ol>
             </nav>
@@ -290,7 +292,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                     <?php
                     date_default_timezone_set('Australia/Sydney');
                     $today = new DateTime();
-                    $incident_date = new DateTime($latest_incident_date);
+                    $incident_date = new DateTime($latest_incident_date ?? 'now');
                     $interval = $today->diff($incident_date);
                     $days_difference = $interval->days;
                     ?>
@@ -327,7 +329,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Involved Person Name <i class="fa-solid fa-sort fa-md ms-1"></i></a>
                         </th>
-                        <th class="py-4 align-middle text-center incidentDateColumn" style="min-width:100px">
+                        <th class="py-4 align-middle text-center incidentDateColumn" style="min-width:180px">
                             <a onclick="updateSort('incident_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Incident Date<i class="fa-solid fa-sort fa-md ms-1"></i></a>
@@ -392,13 +394,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 Director Notified <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
-                        <th class="py-4 align-middle text-center dateRaisedColumn" style="min-width: 100px">
+                        <th class="py-4 align-middle text-center dateRaisedColumn" style="min-width: 180px">
                             <a onclick="updateSort('date_raised', '<?= $order == 'asc' ? 'desc' : 'asc' ?>') "
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Date Raised <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
-                        <th class="py-4 align-middle text-center dateClosedColumn" style="min-width: 100px">
+                        <th class="py-4 align-middle text-center dateClosedColumn" style="min-width: 180px">
                             <a onclick="updateSort('date_closed', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Date Closed <i class="fa-solid fa-sort fa-md ms-1"></i>
@@ -446,14 +448,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                         </div>
                                     </td>
                                 <?php } ?>
+
+                                <?php
+                                $employee_id = $row['involved_person_name'];
+                                $employee_name = "N/A"; // Default value
+                        
+                                if (isset($employee_id)) {
+                                    // Prepare and execute the query to fetch employee name
+                                    $stmt = $conn->prepare("SELECT first_name, last_name FROM employees WHERE employee_id = ?");
+                                    $stmt->bind_param("i", $employee_id);
+                                    $stmt->execute();
+                                    $result = $stmt->get_result();
+
+                                    // Fetch the employee name
+                                    if ($rowEmployee = $result->fetch_assoc()) {
+                                        $employee_first_name = $rowEmployee['first_name'];
+                                        $employee_last_name = $rowEmployee['last_name'];
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name; // Combine first and last name
+                                    }
+                                }
+                                ?>
+
                                 <td class="py-2 align-middle text-center whsDocumentIdColumn"><a
-                                        href="../open-whs-folder.php?folder=<?= $row["whs_document_id"] ?>"
+                                        href="../open-folder.php?employee_id=<?= $row['involved_person_name'] ?>&folder=06 - Work Compensation"
                                         target="_blank"><?= $row['whs_document_id'] ?></a></td>
                                 <td class="py-2 align-middle text-center whsDescriptionColumn"><?= $row['description'] ?></td>
                                 <td class="py-2 align-middle text-center involvedPersonNameColumn">
-                                    <?= $row['involved_person_name'] ?>
+                                    <?= $employee_name ?>
                                 </td>
-                                <td class="py-2 align-middle text-center incidentDateColumn"><?= $row['incident_date'] ?></td>
+                                <td class="py-2 align-middle text-center incidentDateColumn"><?= date("j F Y", strtotime($row['incident_date'])) ?>
+</td>
                                 <td class="py-2 align-middle text-center departmentColumn"><?= $row['department'] ?></td>
                                 <td
                                     class="py-2 align-middle text-center statusColumn <?= $row['status'] == "Open" ? 'bg-danger text-white ' : 'bg-success text-white' ?>">
@@ -495,13 +519,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 <?= $row['director_notified'] == 1 ? 'bg-danger text-white' : '' ?>">
                                     <?= $row['director_notified'] == 1 ? 'Yes' : 'No' ?>
                                 </td>
-                                <td class="py-2 align-middle text-center dateRaisedColumn"><?= $row['date_raised'] ?></td>
+                                <td class="py-2 align-middle text-center dateRaisedColumn"><?= date("j F Y", strtotime($row['date_raised'])) ?></td>
                                 <td class="py-2 align-middle text-center dateClosedColumn" <?= isset($row['date_closed']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['date_closed']) ? $row['date_closed'] : "N/A" ?>
+                                    <?= isset($row['date_closed']) ? date("j F Y", strtotime($row['date_closed'])) : "N/A" ?>
                                 </td>
                                 <td class="py-2 align-middle text-center additionalCommentsColumn"
-                                    <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['additional_comments']) ? $row['additional_comments'] : "N/A" ?>
+                                    <?= isset($row['additional_comments']) && !empty(trim($row['additional_comments']))
+                                        ? ""
+                                        : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                    <?= isset($row['additional_comments']) && !empty(trim($row['additional_comments'])) ? $row['additional_comments'] : "N/A" ?>
                                 </td>
                             </tr>
                         <?php } ?>
@@ -933,7 +959,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                         <input class="form-check-input" type="checkbox" id="whsDocumentIdColumn"
                             data-column="whsDocumentIdColumn">
                         <label class="form-check-label" for="whsDocumentIdColumn">
-                            WHS Id
+                            WHS ID
                         </label>
                     </div>
                     <div class="form-check">

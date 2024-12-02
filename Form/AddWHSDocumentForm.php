@@ -138,7 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                 <option disabled selected hidden></option>
                 <?php
                 foreach ($employees as $row) {
-                    echo '<option value="' . htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . '" > ' .
+                    echo '<option value="' . htmlspecialchars($row['employee_id']) . '" >' .
                         htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
                         htmlspecialchars($row['employee_id']) . ')</option>';
                 }
@@ -180,6 +180,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                 <option value="Office">Office</option>
                 <option value="Sheet Metal"> Sheet Metal</option>
                 <option value="Site"> Site</option>
+                <option value="Store"> Store</option>
             </select>
             <div class="invalid-feedback">
                 Please provide the department.
@@ -391,9 +392,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                                 }
                             })
                             .then(data => {
-                                // loadingSpinner.classList.add('d-none'); // Hide loading spinner after submission
-                                // Handle the server response (you may want to show a success message or update the UI)
-                                location.reload();
+                                // Reload with query parameters preserved
+                                const currentUrl = new URL(window.location.href);
+                                const queryParams = currentUrl.search;
+                                window.location.href = currentUrl.pathname + queryParams;
                             })
                             .catch(error => {
                                 // loadingSpinner.classList.add('d-none'); // Hide loading spinner on error

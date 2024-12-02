@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
 
 <style>
     /* Style the dropdown menu to have a cleaner layout */
-    .dropdown-menu {
+    .engineer-dropdown-menu {
         max-height: 300px;
         overflow-y: auto;
         padding: 0;
@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
     }
 
     /* Style each list item for better alignment */
-    .dropdown-menu li {
+    .engineer-dropdown-menu li {
         display: flex;
         align-items: center;
         padding: 5px 10px;
@@ -98,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
     }
 
     /* Ensure the checkbox is compact and aligned next to the text */
-    .dropdown-menu input[type="checkbox"] {
+    .engineer-dropdown-menu input[type="checkbox"] {
         margin-right: 10px;
         /* Space between checkbox and label */
         width: 20px;
@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
     }
 
     /* Ensure labels take the remaining space and are aligned properly */
-    .dropdown-menu label {
+    .engineer-dropdown-menu label {
         flex: 1;
         white-space: nowrap;
         overflow: hidden;
@@ -189,7 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
             <label for="value" class="fw-bold">Value</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">$</span>
-                <input type="number" name="value" id="value" class="form-control rounded-end" required>
+                <input type="number" min="0" step="any" name="value" id="value" class="form-control rounded-end" required>
                 <div class="invalid-feedback">
                     Please provide the value.
                 </div>
@@ -199,7 +199,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
             <label for="variation" class="fw-bold">Variation</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">$</span>
-                <input type="number" name="variation" id="variation" class="form-control rounded-end">
+                <input type="number" min="0" step="any" name="variation" id="variation" class="form-control rounded-end">
             </div>
         </div>
 
@@ -223,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
                     data-bs-toggle="dropdown" aria-expanded="false">
                     Select Project Engineer(s)
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <ul class="engineer-dropdown-menu dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <!-- Search box to filter the dropdown list -->
                     <li>
                         <input type="text" id="searchEngineer" class="form-control" placeholder="Search engineers..." />

@@ -603,7 +603,7 @@ $folders_result->free();
                     type: "doughnut",
                     indexLabel: "{symbol} - {y}",
                     yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: true,
+                    showInLegend: false,
                     legendText: "{label} : {y}",
                     dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>,
                     cornerRadius: 10,
@@ -621,7 +621,7 @@ $folders_result->free();
                     type: "pie",
                     indexLabel: "{symbol} - {y}",
                     yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: true,
+                    showInLegend: false,
                     legendText: "{label} : {y}",
                     dataPoints: <?php echo json_encode($employmentTypeData, JSON_NUMERIC_CHECK); ?>,
                 }]

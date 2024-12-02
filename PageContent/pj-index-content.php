@@ -15,7 +15,7 @@ $config = include("../config.php");
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// =============================== Project Table Chart ===============================
+// =============================== Project Table Chart (S T A T U S)===============================
 $total_pj_document_count = 0;
 
 // PJ Archived
@@ -95,8 +95,8 @@ $colors = [
 ];
 
 if ($total_pj_document_count > 0) {
-    // Array of departments
-    $departments = [
+    // Array of status
+    $status = [
         "Archived" => $pj_archived_count,
         "By Others" => $pj_by_others_count,
         "In Progress" => $pj_in_progress_count,
@@ -104,12 +104,100 @@ if ($total_pj_document_count > 0) {
         "Cancelled" => $pj_cancelled_count
     ];
 
-    // Iterate through departments to create data points with colors
+    // Iterate through status to create data points with colors
     $index = 0; // To track colors
-    foreach ($departments as $label => $count) {
+    foreach ($status as $label => $count) {
         $percentage = ($count / $total_pj_document_count) * 100;
         $colorIndex = $index % count($colors); // Ensure we loop back to the start of the color array
-        $pjDataPoints[] = [
+        $pjStatusDataPoints[] = [
+            "label" => $label,
+            "y" => $percentage,
+            "color" => $colors[$colorIndex] // Assign color
+        ];
+        $index++;
+    }
+}
+
+// =============================== Project Table Chart (T Y P E) ===============================
+$total_pj_document_type_count = 0;
+
+$pj_local_sql = "SELECT COUNT(*) AS pj_local_count FROM projects WHERE project_type = 'Local'";
+$pj_local_result = $conn->query($pj_local_sql);
+if ($pj_local_result->num_rows > 0) {
+    $row = $pj_local_result->fetch_assoc();
+    $pj_local_count = $row['pj_local_count'];
+    $total_pj_document_type_count += $pj_local_count;
+} else {
+    $pj_local_count = 0;
+}
+
+$pj_sitework_sql = "SELECT COUNT(*) AS pj_sitework_count FROM projects WHERE project_type = 'Sitework'";
+$pj_sitework_result = $conn->query($pj_sitework_sql);
+if ($pj_sitework_result->num_rows > 0) {
+    $row = $pj_sitework_result->fetch_assoc();
+    $pj_sitework_count = $row['pj_sitework_count'];
+    $total_pj_document_type_count += $pj_sitework_count;
+} else {
+    $pj_sitework_count = 0;
+}
+
+$pj_commissioning_sql = "SELECT COUNT(*) AS pj_commissioning_count FROM projects WHERE project_type = 'IOR & Commissioning'";
+$pj_commissioning_result = $conn->query($pj_commissioning_sql);
+if ($pj_commissioning_result->num_rows > 0) {
+    $row = $pj_commissioning_result->fetch_assoc();
+    $pj_commissioning_count = $row['pj_commissioning_count'];
+    $total_pj_document_type_count += $pj_commissioning_count;
+} else {
+    $pj_commissioning_count = 0;
+}
+
+$pj_export_sql = "SELECT COUNT(*) AS pj_export_count FROM projects WHERE project_type = 'Export'";
+$pj_export_result = $conn->query($pj_export_sql);
+if ($pj_export_result->num_rows > 0) {
+    $row = $pj_export_result->fetch_assoc();
+    $pj_export_count = $row['pj_export_count'];
+    $total_pj_document_type_count += $pj_export_count;
+} else {
+    $pj_export_count = 0;
+}
+
+$pj_rd_sql = "SELECT COUNT(*) AS pj_rd_count FROM projects WHERE project_type = 'R&D'";
+$pj_rd_result = $conn->query($pj_rd_sql);
+if ($pj_rd_result->num_rows > 0) {
+    $row = $pj_rd_result->fetch_assoc();
+    $pj_rd_count = $row['pj_rd_count'];
+    $total_pj_document_type_count += $pj_rd_count;
+} else {
+    $pj_rd_count = 0;
+}
+
+$pj_service_sql = "SELECT COUNT(*) AS pj_service_count FROM projects WHERE project_type = 'Service'";
+$pj_service_result = $conn->query($pj_service_sql);
+if($pj_service_result->num_rows > 0) {
+    $row = $pj_service_result->fetch_assoc();
+    $pj_service_count = $row['pj_service_count'];
+    $total_pj_document_type_count += $pj_service_count;
+} else {
+    $pj_service_count;
+}
+
+if ($total_pj_document_type_count > 0) {
+    // Array of types
+    $types = [
+        "Local" => $pj_local_count,
+        "Sitework" => $pj_sitework_count,
+        "IOR & Commissioning" => $pj_commissioning_count,
+        "Export" => $pj_export_count,
+        "R&D" => $pj_rd_count,
+        "Service" => $pj_service_count,
+    ];
+
+    // Iterate through types to create data points with colors
+    $index = 0; // To track colors
+    foreach ($types as $label => $count) {
+        $percentage = ($count / $total_pj_document_count) * 100;
+        $colorIndex = $index % count($colors); // Ensure we loop back to the start of the color array
+        $pjTypeDataPoints[] = [
             "label" => $label,
             "y" => $percentage,
             "color" => $colors[$colorIndex] // Assign color
@@ -252,6 +340,61 @@ if ($total_pj_document_count > 0) {
                     <div class="" id="chartContainer" style="height: 370px;"></div>
                 </div>
             </div>
+            <div class="col-lg-4 mt-3 mt-lg-0">
+                <div class="bg-white p-2 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
+                            data-bs-target="#projectTypeCollapse" aria-expanded="false"
+                            aria-control="projectTypeCollapse" style="cursor:pointer">
+                            Type
+                        </h5>
+                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
+                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a>
+                    </div>
+                    <div class="collapse" id="projectTypeCollapse">
+                        <div class="card card-body border-0 pb-0 pt-2">
+                            <table class="table">
+                                <tbody class="pe-none">
+                                    <tr>
+                                        <td>Local</td>
+                                        <td><?php echo isset($pj_local_count) ? $pj_local_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sitework</td>
+                                        <td><?php echo isset($pj_sitework_count) ? $pj_sitework_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>IOR & Commissioning</td>
+                                        <td><?php echo isset($pj_commissioning_count) ? $pj_commissioning_count : '0' ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Export</td>
+                                        <td><?php echo isset($pj_export_count) ? $pj_export_count : '0' ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>R&D</td>
+                                        <td><?php echo isset($pj_rd_count) ? $pj_rd_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Service</td>
+                                        <td><?php echo isset($pj_service_count) ? $pj_service_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold" style="color:#043f9d">Total Projects
+                                        </td>
+                                        <td class="fw-bold" style="color:#043f9d">
+                                            <?php echo $total_pj_document_type_count ?>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="" id="chartContainer2" style="height: 370px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
@@ -271,13 +414,31 @@ if ($total_pj_document_count > 0) {
                 type: "doughnut",
                 indexLabel: "{label} - {y}%",
                 yValueFormatString: "#,##0.0",
-                showInLegend: true,
+                showInLegend: false,
                 legendText: "{label} : {y}",
-                dataPoints: <?php echo json_encode($pjDataPoints, JSON_NUMERIC_CHECK); ?>,
+                dataPoints: <?php echo json_encode($pjStatusDataPoints, JSON_NUMERIC_CHECK); ?>,
                 cornerRadius: 10,
             }]
         });
 
+        var chart2 = new CanvasJS.Chart("chartContainer2", {
+            theme: "light2",
+            animationEnabled: true,
+            title: {
+                fontSize: 18,
+            },
+            data: [{
+                type: "pie",
+                indexLabel: "{label} - {y}%",
+                yValueFormatString: "#,##0.0",
+                showInLegend: false,
+                legendText: "{label} : {y}",
+                dataPoints: <?php echo json_encode($pjTypeDataPoints, JSON_NUMERIC_CHECK); ?>,
+                cornerRadius: 10,
+            }]
+        })
+
         chart.render();
+        chart2.render();
     }
 </script>

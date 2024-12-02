@@ -1,32 +1,20 @@
-<?php  
-    $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
-    $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
-    $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
-    $payrollType = isset($_GET['payrollType']) ? strtolower(trim($_GET['payrollType'])) : '';
-
-// Set the base directory based on payroll type
-if ($payrollType === 'wage') {
-    $baseDirectory = 'D:\FSMBEH-Data\09 - HR\04 - Wage Staff\\';
-} elseif ($payrollType === 'salary') {
-    $baseDirectory = 'D:\FSMBEH-Data\09 - HR\05 - Salary Staff\\';
-} else {
-    echo "Invalid payroll type.";
-    exit;
-}
-
-?>
 <head>
-    <title> <?php echo $folder . " - " . $employeeId ?></title>
+    <title> <?php echo $folder ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="shortcut icon" type="image/x-icon" href="Images/FE-logo-icon.ico" />
-</head>
+</head>21
 
 <body class="background-color">
     <?php
-    // Build the directory path
-    $directory = $baseDirectory . $employeeId . "/" . $folder;
+    // $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
+    $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
+    $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
+
+    $baseDirectory = 'D:\FSMBEH-Data\04 - PJ\03 - Projects';
+    $directory = $baseDirectory . "/" . $folder;
+
     $currentDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
     $fullDirectory = $directory . ($currentDir ? '/' . $currentDir : '');
 
@@ -54,7 +42,7 @@ if ($payrollType === 'wage') {
 
         echo '<div class="mb-5">';
         echo '<form method="get" class="d-flex w-100">';
-        echo '<input type="hidden" name="employee_id" value="' . htmlspecialchars($employeeId) . '">';
+        // echo '<input type="hidden" name="employee_id" value="' . htmlspecialchars($employeeId) . '">';
         echo '<input type="hidden" name="folder" value="' . htmlspecialchars($folder) . '">';
         echo '<input type="hidden" name="dir" value="' . htmlspecialchars($currentDir) . '">';
         echo '<div class="input-group me-2">';
@@ -67,7 +55,7 @@ if ($payrollType === 'wage') {
 
         if ($currentDir && $currentDir !== ".") {
             // Link to go back to the parent directory
-            echo "<a href='?employee_id=" . urlencode($employeeId) . "&folder=" . urlencode($folder) . "&dir=" . urlencode(dirname($currentDir)) . "&payrollType=" . urlencode($payrollType) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
+            echo "<a href='?folder=" . urlencode($folder) . "&dir=" . urlencode(dirname($currentDir)) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
         }
         echo "</div>";
 
@@ -78,7 +66,7 @@ if ($payrollType === 'wage') {
                 continue;
 
             $itemPath = $fullDirectory . '/' . $item;
-            $itemUrl = '?employee_id=' . urlencode($employeeId) . '&folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery) . '&payrollType=' . urlencode($payrollType);
+            $itemUrl = '?folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery);
             $itemName = htmlspecialchars($item);
             $fileExtension = strtolower(pathinfo($item, PATHINFO_EXTENSION));
 
@@ -87,16 +75,20 @@ if ($payrollType === 'wage') {
                 echo "<i class='fa-solid fa-folder text-warning me-2'></i><span class='me-2'>" . $itemName . "</span>";
                 echo "</a>";
             } else {
-                $fileUrl = 'open-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&employee_id=" . urlencode($employeeId) . "&dir=" . urlencode($currentDir) . "&payrollType=" . urlencode($payrollType);
+                $fileUrl = 'open-project-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&dir=" . urlencode($currentDir);
 
+                // Determine the icon based on file extension
                 // Determine the icon based on file extension
                 if ($fileExtension === 'pdf') {
                     $icon = 'fa-file-pdf text-danger'; // PDF icon
                 } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
                     $icon = 'fa-file-word text-primary'; // Word icon
+                } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $icon = 'fa-file-image text-success'; // Image icon
                 } else {
                     $icon = 'fa-file'; // Default icon for other file types
                 }
+
 
                 echo "<a href='" . $fileUrl . "' class='list-group-item list-group-item-action d-flex align-items-center' target='_blank'>";
                 echo "<i class='fa-solid " . $icon . " me-2'></i><span class='me-2'>" . $itemName . "</span>";

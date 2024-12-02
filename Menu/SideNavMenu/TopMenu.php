@@ -119,13 +119,14 @@ $user_details_result->free();
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/AccessPages/manage-users.php">Manage
                             User Access</a>
                     </li>
+                    <li><a class="dropdown-item"
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-allowances.php">Manage
+                            Allowances</a></li>
                 <?php endif; ?>
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-credential.php?employee_id=<?php echo $employeeId ?>">Manage
                         Credential</a></li>
-                <li><a class="dropdown-item"
-                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/manage-allowances.php">Manage
-                        Allowances</a></li>
+
                 <?php if ($systemRole === "admin"): ?>
                     <li class="dropdown-submenu">
                         <a class="dropdown-item dropdown-toggle" href="#">Manage Form Options</a>
@@ -161,6 +162,8 @@ $user_details_result->free();
                         $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
                     } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                    } else if (htmlspecialchars($row['folder_name']) == "Work Health and Safety") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
                     } else {
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                     }

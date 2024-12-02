@@ -56,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] && isset($_POST["allowanceIdToEdit"])) {
             </ol>
         </nav>
         <?php if ($fixed_allowance_result->num_rows > 0): ?>
-            <div class="table-responsive rounded-3 shadow-lg bg-ligt m-0">
+            <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
                 <table class="table table-hover mb-0 pb-0">
                     <thead>
                         <tr class="text-center">

@@ -139,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
             <label for="valueToEdit" class="fw-bold">Value</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">$</span>
-                <input type="number" name="valueToEdit" id="valueToEdit" class="form-control rounded-end" required>
+                <input type="number" min="0" step="any" name="valueToEdit" id="valueToEdit" class="form-control rounded-end" required>
                 <div class="invalid-feedback">
                     Please provide the value.
                 </div>
@@ -149,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
             <label for="variationToEdit" class="fw-bold">Variation</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">$</span>
-                <input type="number" name="variationToEdit" id="variationToEdit" class="form-control rounded-end">
+                <input type="number" min="0" step="any" name="variationToEdit" id="variationToEdit" class="form-control rounded-end">
             </div>
         </div>
         <div class="form-group col-md-6 mt-3">
@@ -172,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
                     data-bs-toggle="dropdown" aria-expanded="false">
                     Select Project Engineer(s)
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <ul class="dropdown-menu engineer-dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <!-- Search box to filter the dropdown list -->
                     <li>
                         <input type="text" id="searchEngineerToEdit" class="form-control"

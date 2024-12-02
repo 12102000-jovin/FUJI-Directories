@@ -85,26 +85,38 @@ $folders_result->free();
             </a>
             <?php foreach ($folders as $row): ?>
                 <?php
-                $words = explode(' ', $row['folder_name']);
+                $folder_name = htmlspecialchars($row['folder_name']); // Sanitize once for reuse
+                $words = explode(' ', $folder_name);
                 $initials = '';
 
-                foreach ($words as $word) {
-                    if (strtolower($word) === 'project') {
-                        $initials = 'PJ';
-                        break;
-                    } else {
-                        $initials .= strtoupper($word[0]);
+                // Determine initials
+                if (strtolower($folder_name) === 'work health and safety') {
+                    $initials = 'WHS';
+                } elseif (strtolower($folder_name) === 'project') {
+                    $initials = 'PJ';
+                } else {
+                    foreach ($words as $word) {
+                        $initials .= strtoupper($word[0]); // Get first letter of each word
                     }
                 }
 
-                if (htmlspecialchars($row['folder_name']) == "Human Resources") {
-                    $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
-                } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
-                    $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
-                } else if (htmlspecialchars($row['folder_name']) == "Project") {
-                    $folder_page = "http://$serverAddress/$projectName/Pages/pj-index.php";
-                } else {
-                    $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
+                // Determine folder page
+                switch (strtolower($folder_name)) {
+                    case 'human resources':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
+                        break;
+                    case 'quality assurances':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                        break;
+                    case 'project':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/pj-index.php";
+                        break;
+                    case 'work health and safety':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
+                        break;
+                    default:
+                        $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
+                        break;
                 }
                 ?>
                 <a href="<?php echo $folder_page ?>" class="text-decoration-none text-dark">
@@ -112,11 +124,12 @@ $folders_result->free();
                         class="mx-2 py-2 p-1 rounded fw-bold d-flex justify-content-center align-items-center side-menu-folder-list">
                         <span class="folder-initials"><?= htmlspecialchars($initials) ?></span>
                         <div class="d-flex justify-content-start">
-                            <span class="folder-name d-none"><?= htmlspecialchars($row['folder_name']) ?></span>
+                            <span class="folder-name d-none"><?= $folder_name ?></span>
                         </div>
                     </li>
                 </a>
             <?php endforeach; ?>
+
         </ul>
     </div>
 </div>

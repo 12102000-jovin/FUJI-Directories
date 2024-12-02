@@ -6,8 +6,8 @@ error_reporting(E_ALL);
 require_once("../db_connect.php");
 require_once("../status_check.php");
 
-// $folder_name = "Quality Assurances";
-// require_once("../group_role_check.php");
+$folder_name = "Project";
+require_once("../group_role_check.php");
 
 ?>
 
@@ -22,7 +22,7 @@ require_once("../status_check.php");
 </style>
 
 <head>
-    <title>Projects</title>
+    <title>Project</title>
     <link rel="shortcut icon" type="image/x-icon" href="../Images/FE-logo-icon.ico" />
 </head>
 

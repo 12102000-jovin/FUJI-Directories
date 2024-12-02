@@ -1288,7 +1288,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 data-bs-placement="top" title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1301,7 +1301,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <div class="d-flex align-items-center">
                                             <div class="d-flex flex-column">
                                                 <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                         00 - Employee Documents
@@ -1311,13 +1311,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     <div class="d-flex align-items-center">
                                                         <small id="pay-review-directory-path" class="me-1 text-break"
                                                             style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
-                                                        <input type="hidden"
+                                                        <!-- <input type="hidden"
                                                             value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\00 - Employee Documents"; ?>">
                                                         <button id="copy-button" class="btn rounded btn-sm"
                                                             onclick="copyDirectoryPath(this)"><i
                                                                 class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                             <small class="text-primary">Copy</small>
-                                                        </button>
+                                                        </button> -->
                                                     </div>
                                                 </span>
                                             </div>
@@ -1336,7 +1336,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     data-bs-placement="top" title="Open Folder">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                                 class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1349,7 +1349,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             01 - Induction and Training Documents
@@ -1359,13 +1359,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="pay-review-directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
                                                             <button id="copy-button" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1383,7 +1383,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                     <form method="POST">
                                                         <input type="hidden" name="annualLeaveFolder">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                                 class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1396,7 +1396,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             02 - Resume, ID and Qualifications
@@ -1406,13 +1406,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="annual-leaves-directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
                                                             <button id="copy-button-annual" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1430,7 +1430,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                     <form method="POST">
                                                         <input type="hidden" name="annualLeaveFolder">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                                 class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1443,7 +1443,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             03 - Accounts
@@ -1453,13 +1453,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="annual-leaves-directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
                                                             <button id="copy-button-annual" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1475,7 +1475,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1487,7 +1487,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             04 - Leave
@@ -1497,13 +1497,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\04 - Leave" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1519,7 +1519,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1531,7 +1531,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             05 - HR Actions
@@ -1541,13 +1541,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\05 - HR Actions" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1563,7 +1563,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                             class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1575,7 +1575,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             06 - Work Compensation
@@ -1585,13 +1585,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\06 - Work Compensation" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>
@@ -1607,7 +1607,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 title="Open Folder">
                                                 <div class="d-flex align-items-center">
                                                     <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information"
+                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information&payrollType=<?= $payrollType ?>"
                                                         target="_blank"
                                                         class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                     </a>
@@ -1618,7 +1618,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             <div class="d-flex align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information"
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
                                                             07 - Exit Information
@@ -1628,13 +1628,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         <div class="d-flex align-items-center">
                                                             <small id="directory-path" class="me-1 text-break"
                                                                 style="color:#b1b1b1"><?php echo "$employeeId\07 - Exit Information" ?></small>
-                                                            <input type="hidden"
+                                                            <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\07 - Exit Information" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
-                                                            </button>
+                                                            </button> -->
                                                         </div>
                                                     </span>
                                                 </div>

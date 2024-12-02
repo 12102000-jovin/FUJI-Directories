@@ -24,6 +24,10 @@ if ($employee_list_result->num_rows > 0) {
 } else {
     $employees = [];
 }
+
+// Select all visa for filtering
+$visa_sql = "SELECT visa_name FROM visa";
+$visa_result = $conn->query($visa_sql);
 ?>
 
 <!DOCTYPE html>
@@ -67,13 +71,13 @@ if ($employee_list_result->num_rows > 0) {
         }
     </style>
     <script>
-        // Initial setup to show 8 employees on each tab
+        // Initial setup to show 32 employees on each tab
         document.addEventListener('DOMContentLoaded', function () {
-            initializeEmployees('all-employees', 8);
-            initializeEmployees('active-employees', 8);
-            initializeEmployees('inactive-employees', 8);
-            initializeEmployees('wages-employees', 8);
-            initializeEmployees('salary-employees', 8);
+            initializeEmployees('all-employees', 32);
+            initializeEmployees('active-employees', 32);
+            initializeEmployees('inactive-employees', 32);
+            initializeEmployees('wages-employees', 32);
+            initializeEmployees('salary-employees', 32);
         });
     </script>
 </head>
@@ -212,6 +216,24 @@ if ($employee_list_result->num_rows > 0) {
                             </div>
                         <?php } ?>
                     </div>
+                    <!-- <div class="dropdown">
+                        <button class="btn text-white dropdown-toggle ms-1" data-bs-toggle="dropdown"
+                            aria-expanded="false" style="background-color:#043f9d;">
+                            <small class="text-nowrap fw-bold">Filter by</small>
+                        </button>
+                        <ul id="filterDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <?php
+                            if ($visa_result->num_rows > 0) {
+                                // Loop through each department
+                                while ($row = $visa_result->fetch_assoc()) {
+                                    echo '<li><a class="dropdown-item" href="javascript:void(0);">' . htmlspecialchars($row['visa_name']) . '</a></li>';
+                                }
+                            } else {
+                                echo '<li><a class="dropdown-item" href="javascript:void(0);">No visa found</a></li>';
+                            }
+                            ?>
+                        </ul>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -315,7 +337,7 @@ if ($employee_list_result->num_rows > 0) {
                             style="border: 1px solid #043f9d; color: #043f9d;"
                             onmouseover="this.style.backgroundColor='#043f9d'; this.style.color='white';"
                             onmouseout="this.style.backgroundColor='transparent'; this.style.color='#043f9d';"
-                            onclick="loadMoreEmployees('all-employees', 8)">Load
+                            onclick="loadMoreEmployees('all-employees', 32)">Load
                             More</button>
                     </div>
                 </div>
@@ -418,7 +440,7 @@ if ($employee_list_result->num_rows > 0) {
                             style="border: 1px solid #043f9d; color: #043f9d;"
                             onmouseover="this.style.backgroundColor='#043f9d'; this.style.color='white';"
                             onmouseout="this.style.backgroundColor='transparent'; this.style.color='#043f9d';"
-                            onclick="loadMoreEmployees('active-employees', 8)">Load More</button>
+                            onclick="loadMoreEmployees('active-employees', 32)">Load More</button>
                     </div>
                 </div>
 
@@ -519,7 +541,7 @@ if ($employee_list_result->num_rows > 0) {
                             style="border: 1px solid #043f9d; color: #043f9d;"
                             onmouseover="this.style.backgroundColor='#043f9d'; this.style.color='white';"
                             onmouseout="this.style.backgroundColor='transparent'; this.style.color='#043f9d';"
-                            onclick="loadMoreEmployees('inactive-employees', 8)">
+                            onclick="loadMoreEmployees('inactive-employees', 32)">
                             Load More
                         </button>
                     </div>
@@ -594,10 +616,10 @@ if ($employee_list_result->num_rows > 0) {
                                                         data-bs-placement="top" title="Visa expired today"></i>';
                                                 } else if ($daysDifference < 30 && $daysDifference >= 0) {
                                                     echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
-                                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' .  dayText($daysDifference) . '"> </i>';
+                                                        data-bs-placement="top" title="Visa expired in ' . $daysDifference . ' ' . dayText($daysDifference) . '"> </i>';
                                                 } else if ($daysDifference < 0) {
                                                     echo '<i class="fa-shake fa-solid fa-circle-exclamation text-danger tooltips" data-bs-toggle="tooltip"
-                                                        data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' .  dayText($daysDifference) . ' ago"> </i>';
+                                                        data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"> </i>';
                                                 }
                                                 ?>
                                             <?php } ?>
@@ -621,7 +643,7 @@ if ($employee_list_result->num_rows > 0) {
                         style="border: 1px solid #043f9d; color: #043f9d;"
                         onmouseover="this.style.backgroundColor='#043f9d'; this.style.color='white';"
                         onmouseout="this.style.backgroundColor='transparent'; this.style.color='#043f9d';"
-                        onclick="loadMoreEmployees('wages-employees', 8)">Load More</button>
+                        onclick="loadMoreEmployees('wages-employees', 32)">Load More</button>
                 </div>
             </div>
 
@@ -670,7 +692,7 @@ if ($employee_list_result->num_rows > 0) {
 
                                                     // Create DateTime objects with the Sydney timezone 
                                                     $today = new DateTime();
-                                                    $today->setTime(0, 0 , 0);
+                                                    $today->setTime(0, 0, 0);
 
                                                     $expiryDate = new DateTime($visaExpiryDate);
                                                     $expiryDate->setTime(0, 0, 0);
@@ -718,7 +740,7 @@ if ($employee_list_result->num_rows > 0) {
                             style="border: 1px solid #043f9d; color: #043f9d;"
                             onmouseover="this.style.backgroundColor='#043f9d'; this.style.color='white';"
                             onmouseout="this.style.backgroundColor='transparent'; this.style.color='#043f9d';"
-                            onclick="loadMoreEmployees('salary-employees', 8)">Load More</button>
+                            onclick="loadMoreEmployees('salary-employees', 32)">Load More</button>
                     </div>
                 </div>
             <?php } ?>
@@ -803,13 +825,13 @@ if ($employee_list_result->num_rows > 0) {
                 }
             });
 
-            // Reinitialize to show only 8 employees when search term is cleared
+            // Reinitialize to show only 32 employees when search term is cleared
             if (searchTerm === '') {
-                initializeEmployees('all-employees', 8);
-                initializeEmployees('active-employees', 8);
-                initializeEmployees('inactive-employees', 8);
-                initializeEmployees('wages-employees', 8);
-                initializeEmployees('salary-employees', 8);
+                initializeEmployees('all-employees', 32);
+                initializeEmployees('active-employees', 32);
+                initializeEmployees('inactive-employees', 32);
+                initializeEmployees('wages-employees', 32);
+                initializeEmployees('salary-employees', 32);
             } else if (searchTerm !== '') {
                 hideLoadMoreButton();
             }
@@ -880,13 +902,13 @@ if ($employee_list_result->num_rows > 0) {
             });
         }
 
-        // Initial setup to show 8 employees on each tab
+        // Initial setup to show 32 employees on each tab
         document.addEventListener('DOMContentLoaded', function () {
-            initializeEmployees('all-employees', 8);
-            initializeEmployees('active-employees', 8);
-            initializeEmployees('inactive-employees', 8);
-            initializeEmployees('wages-employees', 8);
-            initializeEmployees('salary-employees', 8);
+            initializeEmployees('all-employees', 32);
+            initializeEmployees('active-employees', 32);
+            initializeEmployees('inactive-employees', 32);
+            initializeEmployees('wages-employees', 32);
+            initializeEmployees('salary-employees', 32);
         });
     </script>
 
