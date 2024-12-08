@@ -1,8 +1,8 @@
-<?php  
-    $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
-    $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
-    $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
-    $payrollType = isset($_GET['payrollType']) ? strtolower(trim($_GET['payrollType'])) : '';
+<?php
+$employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
+$folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
+$searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
+$payrollType = isset($_GET['payrollType']) ? strtolower(trim($_GET['payrollType'])) : '';
 
 // Set the base directory based on payroll type
 if ($payrollType === 'wage') {
@@ -15,6 +15,7 @@ if ($payrollType === 'wage') {
 }
 
 ?>
+
 <head>
     <title> <?php echo $folder . " - " . $employeeId ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -94,6 +95,8 @@ if ($payrollType === 'wage') {
                     $icon = 'fa-file-pdf text-danger'; // PDF icon
                 } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
                     $icon = 'fa-file-word text-primary'; // Word icon
+                } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $icon = 'fa-file-image text-success'; // Image icon
                 } else {
                     $icon = 'fa-file'; // Default icon for other file types
                 }

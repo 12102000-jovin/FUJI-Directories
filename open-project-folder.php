@@ -4,7 +4,7 @@
     <link rel="stylesheet" type="text/css" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="shortcut icon" type="image/x-icon" href="Images/FE-logo-icon.ico" />
-</head>21
+</head>
 
 <body class="background-color">
     <?php
@@ -77,7 +77,6 @@
             } else {
                 $fileUrl = 'open-project-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&dir=" . urlencode($currentDir);
 
-                // Determine the icon based on file extension
                 // Determine the icon based on file extension
                 if ($fileExtension === 'pdf') {
                     $icon = 'fa-file-pdf text-danger'; // PDF icon

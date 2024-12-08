@@ -53,13 +53,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
     $nearMiss = (int) $_POST["nearMiss"];
     $firstAidGiven = (int) $_POST["firstAidGiven"];
     $medicalTreatmentCase = (int) $_POST["medicalTreatmentCase"];
-    $recordableIncident = (int) $_POST["recordableIncident"];
     $restrictedWorkCase = (int) $_POST["restrictedWorkCase"];
     $lostTimeCase = (int) $_POST["lostTimeCase"];
     $fiveDaysOff = (int) $_POST["fiveDaysOff"];
     $insuranceNotified = (int) $_POST["insuranceNotified"];
     $directorNotified = (int) $_POST["directorNotified"];
     $additionalComments = $_POST["additionalComments"];
+    
+    $recordableIncident = 0; // Default value
+    
+    // Check if any of the specified variables equals to 1
+    if (
+        $medicalTreatmentCase === 1 ||
+        $restrictedWorkCase === 1 ||
+        $lostTimeCase === 1 ||
+        $fiveDaysOff === 1 ||
+        $insuranceNotified === 1 ||
+        $directorNotified === 1
+    ) {
+        $recordableIncident = 1;
+    }
 
     $add_whs_document_sql = "INSERT INTO whs (whs_document_id, involved_person_name, description, incident_date, department, status, near_miss, first_aid_given, medical_treatment_case, recordable_incident, restricted_work_case, lost_time_case, five_days_off, insurance_notified, director_notified, date_raised, date_closed, additional_comments) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -235,7 +248,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                 </div>
             </div>
         </div>
-        <div class="form-group col-md-4 mt-4">
+        <!-- <div class="form-group col-md-4 mt-4">
             <div class="d-flex flex-column">
                 <label for="recordableIncident" class="fw-bold" style="font-size: 11px">Automated Notifiable/Recordable
                     Incident</label>
@@ -251,7 +264,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                         style="color:#043f9d; border: 1px solid #043f9d">No</label>
                 </div>
             </div>
-        </div>
+        </div> -->
         <div class="form-group col-md-4 mt-3">
             <div class="d-flex flex-column">
                 <label for="restrictedWorkCase" class="fw-bold">Restricted Work Case</label>

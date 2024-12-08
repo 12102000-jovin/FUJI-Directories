@@ -432,11 +432,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 echo "<div class='table-responsive rounded-3 shadow-lg bg-light m-0'>";
                                 echo "<table class='table table-hover mb-0 pb-0'>";
                                 echo "<thead>
-                                    <tr> 
-                                        <th class='col-6 text-center'>Group</th>
-                                        <th class='col-6 text-center'>Role</th>
-                                    </tr>
-                                </thead>";
+        <tr> 
+            <th class='col-6 text-center'>Group</th>
+            <th class='col-6 text-center'>Role</th>
+        </tr>
+    </thead>";
                                 // Table body
                                 echo "<tbody>";
 
@@ -446,44 +446,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                         'admin' => 'text-bg-danger',
                                         'general' => 'text-bg-success',
                                         'restricted' => 'text-bg-dark',
+                                        'supervisor' => 'text-bg-primary',
+                                        default => 'text-bg-secondary',
                                     };
 
+                                    // Check if the group is "Human Resource" and add "Supervisor" option
+                                    $extraOption = ($group_data['name'] === 'Human Resources Group')
+                                        ? "<option value='supervisor'" . ($group_data['role'] === 'supervisor' ? " selected" : "") . ">Supervisor</option>"
+                                        : "";
+
                                     $editSelect = "<select class='form-select edit-mode d-none' aria-label='editRole' name='editRole' id='editRole' style='min-width: 120px;' required>
-                                    <option value='general'" . ($group_data['role'] === 'general' ? " selected" : "") . ">General</option>
-                                    <option value='admin'" . ($group_data['role'] === 'admin' ? " selected" : "") . ">Admin</option>
-                                    <option value='restricted'" . ($group_data['role'] === 'restricted' ? " selected" : "") . ">Restricted</option>
-                                </select>";
+            <option value='general'" . ($group_data['role'] === 'general' ? " selected" : "") . ">General</option>
+            <option value='admin'" . ($group_data['role'] === 'admin' ? " selected" : "") . ">Admin</option>
+            <option value='restricted'" . ($group_data['role'] === 'restricted' ? " selected" : "") . ">Restricted</option>
+            $extraOption
+        </select>";
+
                                     echo "<tr>
-                                    <td class='align-middle'>{$group_data['name']}</td>
-                                    <td class='align-middle text-center'>  
-                                    <form class='editGroupRoleForm'><div class='d-flex align-items-center justify-content-center'>
-                                        $editSelect
-                                        <span class='badge rounded-pill $badgeClass view-mode'>{$group_data['role']}</span>
-                                        <i class='fa-regular fa-pen-to-square ms-2 signature-color tooltips editRoleBtn view-mode'
-                                        data-bs-toggle='tooltip' data-bs-placement='top' title='Edit Role' role='button'></i>
-                                            <div class='edit-mode d-none d-flex justify-content-center'>
-                                                <input type='hidden' name='userGroupIdToEdit' value='{$userGroupIds[$group_id]}'>
-                                                <button type='submit' class='btn btn-sm px-2 btn-success mx-1'>
-                                                    <div class='d-flex justify-content-center'>
-                                                        <i role='button' class='fa-solid fa-check text-white m-1'></i> Edit
-                                                    </div>
-                                                </button>
-                                                <button type='button' class='btn btn-sm px-2 btn-danger mx-1 editRoleBtn'>
-                                                    <div class='d-flex justify-content-center'>
-                                                        <i role='button' class='fa-solid fa-xmark text-white m-1'></i> Cancel
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>     
-                                    </td>
-                                </tr>";
+            <td class='align-middle'>{$group_data['name']}</td>
+            <td class='align-middle text-center'>  
+                <form class='editGroupRoleForm'>
+                    <div class='d-flex align-items-center justify-content-center'>
+                        $editSelect
+                        <span class='badge rounded-pill $badgeClass view-mode'>{$group_data['role']}</span>
+                        <i class='fa-regular fa-pen-to-square ms-2 signature-color tooltips editRoleBtn view-mode'
+                        data-bs-toggle='tooltip' data-bs-placement='top' title='Edit Role' role='button'></i>
+                        <div class='edit-mode d-none d-flex justify-content-center'>
+                            <input type='hidden' name='userGroupIdToEdit' value='{$userGroupIds[$group_id]}'>
+                            <button type='submit' class='btn btn-sm px-2 btn-success mx-1'>
+                                <div class='d-flex justify-content-center'>
+                                    <i role='button' class='fa-solid fa-check text-white m-1'></i> Edit
+                                </div>
+                            </button>
+                            <button type='button' class='btn btn-sm px-2 btn-danger mx-1 editRoleBtn'>
+                                <div class='d-flex justify-content-center'>
+                                    <i role='button' class='fa-solid fa-xmark text-white m-1'></i> Cancel
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </form>     
+            </td>
+        </tr>";
                                 }
                                 echo "</tbody>";
                                 echo "</table>";
                                 echo "</div>";
                                 echo "</div>";
                             }
+
 
                             // Output unique folder names
                             if (!empty($unique_folders)) {
@@ -857,6 +868,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             switch (newRole) {
                                 case 'admin':
                                     badgeClass = 'text-bg-danger';
+                                    break;
+                                case 'supervisor':
+                                    badgeClass = 'text-bg-primary';
                                     break;
                                 case 'general':
                                     badgeClass = 'text-bg-success';

@@ -146,6 +146,12 @@ if ($employee_list_result->num_rows > 0) {
     $employees = [];
 }
 
+// Adjust the WHERE clause based on the role
+if ($role !== "admin") {
+    // Exclude payroll_type = 'salary' for non-admin roles
+    $whereClause .= " AND payroll_type != 'salary'";
+}
+
 // Get total count of filtered results (count query)
 $count_sql = "SELECT COUNT(*) as total FROM employees WHERE $whereClause";
 $count_stmt = $conn->prepare($count_sql);
@@ -156,6 +162,7 @@ $count_stmt->execute();
 $count_result = $count_stmt->get_result();
 $count_row = $count_result->fetch_assoc();
 $total_count = $count_row['total'];
+
 
 // Get all URL parameters from $_GET
 $urlParams = $_GET;
@@ -188,7 +195,7 @@ $urlParams = $_GET;
                     </ol>
                 </nav>
             </div>
-            <?php if ($role == "admin") { ?>
+            <?php if ($role == "admin" || $role == "supervisor") { ?>
                 <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
                     <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
                         <i class="fa-solid fa-user-plus"></i> Add Employee
@@ -474,9 +481,9 @@ $urlParams = $_GET;
                 }
                 ?>
                 <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                    <div class="card positive-relative" style="min-height:140px">
+                    <div class="card <?php if ($isActive == 0) { echo "bg-danger bg-opacity-25"; } ?>  positive-relative" style="min-height:140px">
                         <?php if ($isActive == 0) { ?>
-                            <span class="badge rounded-pill bg-danger position-absolute bottom-0 end-0 m-2">Inactive</span>
+                            <span class="badge rounded-pill bg-danger position-absolute bottom-0 end-0 m-2"><small>Inactive</small></span>
                         <?php } ?>
                         <div class="card-body d-flex justify-content-between align-items-center position-relative">
                             <div class="col-4 d-flex justify-content-center">

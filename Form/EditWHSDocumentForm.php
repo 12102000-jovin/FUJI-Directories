@@ -28,13 +28,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit"])) {
     $nearMiss = $_POST["nearMissToEdit"];
     $firstAidGiven = $_POST["firstAidGivenToEdit"];
     $medicalTreatmentCase = $_POST["medicalTreatmentCaseToEdit"];
-    $recordableIncident = $_POST["recordableIncidentToEdit"];
+    $recordableIncident = (int) $_POST["recordableIncidentToEdit"];
     $restrictedWorkCase = $_POST["restrictedWorkCaseToEdit"];
     $lostTimeCase = $_POST["lostTimeCaseToEdit"];
     $fiveDaysOff = $_POST["fiveDaysOffToEdit"];
     $insuranceNotified = $_POST["insuranceNotifiedToEdit"];
     $directorNotified = $_POST["directorNotifiedToEdit"];
 
+    // Default to the current value of recordableIncident
+    $recordableIncident = (int) $recordableIncident;
+
+    // Check if any of the specified variables equals 1
+    if (
+        $medicalTreatmentCase == 1 ||
+        $restrictedWorkCase == 1 ||
+        $lostTimeCase == 1 ||
+        $fiveDaysOff == 1 ||
+        $insuranceNotified == 1 ||
+        $directorNotified == 1
+    ) {
+        $recordableIncident = 1;
+    }
+    
     // Prepare statement
     $edit_document_sql = "UPDATE whs SET whs_document_id = ?, involved_person_name = ?, `description` = ?, incident_date = ?, date_raised = ?, department = ?, near_miss = ?, first_aid_given = ?, medical_treatment_case = ?, recordable_incident = ?, restricted_work_case = ?, lost_time_case = ?, five_days_off = ?, insurance_notified = ?, director_notified = ? WHERE whs_id = ?";
     $edit_document_result = $conn->prepare($edit_document_sql);
@@ -282,7 +297,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
                     </div>
                 </div>
             </div>
-            <div class="form-group col-md-4 mt-4">
+            <!-- <div class="form-group col-md-4 mt-4">
                 <div class="d-flex flex-column">
                     <label for="recordableIncidentToEdit" class="fw-bold" style="font-size: 11px">Automated
                         Notifiable/Recordable
@@ -299,7 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
                             style="color:#043f9d; border: 1px solid #043f9d">No</label>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <div class="form-group col-md-4 mt-3">
                 <div class="d-flex flex-column">
                     <label for="restrictedWorkCaseToEdit" class="fw-bold">Restricted Work Case</label>

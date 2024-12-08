@@ -470,7 +470,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 ?>
 
                                 <td class="py-2 align-middle text-center whsDocumentIdColumn"><a
-                                        href="../open-folder.php?employee_id=<?= $row['involved_person_name'] ?>&folder=06 - Work Compensation"
+                                        href="../open-whs-folder.php?employee_id=<?= $row['involved_person_name'] ?>&folder=06 - Work Compensation"
                                         target="_blank"><?= $row['whs_document_id'] ?></a></td>
                                 <td class="py-2 align-middle text-center whsDescriptionColumn"><?= $row['description'] ?></td>
                                 <td class="py-2 align-middle text-center involvedPersonNameColumn">
@@ -1301,11 +1301,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                     document.getElementById("medicalTreatmentCaseToEditNo").checked = true;
                 }
 
-                if (recordableIncident === "1") {
-                    document.getElementById("recordableIncidentToEditYes").checked = true;
-                } else if (recordableIncident === "0") {
-                    document.getElementById("recordableIncidentToEditNo").checked = true;
-                }
+                // if (recordableIncident === "1") {
+                //     document.getElementById("recordableIncidentToEditYes").checked = true;
+                // } else if (recordableIncident === "0") {
+                //     document.getElementById("recordableIncidentToEditNo").checked = true;
+                // }
 
                 if (restrictedWorkCase === "1") {
                     document.getElementById("restrictedWorkCaseToEditYes").checked = true;
@@ -1341,6 +1341,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                 var openForm = myModalEl.querySelector('#openForm');
 
                 var documentCloseText = myModalEl.querySelector('#documentCloseText');
+                
+                console.log("Heret");
+                console.log(status);
 
                 if (status !== "Open") {
                     openForm.style.display = 'none'; //Hide the form

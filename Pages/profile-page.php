@@ -991,7 +991,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <div class="d-flex align-items-center justify-content-start">
                                         <h5 class="card-title fw-bold text-start">
                                             <div class="d-flex align-items-center">
-                                                <div class="print-name">
+                                                <div class="print-name" id="print-name">
                                                     <?php echo (isset($firstName) && isset($lastName)) ? $firstName . " " . $lastName : "N/A"; ?>
                                                 </div>
                                                 <div class="hide-print ms-2">
@@ -2144,7 +2144,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
                         <div class="p-3">
                             <p class="fw-bold signature-color">Machine Competency</p>
-                            <?php require_once("../open-machine-competency.php") ?>
+                            <?php require_once("../open-machine-competency-folder.php") ?>
                         </div>
                     </div>
 
@@ -4283,7 +4283,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 });
             });
         </script>
+        <script>
+            const nameElement = document.getElementById('print-name');
+            const nameLength = nameElement.innerText.length;
 
+            if (nameLength > 10) { // Adjust the number as needed
+                nameElement.style.fontSize = '18px';  // Smaller font size for longer names
+            } else {
+                nameElement.style.fontSize = '24px';  // Default font size
+            }
+
+        </script>
 </body>
 
 </html>

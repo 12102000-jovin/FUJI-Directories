@@ -28,6 +28,13 @@ if (file_exists($filePath)) {
         header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
         readfile($filePath);
         exit;
+    } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+        // Server image files
+        $mimeType = mime_content_type($filePath); // Detect MIME type for images
+        header('Content-Type: ' . $mimeType);
+        header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+        readfile($filePath);
+        exit;
     } else {
         echo "Unsupported file type.";
     }

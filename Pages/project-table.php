@@ -353,6 +353,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 data-project-no="<?= $row["project_no"] ?>"
                                                 data-quote-no="<?= $row["quote_no"] ?>"><i
                                                     class="fa-regular fa-trash-can text-danger"></i></button>
+                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#detailsModal"
+                                                data-project-id="<?= $row["project_id"] ?>"
+                                                data-project-name="<?= $row["project_name"] ?>"
+                                                data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
+                                                data-value="<?= $row["value"] ?>"><i
+                                                    class="fa-solid fa-file-pen text-warning text-opacity-50"></i></button>
                                         </div>
                                     </td>
                                 <?php } ?>
@@ -616,6 +622,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
             </div>
         </div>
 
+        <div class="modal fade" id="detailsModal" tab-index="-1" aria-labelledby="detailsModal" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detailsModal">Details??</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <?php require("../PageContent/project-details-table.php") ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <?php require_once("../logout.php") ?>
 
         <script src=" https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
@@ -681,6 +701,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
             })    
         </script>
 
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var myModalEl = document.getElementById('detailsModal');
+                myModalEl.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget; // Button that triggered the Modal
+                    var projectId = button.getAttribute('data-project-id');
+                    var projectNo = button.getAttribute('data-project-no');
+                    var projectName = button.getAttribute('data-project-name');
+                    var quoteNo = button.getAttribute('data-quote-no');
+                    var value = button.getAttribute('data-value');
+
+                    var modalProjectId = myModalEl.querySelector('#projectId');
+                    var modalProjectNo = myModalEl.querySelector('#projectNo');
+                    var modalProjectName = myModalEl.querySelector('#projectName');
+                    var modalQuoteNo = myModalEl.querySelector('#quoteNo');
+                    var modalValue =myModalEl.querySelector('#value')
+
+                    modalProjectId.value = projectId;
+                    modalProjectNo.textContent = projectNo;
+                    modalProjectName.textContent = projectName;
+                    modalQuoteNo.textContent = quoteNo;
+                    modalValue.textContent = value;
+                })
+            })
+        </script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 var myModalEl = document.getElementById('editDocumentModal');
@@ -842,7 +887,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 document.querySelectorAll('.form-check-input').forEach(checkbox => {
                     const columnClass = checkbox.getAttribute('data-column');
                     const columns = document.querySelectorAll(`.${columnClass}`);
-                    
+
                     // Retrieve stored visibility state and timestamp
                     const storedVisibility = localStorage.getItem(columnClass);
                     const storedTimestamp = localStorage.getItem(columnClass + '_timestamp');

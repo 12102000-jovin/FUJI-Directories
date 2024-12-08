@@ -82,6 +82,8 @@
                     $icon = 'fa-file-pdf text-danger'; // PDF icon
                 } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
                     $icon = 'fa-file-word text-primary'; // Word icon
+                } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $icon = 'fa-file-image text-success'; // Image icon
                 } else {
                     $icon = 'fa-file'; // Default icon for other file types
                 }

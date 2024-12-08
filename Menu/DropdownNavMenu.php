@@ -121,7 +121,7 @@ $folders_result->free();
         <div class="d-flex align-items-center me-3">
             <a class="d-flex align-items-center justify-content-center text-decoration-none text-dark" href="#"
                 role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                <div class="d-md-flex d-none align-items-center">
+                <div class="d-md-flex d-none align-items-center justify-content-end" style="min-width:240px">
                     <span class="me-1 fw-bold d-flex"><?= htmlspecialchars($firstName) ?></span>
                     <span class="me-2 fw-bold d-flex"><?= htmlspecialchars($lastName) ?></span>
                 </div>
