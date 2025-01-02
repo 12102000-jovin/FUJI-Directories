@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit"])) {
     ) {
         $recordableIncident = 1;
     }
-    
+
     // Prepare statement
     $edit_document_sql = "UPDATE whs SET whs_document_id = ?, involved_person_name = ?, `description` = ?, incident_date = ?, date_raised = ?, department = ?, near_miss = ?, first_aid_given = ?, medical_treatment_case = ?, recordable_incident = ?, restricted_work_case = ?, lost_time_case = ?, five_days_off = ?, insurance_notified = ?, director_notified = ? WHERE whs_id = ?";
     $edit_document_result = $conn->prepare($edit_document_sql);
@@ -147,8 +147,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
         echo "Error reopening document: " . $open_whs_result->error;
     }
 }
-
-
 
 ?>
 

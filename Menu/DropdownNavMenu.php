@@ -139,7 +139,7 @@ $folders_result->free();
                 <?php endif; ?>
                 <i class="fa-solid fa-caret-down fs-6"></i>
             </a>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
                 <li><a class="dropdown-item"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">Profile</a>
                 </li>
@@ -167,6 +167,9 @@ $folders_result->free();
                             <li><a class="dropdown-item"
                                     href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-position.php">Manage
                                     Position</a></li>
+                            <li><a class="dropdown-item"
+                                    href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/FormOptions/manage-location.php">Manage
+                                    Location</a></li>
                         </ul>
                     </li>
                 <?php endif; ?>
@@ -190,6 +193,10 @@ $folders_result->free();
                     $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
                 } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Project") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/pj-index.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Test and Tag") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
                 } else {
                     $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                 }

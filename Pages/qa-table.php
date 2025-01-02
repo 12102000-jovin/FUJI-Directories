@@ -427,12 +427,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     Revision Status <i class="fa-solid fa-sort fa-md ms-1"></i>
                                 </a> -->
                             </th>
-                            <th class="py-4 align-middle text-center wipDocLink" style="min-width:200px">
+                            <!-- <th class="py-4 align-middle text-center wipDocLink" style="min-width:200px">
                                 <a onclick="updateSort('wip_doc_link', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor: pointer;">
                                     WIP Doc Link <i class="fa-solid fa-sort fa-md ms-1"></i>
                                 </a>
-                            </th>
+                            </th> -->
                             </td>
                         <?php } ?>
                         <th class="py-4 align-middle text-center department" style="min-width:200px">
@@ -608,72 +608,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 <?= $row["revision_status"] ?></span>
                                         </div>
                                     </td>
-                                    <td class="py-2 align-middle text-center wipDocLink">
-                                        <form class="wip_document" method="POST">
-                                            <div class="d-flex align-items-center justify-content-center">
-
-                                                <?php
-                                                $departmentFolder = ''; // Initialize the departmentFolder variable
                                     
-                                                // Check the start of the wip_doc_link
-                                                if (strpos($row['wip_doc_link'], '00-QA') === 0) {
-                                                    $departmentFolder = '00 - QA';
-                                                } elseif (strpos($row['wip_doc_link'], '01-MN') === 0) {
-                                                    $departmentFolder = '01 - MN';
-                                                } elseif (strpos($row['wip_doc_link'], '02-ES') === 0) {
-                                                    $departmentFolder = '02 - ES';
-                                                } elseif (strpos($row['wip_doc_link'], '03-AC') === 0) {
-                                                    $departmentFolder = '03 - AC';
-                                                } elseif (strpos($row['wip_doc_link'], '04-PJ') === 0) {
-                                                    $departmentFolder = '04 - PJ';
-                                                } elseif (strpos($row['wip_doc_link'], '05-EN') === 0) {
-                                                    $departmentFolder = '05 - EN';
-                                                } elseif (strpos($row['wip_doc_link'], '06-EL') === 0) {
-                                                    $departmentFolder = '06 - EL';
-                                                } elseif (strpos($row['wip_doc_link'], '07-SM') === 0) {
-                                                    $departmentFolder = '07 - SM';
-                                                } elseif (strpos($row['wip_doc_link'], '08-OS') === 0) {
-                                                    $departmentFolder = '08 - OS';
-                                                } elseif (strpos($row['wip_doc_link'], '09-HR') === 0) {
-                                                    $departmentFolder = '09 - HR';
-                                                } elseif (strpos($row['wip_doc_link'], '10-RD') === 0) {
-                                                    $departmentFolder = '10 - RD';
-                                                } elseif (strpos($row['wip_doc_link'], '11-WH') === 0) {
-                                                    $departmentFolder = '11 - WH';
-                                                } elseif (strpos($row['wip_doc_link'], '12-QC') === 0) {
-                                                    $departmentFolder = '12 - QC';
-                                                } elseif (strpos($row['wip_doc_link'], '13-SD') === 0) {
-                                                    $departmentFolder = '13 - SD';
-                                                } elseif (strpos($row['wip_doc_link'], '14-IF') === 0) {
-                                                    $departmentFolder = '14 - IF';
-                                                } elseif (strpos($row['wip_doc_link'], '15-SP') === 0) {
-                                                    $departmentFolder = '15 - SP';
-                                                } elseif (strpos($row['wip_doc_link'], '16-CC') === 0) {
-                                                    $departmentFolder = '16 - CC';
-                                                } else {
-                                                    // Default departmentFolder if neither condition is met
-                                                    $departmentFolder = 'Unknown Document'; // or any default value you want
-                                                }
-                                                ?>
-
-                                                <input type="hidden"
-                                                    value="D:\FSMBEH-Data\<?= $departmentFolder ?>\00 - Documents\01 - WIP Documents\<?= $row['wip_doc_link'] ?>.docx"
-                                                    name="wip_document">
-                                                <!-- <button type="submit"
-                                                    class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><?= $row["wip_doc_link"] ?>
-                                                </button> -->
-
-                                                <a href="doc.php?file=<?= urlencode(string: $row["wip_doc_link"]) ?>.docx"
-                                                    target="_blank" class="btn btn-link p-0 m-0 text-decoration_underline fw-bold">
-                                                    <?= htmlspecialchars(string: $row["wip_doc_link"], flags: ENT_QUOTES, encoding: 'UTF-8') ?>
-                                                </a>
-
-                                                <i class="fa-solid fa-copy tooltips text-primary ms-2"
-                                                    onclick="copyDirectoryPath(this)" role="button"></i>
-                                            </div>
-                                        </form>
-                                    </td>
-
                                 <?php } ?>
 
                                 <td class="py-2 align-middle text-center department">
@@ -926,13 +861,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     Rev No.
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <!-- <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="" id="wipDocumentCheckBox"
                                     data-column="wipDocLink">
                                 <label class="form-check-label" for="wipDocumentCheckBox">
                                     WIP Doc Link
                                 </label>
-                            </div>
+                            </div> -->
                         <?php } ?>
 
                         <div class="form-check">
@@ -1236,12 +1171,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
         });
 
         // Add event listeners to all forms with the class 'wip_document'
-        document.querySelectorAll('.wip_document').forEach(form => {
-            form.addEventListener('submit', function () {
-                // Show the loading indicator
-                document.getElementById('loading-indicator').style.display = 'flex';
-            });
-        });
+        // document.querySelectorAll('.wip_document').forEach(form => {
+        //     form.addEventListener('submit', function () {
+        //         // Show the loading indicator
+        //         document.getElementById('loading-indicator').style.display = 'flex';
+        //     });
+        // });
     </script>
     <script>
         const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
@@ -1430,7 +1365,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             topMenuTitleSmall.textContent = documentTitle;
         })
     </script>
-    <script>
+    <!-- <script>
         function copyDirectoryPath(i) {
             var wipDocLink = i.closest('td').querySelector('input').value;
             var icon = i;
@@ -1465,7 +1400,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             // Remove the temporary input from the document
             document.body.removeChild(tempInput);
         }
-    </script>
+    </script> -->
     <script>
         document.querySelectorAll('.dropdown-menu .dropdown-department-item').forEach(item => {
             item.addEventListener('click', function (event) {

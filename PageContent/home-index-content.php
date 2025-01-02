@@ -81,10 +81,16 @@ $folders_result = $conn->query($folders_sql);
                             $initials .= strtoupper(substr($word, 0, 1)); // Extract the first letter of each word
                         }
                     }
+
+                    // Set custom href for 'test' and 'tag'
+                    if ($folderName === 'test and tag') {
+                        $href = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
+                    } else {
+                        $href = "http://$serverAddress/$projectName/Pages/" . strtolower($initials) . "-index.php";
+                    }
                     ?>
                     <div class="col">
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/<?= strtolower($initials) ?>-index.php"
-                            class="text-decoration-none">
+                        <a href="<?php echo $href; ?>" class="text-decoration-none">
                             <div class="card text-white">
                                 <div class="card-body signature-bg-color text-center rounded py-4 position-relative"
                                     role="button">
@@ -111,6 +117,7 @@ $folders_result = $conn->query($folders_sql);
             </div>
         <?php endif; ?>
     </div>
+
 </body>
 
 </html>

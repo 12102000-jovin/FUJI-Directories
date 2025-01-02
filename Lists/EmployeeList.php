@@ -9,7 +9,6 @@ $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-
 // Default query to fetch all employees
 $employee_list_sql = "SELECT * FROM employees";
 $employee_list_result = $conn->query($employee_list_sql);

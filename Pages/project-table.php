@@ -274,16 +274,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 class="text-decoration-none text-white" style="cursor:pointer">Value (Ex. GST) <i
                                     class="fa-solid fa-sort fa-ms ms-1"></i></a>
                         </th>
-                        <th class="py-4 align-middle text-center variationColumn" style="min-width: 120px;">
-                            <a onclick="updateSort('variation', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer">Variation <i
-                                    class="fa-solid fa-sort fa-ms ms-1"></i></a>
-                        </th>
-                        <th class="py-4 align-middle text-center estimatedDeliveryDateColumn" style="min-width: 180px;">
-                            <a onclick="updateSort('estimated_delivery_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer">Estimated Delivery Date
-                                <i class="fa-solid fa-sort fa-ms ms-1"></i></a>
-                        </th>
                         <th class="py-4 align-middle text-center paymentTermsColumn" style="min-width: 120px;">
                             <a onclick="updateSort('payment_terms', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">Payment Terms <i
@@ -342,8 +332,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 data-project-name="<?= $row["project_name"] ?>"
                                                 data-project-type="<?= $row["project_type"] ?>"
                                                 data-customer="<?= $row["customer"] ?>" data-value="<?= $row["value"] ?>"
-                                                data-variation="<?= $row["variation"] ?>"
-                                                data-estimated-delivery-date="<?= $row["estimated_delivery_date"] ?>"
                                                 data-payment-terms="<?= $row["payment_terms"] ?>"
                                                 data-project-engineer="<?= $row["project_engineer"] ?>"
                                                 data-customer-address="<?= $row["customer_address"] ?>"><i
@@ -357,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 data-project-id="<?= $row["project_id"] ?>"
                                                 data-project-name="<?= $row["project_name"] ?>"
                                                 data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
-                                                data-value="<?= $row["value"] ?>"><i
+                                                data-customer="<?= $row["customer"] ?>"><i
                                                     class="fa-solid fa-file-pen text-warning text-opacity-50"></i></button>
                                         </div>
                                     </td>
@@ -384,15 +372,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 <td class="py-3 align-middle text-center projectNameColumn"><?= $row["project_name"] ?></td>
                                 <td class="py-3 align-middle text-center projectTypeColumn"><?= $row["project_type"] ?></td>
                                 <td class="py-3 align-middle text-center customerColumn"><?= $row["customer"] ?></td>
-                                <td class="py-3 align-middle text-center valueColumn">
-                                    <?= "$" . number_format($row["value"], 2) ?>
-                                </td>
-                                <td class="py-3 align-middle text-center variationColumn" <?= isset($row["variation"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['variation']) ? "$" . number_format($row["variation"], 2) : "N/A" ?>
-                                </td>
-                                <td class="py-3 align-middle text-center estimatedDeliveryDateColumn"
-                                    <?= isset($row["estimated_delivery_date"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row["estimated_delivery_date"]) ? (new DateTime($row["estimated_delivery_date"]))->format('j F Y') : "N/A" ?>
+                                <td class="py-3 align-middle text-center valueColumn" <?=
+                                    isset($row["value"]) && $row["value"] != 0
+                                    ? ""
+                                    : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
+                                    ?>>
+                   <?=
+                       isset($row["value"]) && $row["value"] != 0
+                       ? "$" . number_format($row["value"], 2)
+                       : "N/A"
+                       ?>
                                 </td>
                                 <td class="py-3 align-middle text-center paymentTermsColumn">
                                     <?= $row["payment_terms"] ?>
@@ -587,17 +576,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             <label class="form-check-label" for="valueColumn">Value</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="variationColumn"
-                                data-column="variationColumn">
-                            <label class="form-check-label" for="variationColumn">Variation</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="estimatedDeliveryDateColumn"
-                                data-column="estimatedDeliveryDateColumn">
-                            <label class="form-check-label" for="estimatedDeliveryDateColumn">Estimated Delivery
-                                Date</label>
-                        </div>
-                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="paymentTermsColumn"
                                 data-column="paymentTermsColumn">
                             <label class="form-check-label" for="paymentTermsColumn">Payment Terms</label>
@@ -623,10 +601,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
 
         <div class="modal fade" id="detailsModal" tab-index="-1" aria-labelledby="detailsModal" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
+            <div class="modal-dialog modal-fullscreen">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="detailsModal">Details??</h5>
+                        <h5 class="modal-title" id="detailsModal">Project Details</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -709,20 +687,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     var projectId = button.getAttribute('data-project-id');
                     var projectNo = button.getAttribute('data-project-no');
                     var projectName = button.getAttribute('data-project-name');
+                    var projectCustomer = button.getAttribute('data-customer');
                     var quoteNo = button.getAttribute('data-quote-no');
-                    var value = button.getAttribute('data-value');
+
+                    // Ensure that quoteNo has a value, otherwise set it to "N/A"
+                    if (!quoteNo || quoteNo.trim() === "") {
+                        quoteNo = "N/A";
+                    }
 
                     var modalProjectId = myModalEl.querySelector('#projectId');
+                    var modalProjectIdEditAllDate = myModalEl.querySelector('#projectIdEditAllDate');
                     var modalProjectNo = myModalEl.querySelector('#projectNo');
                     var modalProjectName = myModalEl.querySelector('#projectName');
+                    var modalProjectCustomer = myModalEl.querySelector('#projectCustomer');
                     var modalQuoteNo = myModalEl.querySelector('#quoteNo');
-                    var modalValue =myModalEl.querySelector('#value')
 
                     modalProjectId.value = projectId;
+                    modalProjectIdEditAllDate.value = projectId;
                     modalProjectNo.textContent = projectNo;
                     modalProjectName.textContent = projectName;
+                    modalProjectCustomer.textContent = projectCustomer;
                     modalQuoteNo.textContent = quoteNo;
-                    modalValue.textContent = value;
                 })
             })
         </script>
@@ -739,11 +724,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     var quoteNo = button.getAttribute('data-quote-no');
                     var projectName = button.getAttribute('data-project-name');
                     var current = button.getAttribute('data-current');
-                    var estimatedDeliveryDate = button.getAttribute('data-estimated-delivery-date');
                     var projectType = button.getAttribute('data-project-type');
                     var customer = button.getAttribute('data-customer');
-                    var value = button.getAttribute('data-value');
-                    var variation = button.getAttribute('data-variation');
                     var paymentTerms = button.getAttribute('data-payment-terms');
                     var projectEngineers = button.getAttribute('data-project-engineer'); // Ensure this attribute is set
                     var customerAddress = button.getAttribute('data-customer-address');
@@ -754,11 +736,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     var modalQuoteNo = myModalEl.querySelector('#quoteNoToEdit');
                     var modalProjectName = myModalEl.querySelector('#projectNameToEdit');
                     var modalCurrent = myModalEl.querySelector('#currentToEdit');
-                    var modalEstimatedDeliveryDate = myModalEl.querySelector('#estimatedDeliveryDateToEdit');
                     var modalProjectType = myModalEl.querySelector('#projectTypeToEdit');
                     var modalCustomer = myModalEl.querySelector('#customerToEdit');
-                    var modalValue = myModalEl.querySelector('#valueToEdit');
-                    var modalVariation = myModalEl.querySelector('#variationToEdit');
                     var modalPaymentTerms = myModalEl.querySelector('#paymentTermsToEdit');
                     var modalCustomerAddress = myModalEl.querySelector('#customerAddressToEdit');
 
@@ -768,11 +747,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     modalQuoteNo.value = quoteNo;
                     modalProjectName.value = projectName;
                     modalCurrent.value = current;
-                    modalEstimatedDeliveryDate.value = estimatedDeliveryDate;
                     modalProjectType.value = projectType;
                     modalCustomer.value = customer;
-                    modalValue.value = value;
-                    modalVariation.value = variation;
                     modalPaymentTerms.value = paymentTerms;
                     modalCustomerAddress.value = customerAddress;
 
@@ -934,6 +910,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
                 });
             }
+        </script>
+        <script>
+            // Listen for the modal close event
+            $('#detailsModal').on('hidden.bs.modal', function () {
+                // Reload the page and keep the parameters in the URL
+                location.reload();  // This reloads the page
+            });
         </script>
     </div>
 </body>

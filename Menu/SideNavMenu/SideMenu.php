@@ -114,6 +114,9 @@ $folders_result->free();
                     case 'work health and safety':
                         $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
                         break;
+                    case 'test and tag':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
+                        break;
                     default:
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                         break;

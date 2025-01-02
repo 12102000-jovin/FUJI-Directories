@@ -1017,7 +1017,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </button>
 
 
-                                    <?php if ($role === "admin") { ?>
+                                    <?php if ($role === "admin" || $role === "supervisor") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
                                             id="editProfileBtn">
                                             Edit Profile <i class="fa-regular fa-pen-to-square"></i>

@@ -12,9 +12,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
     $projectNameToEdit = $_POST["projectNameToEdit"];
     $projectTypeToEdit = $_POST["projectTypeToEdit"];
     $customerToEdit = $_POST["customerToEdit"];
-    $valueToEdit = $_POST["valueToEdit"];
-    $variationToEdit = empty($_POST['variationToEdit']) ? NULL : $_POST['variationToEdit'];
-    $estimatedDeliveryDateToEdit = $_POST['estimatedDeliveryDateToEdit'];
     $paymentTermsToEdit = $_POST["paymentTermsToEdit"];
     $projectEngineerToEdit = empty($_POST['projectEngineerToEdit']) ? NULL : $_POST['projectEngineerToEdit'];
     $customerAddressToEdit = empty($_POST['customerAddressToEdit']) ? NULL : $_POST['customerAddressToEdit'];
@@ -22,8 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
     // SQL statement
     $edit_document_sql = "UPDATE projects SET 
         project_no = ?, quote_no = ?, `current` = ?, project_name = ?, 
-        project_type = ?, customer = ?, `value` = ?, variation = ?, 
-        estimated_delivery_date = ?, payment_terms = ?, project_engineer = ?, 
+        project_type = ?, customer = ?, payment_terms = ?, project_engineer = ?, 
         customer_address = ? WHERE project_id = ?";
     $edit_document_result = $conn->prepare($edit_document_sql);
 
@@ -34,16 +30,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
 
     // Bind parameters
     $edit_document_result->bind_param(
-        "ssssssssssssi",
+        "sssssssssi",
         $projectNoToEdit,
         $quoteNoToEdit,
         $currentToEdit,
         $projectNameToEdit,
         $projectTypeToEdit,
         $customerToEdit,
-        $valueToEdit,
-        $variationToEdit,
-        $estimatedDeliveryDateToEdit,
         $paymentTermsToEdit,
         $projectEngineerToEdit,
         $customerAddressToEdit,
@@ -106,14 +99,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
             </div>
         </div>
         <div class="form-group col-md-6 mt-3">
-            <label for="estimatedDeliveryDateToEdit" class="fw-bold">Estimated Delivery Date</label>
-            <input type="date" name="estimatedDeliveryDateToEdit" id="estimatedDeliveryDateToEdit" class="form-control"
-                required>
-            <div class="invalid-feedback">
-                Please provide the delivery date.
-            </div>
-        </div>
-        <div class="form-group col-md-6 mt-3">
             <label for="projectTypeToEdit" class="fw-bold">Project Type</label>
             <select name="projectTypeToEdit" id="projectTypeToEdit" class="form-select" required>
                 <option disabled selected hidden></option>
@@ -133,23 +118,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
             <input type="text" name="customerToEdit" id="customerToEdit" class="form-control" required>
             <div class="invalid-feedback">
                 Please provide the customer.
-            </div>
-        </div>
-        <div class="form-group col-md-6 mt-3">
-            <label for="valueToEdit" class="fw-bold">Value</label>
-            <div class="input-group">
-                <span class="input-group-text rounded-start">$</span>
-                <input type="number" min="0" step="any" name="valueToEdit" id="valueToEdit" class="form-control rounded-end" required>
-                <div class="invalid-feedback">
-                    Please provide the value.
-                </div>
-            </div>
-        </div>
-        <div class="form-group col-md-6 mt-3">
-            <label for="variationToEdit" class="fw-bold">Variation</label>
-            <div class="input-group">
-                <span class="input-group-text rounded-start">$</span>
-                <input type="number" min="0" step="any" name="variationToEdit" id="variationToEdit" class="form-control rounded-end">
             </div>
         </div>
         <div class="form-group col-md-6 mt-3">

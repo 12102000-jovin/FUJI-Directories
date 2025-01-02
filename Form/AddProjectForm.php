@@ -21,9 +21,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
     $projectName = $_POST["projectName"];
     $projectType = $_POST["projectType"];
     $customer = $_POST["customer"];
-    $value = $_POST['value'];
-    $variation = empty($_POST['variation']) ? NULL : $_POST['variation'];
-    $estimatedDeliveryDate = $_POST['estimatedDeliveryDate'];
     $paymentTerms = $_POST['paymentTerms'];
     // Join multiple project engineers into a comma-separated string, or set to NULL if none selected
     $projectEngineer = empty($_POST['projectEngineer']) ? NULL : $_POST['projectEngineer'];
@@ -37,28 +34,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
         project_name, 
         project_type, 
         customer, 
-        `value`, 
-        variation, 
-        estimated_delivery_date, 
         payment_terms, 
         project_engineer, 
         customer_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     // Prepare statement
     if ($add_project_result = $conn->prepare($add_project_sql)) {
         // Bind parameters
         $add_project_result->bind_param(
-            "ssssssssssss",
+            "sssssssss",
             $projectNo,
             $quoteNo,
             $current,
             $projectName,
             $projectType,
             $customer,
-            $value,
-            $variation,
-            $estimatedDeliveryDate,
             $paymentTerms,
             $projectEngineer,
             $customerAddress
@@ -157,13 +148,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
             </div>
         </div>
         <div class="form-group col-md-6 mt-3">
-            <label for="estimatedDeliveryDate" class="fw-bold">Estimated Delivery Date</label>
-            <input type="date" name="estimatedDeliveryDate" id="estimatedDeliveryDate" class="form-control" required>
-            <div class="invalid-feedback">
-                Please provide the delivery date.
-            </div>
-        </div>
-        <div class="form-group col-md-6 mt-3">
             <label for="projectType" class="fw-bold">Project Type</label>
             <select name="projectType" id="projectType" class="form-select" required>
                 <option disabled selected hidden></option>
@@ -185,24 +169,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectNo"])) {
                 Please provide the customer.
             </div>
         </div>
-        <div class="form-group col-md-6 mt-3">
-            <label for="value" class="fw-bold">Value</label>
-            <div class="input-group">
-                <span class="input-group-text rounded-start">$</span>
-                <input type="number" min="0" step="any" name="value" id="value" class="form-control rounded-end" required>
-                <div class="invalid-feedback">
-                    Please provide the value.
-                </div>
-            </div>
-        </div>
-        <div class="form-group col-md-6 mt-3">
-            <label for="variation" class="fw-bold">Variation</label>
-            <div class="input-group">
-                <span class="input-group-text rounded-start">$</span>
-                <input type="number" min="0" step="any" name="variation" id="variation" class="form-control rounded-end">
-            </div>
-        </div>
-
         <div class="form-group col-md-6 mt-3">
             <label for="paymentTerms" class="fw-bold">Payment Terms</label>
             <select name="paymentTerms" id="paymentTerms" class="form-select" required>

@@ -750,7 +750,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <label for="otherPosition" class="fw-bold"><small>Other Position</small></label>
                             <input class="form-control" type="text" name="otherPosition" id="otherPosition">
                             <div class="invalid-feedback">
-                                Please select the other position.
+                                Please provide other position.
                             </div>
                         </div>
 
