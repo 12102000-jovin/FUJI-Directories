@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Connect to the database
@@ -23,7 +23,7 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : 'qa_document';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
 // Pagination
-$records_per_page = isset($_GET["recordsPerPage"]) ? intval($_GET["recordsPerPage"]) : 10; // Number of records per page
+$records_per_page = isset($_GET["recordsPerPage"]) ? intval($_GET["recordsPerPage"]) : 30; // Number of records per page
 $page = isset($_GET["page"]) ? intval($_GET["page"]) : 1; //Current Page
 $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 
@@ -704,9 +704,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 <form method="GET" class="me-2">
                     <select class="form-select" id="recordsPerPage" name="recordsPerPage"
                         onchange="updateURLWithRecordsPerPage()">
-                        <option value="10" <?php echo $records_per_page == 10 ? 'selected' : ''; ?>>10</option>
-                        <option value="20" <?php echo $records_per_page == 20 ? 'selected' : ''; ?>>20</option>
                         <option value="30" <?php echo $records_per_page == 30 ? 'selected' : ''; ?>>30</option>
+                        <option value="40" <?php echo $records_per_page == 40 ? 'selected' : ''; ?>>40</option>
+                        <option value="50" <?php echo $records_per_page == 50 ? 'selected' : ''; ?>>50</option>
                     </select>
                 </form>
 

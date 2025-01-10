@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once("../db_connect.php");
@@ -30,9 +30,10 @@ if (isset($_POST['project_id'])) {
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='item_number_" . $row['project_details_id'] . "'>" . htmlspecialchars($item_number) . "</td>
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='description_" . $row['project_details_id'] . "'>" . htmlspecialchars($row['description']) . "</td>
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='date_" . $row['project_details_id'] . "'>";
-
+        
         if (!empty($row['date'])) {
-            $output .= htmlspecialchars($row['date']);
+            $formattedDate = date("d F Y", strtotime($row['date']));
+            $output .= htmlspecialchars($formattedDate);
         } else {
             $output .= "<span style='color: red; font-weight: bold;'>N/A</span>";
         }
@@ -140,15 +141,19 @@ if (isset($_POST['project_id'])) {
                 let id = td.id.split('_')[0]; // Extract the main column name (date, description, unitprice, etc.)
                 const value = td.textContent.trim();
 
-                // Remove the "$" symbol for numeric fields like unitprice and sub_total
+                // Remove the "$" symbol and handle numeric fields
                 if (id === "unitprice" || id === "sub_total") {
-                    td.innerHTML = `<input type="number" class="form-control" value="${parseFloat(value.replace('$', '').trim())}" id="edit_${id}_${row.dataset.id}" required>`;
+                    // Use 'text' type to allow formatting with commas
+                    let numericValue = value.replace('$', '').replace(/,/g, '').trim(); // Remove $ and commas
+                    td.innerHTML = `<input type="text" class="form-control" value="${parseFloat(numericValue).toLocaleString()}" id="edit_${id}_${row.dataset.id}" required 
+            oninput="this.value = this.value.replace(/[^0-9,.]/g, '')">`; // Allow only numbers and commas
                 } else if (id === "date") {
                     // For the "date" field, create an <input type="date"> without the required attribute
                     td.innerHTML = `<input type="date" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}">`;
                 } else if (id === "quantity") {
-                    // For "quantity", create an <input type="number">
-                    td.innerHTML = `<input type="number" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}" required>`;
+                    // Use 'text' to allow numeric formatting
+                    td.innerHTML = `<input type="text" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}" required 
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')">`; // Allow only whole numbers
                 } else {
                     // For other fields, create an <input type="text">
                     td.innerHTML = `<input type="text" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}" required>`;
@@ -181,7 +186,6 @@ if (isset($_POST['project_id'])) {
         }
     });
 
-    // Save button functionality to submit updated data
     // Save button functionality to submit updated data
     document.addEventListener('click', function (event) {
         if (event.target && event.target.closest('.saveBtn')) {

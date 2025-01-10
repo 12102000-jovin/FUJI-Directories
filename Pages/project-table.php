@@ -1,6 +1,6 @@
 <?php
-ini_set('diplay_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('diplay_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once '../vendor/autoload.php';
@@ -377,11 +377,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     ? ""
                                     : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
                                     ?>>
-                   <?=
-                       isset($row["value"]) && $row["value"] != 0
-                       ? "$" . number_format($row["value"], 2)
-                       : "N/A"
-                       ?>
+                                    <?=
+                                        isset($row["value"]) && $row["value"] != 0
+                                        ? "$" . number_format($row["value"], 2)
+                                        : "N/A"
+                                        ?>
                                 </td>
                                 <td class="py-3 align-middle text-center paymentTermsColumn">
                                     <?= $row["payment_terms"] ?>
@@ -406,15 +406,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 <form method="GET" class="me-2">
                     <select class="form-select" name="recordsPerPage" id="recordsPerPage"
                         onchange="updateURLWithRecordsPerPage()">
-                        <option value="10" <?php echo $records_per_page == 10 ? 'selected' : ''; ?>>10</option>
-                        <option value="20" <?php echo $records_per_page == 20 ? 'selected' : ''; ?>>20</option>
                         <option value="30" <?php echo $records_per_page == 30 ? 'selected' : ''; ?>>30</option>
+                        <option value="40" <?php echo $records_per_page == 40 ? 'selected' : ''; ?>>40</option>
+                        <option value="50" <?php echo $records_per_page == 50 ? 'selected' : ''; ?>>50</option>
                     </select>
                 </form>
 
                 <!-- Pagination controls -->
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
+                        <!-- First Page Button -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(1); return false;" aria-label="First"
+                                    style="cursor: pointer">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                        <?php endif; ?>
+
                         <!-- Previous Button -->
                         <?php if ($page > 1): ?>
                             <li class="page-item">
@@ -447,15 +461,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 
                         for ($i = $start_page; $i <= $end_page; $i++): ?>
                             <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>" style="cursor: pointer">
-                                <a class="page-link"
-                                    onclick="updatePage(<?php echo $i ?>); return false"><?php echo $i; ?></a>
+                                <a class="page-link" onclick="updatePage(<?php echo $i ?>); return false;">
+                                    <?php echo $i; ?> </a>
                             </li>
                         <?php endfor; ?>
 
                         <!-- Next Button -->
                         <?php if ($page < $total_pages): ?>
                             <li class="page-item">
-                                <a class="page-link" href="#" onclick="updatePage(<?php echo $page + 1; ?>); return false;"
+                                <a class="page-link" onclick="updatePage(<?php echo $page + 1; ?>); return false;"
                                     aria-label="Next">
                                     <span aria-hidden="true">&raquo;</span>
                                 </a>
@@ -465,458 +479,470 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 <span class="page-link">&raquo;</span>
                             </li>
                         <?php endif; ?>
+
+                        <!-- Last Page Button -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(<?php echo $total_pages; ?>); return false;"
+                                    aria-label="Last" style="cursor: pointer">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                        <?php endif; ?>
                     </ul>
                 </nav>
             </div>
         </div>
+    </div>
 
-        <!-- ================== Add Document Modal ================== -->
-        <div class="modal fade" id="addDocumentModal" tabindex="-1" aria-labelledby="addDocumentModal"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Add Project</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- ================== Add Document Modal ================== -->
+    <div class="modal fade" id="addDocumentModal" tabindex="-1" aria-labelledby="addDocumentModal" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require_once("../Form/AddProjectForm.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== Edit Project Document Modal ================== -->
+    <div class="modal fade" id="editDocumentModal" tab-index="-1" aria-labelledby="editDocumentModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require("../Form/EditProjectForm.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== Delete Confirmation Modal ================== -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete project <span class="fw-bold" id="projectNoToDelete"></span>
+                        with quote <span class="fw-bold" id="quoteNoToDelete"></span>?
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <!-- Add form submission for deletion here -->
+                    <form method="POST">
+                        <input type="hidden" name="projectIdToDelete" id="projectIdToDelete">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== Filter Document Modal ================== -->
+    <div class="modal fade" id="filterColumnModal" tab-index="-1" aria-labelledby="filterColumnModal"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filterColumnModalLabel">Filter Column</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="projectNoColumn"
+                            data-column="projectNoColumn">
+                        <label class="form-check-label" for="projectNoColumn">
+                            Project No
+                        </label>
                     </div>
-                    <div class="modal-body">
-                        <?php require_once("../Form/AddProjectForm.php") ?>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="quoteNoColumn" data-column="quoteNoColumn">
+                        <label class="form-check-label" for="quoteNoColumn">Quote No</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="currentColumn" data-column="currentColumn">
+                        <label class="form-check-label" for="currentColumn">Status</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="projectNameColumn"
+                            data-column="projectNameColumn">
+                        <label class="form-check-label" for="projectNameColumn">Project Name</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="projectTypeColumn"
+                            data-column="projectTypeColumn">
+                        <label class="form-check-label" for="projectTypeColumn">Project Type</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="customerColumn"
+                            data-column="customerColumn">
+                        <label class="form-check-label" for="customerColumn">Customer</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="valueColumn" data-column="valueColumn">
+                        <label class="form-check-label" for="valueColumn">Value</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="paymentTermsColumn"
+                            data-column="paymentTermsColumn">
+                        <label class="form-check-label" for="paymentTermsColumn">Payment Terms</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="projectEngineerColumn"
+                            data-column="projectEngineerColumn">
+                        <label class="form-check-label" for="projectEngineerColumn">Project Engineer</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="customerAddressColumn"
+                            data-column="customerAddressColumn">
+                        <label class="form-check-label" for="customerAddressColumn">Customer Address</label>
+                    </div>
+                    <div class="d-flex justify-content-end" style="cursor:pointer">
+                        <button onclick="resetColumnFilter()" class="btn btn-sm btn-danger me-1"> Reset
+                            Filter</button>
+                        <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Done</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- ================== Edit Project Document Modal ================== -->
-        <div class="modal fade" id="editDocumentModal" tab-index="-1" aria-labelledby="editDocumentModal"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Project</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <?php require("../Form/EditProjectForm.php") ?>
-                    </div>
+    <div class="modal fade" id="detailsModal" tab-index="-1" aria-labelledby="detailsModal" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModal">Project Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require("../PageContent/ModalContent/project-details-table.php") ?>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- ================== Delete Confirmation Modal ================== -->
-        <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteConfirmationLabel">Confirm Deletion</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure you want to delete project <span class="fw-bold" id="projectNoToDelete"></span>
-                            with quote <span class="fw-bold" id="quoteNoToDelete"></span>?
-                        </p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <!-- Add form submission for deletion here -->
-                        <form method="POST">
-                            <input type="hidden" name="projectIdToDelete" id="projectIdToDelete">
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <?php require_once("../logout.php") ?>
 
-        <!-- ================== Filter Document Modal ================== -->
-        <div class="modal fade" id="filterColumnModal" tab-index="-1" aria-labelledby="filterColumnModal"
-            aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="filterColumnModalLabel">Filter Column</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="projectNoColumn"
-                                data-column="projectNoColumn">
-                            <label class="form-check-label" for="projectNoColumn">
-                                Project No
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="quoteNoColumn"
-                                data-column="quoteNoColumn">
-                            <label class="form-check-label" for="quoteNoColumn">Quote No</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="currentColumn"
-                                data-column="currentColumn">
-                            <label class="form-check-label" for="currentColumn">Status</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="projectNameColumn"
-                                data-column="projectNameColumn">
-                            <label class="form-check-label" for="projectNameColumn">Project Name</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="projectTypeColumn"
-                                data-column="projectTypeColumn">
-                            <label class="form-check-label" for="projectTypeColumn">Project Type</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="customerColumn"
-                                data-column="customerColumn">
-                            <label class="form-check-label" for="customerColumn">Customer</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="valueColumn" data-column="valueColumn">
-                            <label class="form-check-label" for="valueColumn">Value</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="paymentTermsColumn"
-                                data-column="paymentTermsColumn">
-                            <label class="form-check-label" for="paymentTermsColumn">Payment Terms</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="projectEngineerColumn"
-                                data-column="projectEngineerColumn">
-                            <label class="form-check-label" for="projectEngineerColumn">Project Engineer</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="customerAddressColumn"
-                                data-column="customerAddressColumn">
-                            <label class="form-check-label" for="customerAddressColumn">Customer Address</label>
-                        </div>
-                        <div class="d-flex justify-content-end" style="cursor:pointer">
-                            <button onclick="resetColumnFilter()" class="btn btn-sm btn-danger me-1"> Reset
-                                Filter</button>
-                            <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Done</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <script src=" https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
-        <div class="modal fade" id="detailsModal" tab-index="-1" aria-labelledby="detailsModal" aria-hidden="true">
-            <div class="modal-dialog modal-fullscreen">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="detailsModal">Project Details</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <?php require("../PageContent/project-details-table.php") ?>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <script>
+        function clearURLParameters() {
+            // Use the URL API to manipulate the URL
+            const url = new URL(window.location.href);
+            url.search = ''; // Clear the query string
 
-        <?php require_once("../logout.php") ?>
+            // Reload the page with the updated URL 
+            window.location.href = url.href;
+        }
+    </script>
 
-        <script src=" https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script>
+        // Load saved zoom level from localStorage or use default
+        let currentZoom = parseFloat(localStorage.getItem('zoomLevel')) || 1;
 
-        <script>
-            function clearURLParameters() {
-                // Use the URL API to manipulate the URL
-                const url = new URL(window.location.href);
-                url.search = ''; // Clear the query string
+        // Apply the saved zoom level
+        document.body.style.zoom = currentZoom;
 
-                // Reload the page with the updated URL 
-                window.location.href = url.href;
-            }
-        </script>
-
-        <script>
-            // Load saved zoom level from localStorage or use default
-            let currentZoom = parseFloat(localStorage.getItem('zoomLevel')) || 1;
-
-            // Apply the saved zoom level
+        function zoom(factor) {
+            currentZoom *= factor;
             document.body.style.zoom = currentZoom;
 
-            function zoom(factor) {
-                currentZoom *= factor;
-                document.body.style.zoom = currentZoom;
+            // Save the new zoom level to localStorage
+            localStorage.setItem('zoomLevel', currentZoom);
+        }
 
-                // Save the new zoom level to localStorage
-                localStorage.setItem('zoomLevel', currentZoom);
-            }
+        function resetZoom() {
+            currentZoom = 1;
+            document.body.style.zoom = currentZoom;
 
-            function resetZoom() {
-                currentZoom = 1;
-                document.body.style.zoom = currentZoom;
+            // Remove the zoom level from localStorage
+            localStorage.removeItem('zoomLevel');
+        }
 
-                // Remove the zoom level from localStorage
-                localStorage.removeItem('zoomLevel');
-            }
+        // Optional: Reset zoom level on page load
+        window.addEventListener('load', () => {
+            document.body.style.zoom = currentZoom;
+        });
+    </script>
 
-            // Optional: Reset zoom level on page load
-            window.addEventListener('load', () => {
-                document.body.style.zoom = currentZoom;
-            });
-        </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('deleteConfirmationModal');
+            myModalEl.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget; // Button that triggered the modal
+                var projectNo = button.getAttribute('data-project-no');
+                var quoteNo = button.getAttribute('data-quote-no');
+                var projectId = button.getAttribute('data-project-id');
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var myModalEl = document.getElementById('deleteConfirmationModal');
-                myModalEl.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget; // Button that triggered the modal
-                    var projectNo = button.getAttribute('data-project-no');
-                    var quoteNo = button.getAttribute('data-quote-no');
-                    var projectId = button.getAttribute('data-project-id');
-
-                    // Update the modal's content with the extracted info
-                    var modalProjectNoToDelete = myModalEl.querySelector('#projectNoToDelete');
-                    var modalQuoteNoToDelete = myModalEl.querySelector('#quoteNoToDelete');
-                    var modalProjectIdToDelete = myModalEl.querySelector('#projectIdToDelete');
-                    modalProjectNoToDelete.textContent = projectNo;
-                    modalQuoteNoToDelete.textContent = quoteNo;
-                    modalProjectIdToDelete.value = projectId;
-                })
-            })    
-        </script>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var myModalEl = document.getElementById('detailsModal');
-                myModalEl.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget; // Button that triggered the Modal
-                    var projectId = button.getAttribute('data-project-id');
-                    var projectNo = button.getAttribute('data-project-no');
-                    var projectName = button.getAttribute('data-project-name');
-                    var projectCustomer = button.getAttribute('data-customer');
-                    var quoteNo = button.getAttribute('data-quote-no');
-
-                    // Ensure that quoteNo has a value, otherwise set it to "N/A"
-                    if (!quoteNo || quoteNo.trim() === "") {
-                        quoteNo = "N/A";
-                    }
-
-                    var modalProjectId = myModalEl.querySelector('#projectId');
-                    var modalProjectIdEditAllDate = myModalEl.querySelector('#projectIdEditAllDate');
-                    var modalProjectNo = myModalEl.querySelector('#projectNo');
-                    var modalProjectName = myModalEl.querySelector('#projectName');
-                    var modalProjectCustomer = myModalEl.querySelector('#projectCustomer');
-                    var modalQuoteNo = myModalEl.querySelector('#quoteNo');
-
-                    modalProjectId.value = projectId;
-                    modalProjectIdEditAllDate.value = projectId;
-                    modalProjectNo.textContent = projectNo;
-                    modalProjectName.textContent = projectName;
-                    modalProjectCustomer.textContent = projectCustomer;
-                    modalQuoteNo.textContent = quoteNo;
-                })
+                // Update the modal's content with the extracted info
+                var modalProjectNoToDelete = myModalEl.querySelector('#projectNoToDelete');
+                var modalQuoteNoToDelete = myModalEl.querySelector('#quoteNoToDelete');
+                var modalProjectIdToDelete = myModalEl.querySelector('#projectIdToDelete');
+                modalProjectNoToDelete.textContent = projectNo;
+                modalQuoteNoToDelete.textContent = quoteNo;
+                modalProjectIdToDelete.value = projectId;
             })
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var myModalEl = document.getElementById('editDocumentModal');
+        })    
+    </script>
 
-                myModalEl.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget;
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('detailsModal');
+            myModalEl.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget; // Button that triggered the Modal
+                var projectId = button.getAttribute('data-project-id');
+                var projectNo = button.getAttribute('data-project-no');
+                var projectName = button.getAttribute('data-project-name');
+                var projectCustomer = button.getAttribute('data-customer');
+                var quoteNo = button.getAttribute('data-quote-no');
 
-                    // Extract data from the button attributes
-                    var projectId = button.getAttribute('data-project-id');
-                    var projectNo = button.getAttribute('data-project-no');
-                    var quoteNo = button.getAttribute('data-quote-no');
-                    var projectName = button.getAttribute('data-project-name');
-                    var current = button.getAttribute('data-current');
-                    var projectType = button.getAttribute('data-project-type');
-                    var customer = button.getAttribute('data-customer');
-                    var paymentTerms = button.getAttribute('data-payment-terms');
-                    var projectEngineers = button.getAttribute('data-project-engineer'); // Ensure this attribute is set
-                    var customerAddress = button.getAttribute('data-customer-address');
-
-                    // Update the modal's content with the extracted data
-                    var modalProjectId = myModalEl.querySelector('#projectIdToEdit');
-                    var modalProjectNo = myModalEl.querySelector('#projectNoToEdit');
-                    var modalQuoteNo = myModalEl.querySelector('#quoteNoToEdit');
-                    var modalProjectName = myModalEl.querySelector('#projectNameToEdit');
-                    var modalCurrent = myModalEl.querySelector('#currentToEdit');
-                    var modalProjectType = myModalEl.querySelector('#projectTypeToEdit');
-                    var modalCustomer = myModalEl.querySelector('#customerToEdit');
-                    var modalPaymentTerms = myModalEl.querySelector('#paymentTermsToEdit');
-                    var modalCustomerAddress = myModalEl.querySelector('#customerAddressToEdit');
-
-                    // Assign the extracted values to the modal input fields
-                    modalProjectId.value = projectId;
-                    modalProjectNo.value = projectNo;
-                    modalQuoteNo.value = quoteNo;
-                    modalProjectName.value = projectName;
-                    modalCurrent.value = current;
-                    modalProjectType.value = projectType;
-                    modalCustomer.value = customer;
-                    modalPaymentTerms.value = paymentTerms;
-                    modalCustomerAddress.value = customerAddress;
-
-                    // Preselect engineers in the dropdown (if any)
-                    if (projectEngineers) {
-                        var selectedEngineers = projectEngineers.split(','); // Assuming a comma-separated list of engineer IDs
-
-                        selectedEngineers.forEach(function (engineerId) {
-                            var engineerCheckbox = myModalEl.querySelector('#engineer_' + engineerId);
-                            if (engineerCheckbox) {
-                                engineerCheckbox.checked = true;
-                            }
-                        });
-
-                        // Update the button text to reflect the selected engineers
-                        updateSelectedEngineersText();
-                    }
-                })
-            })
-
-            // Function to update the selected engineers' names on the button
-            function updateSelectedEngineersText() {
-                const projectEngineerDropdown = document.getElementById("projectEngineerDropdownToEdit");
-                const checkboxes = projectEngineerDropdown.querySelectorAll('input[type="checkbox"]');
-                const selectedEngineerText = document.getElementById("selectedEngineerToEdit");
-
-                const selected = Array.from(checkboxes).filter(cb => cb.checked);
-
-                const selectedNames = selected.map(cb => {
-                    const label = cb.nextElementSibling;
-                    return label ? label.innerHTML : '';
-                }).filter(name => name !== '');
-
-                const buttonText = selectedNames.length > 0
-                    ? selectedNames.join("<br>")
-                    : "Select Project Engineer(s)";
-
-                if (selectedNames.length > 0) {
-                    selectedEngineerText.innerHTML = "Selected:<br>" + buttonText;
-                    selectedEngineerText.style.display = 'block';
-                } else {
-                    selectedEngineerText.innerHTML = '';
-                    selectedEngineerText.style.display = 'none';
+                // Ensure that quoteNo has a value, otherwise set it to "N/A"
+                if (!quoteNo || quoteNo.trim() === "") {
+                    quoteNo = "N/A";
                 }
-            }
-        </script>
-        <script>
-            function updatePage(page) {
-                // Check if page number is valid
-                if (page < 1) return;
 
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', page);
-                window.location.href = url.toString();
-            }
-        </script>
-        <script>
-            function updateURLWithRecordsPerPage() {
-                const selectElement = document.getElementById('recordsPerPage');
-                const recordsPerPage = selectElement.value;
-                const url = new URL(window.location.href);
-                url.searchParams.set('recordsPerPage', recordsPerPage);
-                url.searchParams.set('page', 1);
-                window.location.href = url.toString();
-            }
-        </script>
-        <script>
-            function updateSort(sort, order) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('sort', sort);
-                url.searchParams.set('order', order);
-                window.location.href = url.toString();
-            }
-        </script>
-        <script>
-            document.querySelectorAll('.dropdown-menu .dropdown-status-item').forEach(item => {
-                item.addEventListener('click', function (event) {
-                    event.preventDefault(); // Prevent default anchor click behavior
-                    let status = this.getAttribute('data-status-filter');
-                    if (status === "All Status") {
-                        document.getElementById('selectedStatusFilter').value = "";
-                    } else {
-                        document.getElementById('selectedStatusFilter').value = status;
-                    }
-                    this.closest('form').submit();
-                })
+                var modalProjectId = myModalEl.querySelector('#projectId');
+                var modalProjectIdEditAllDate = myModalEl.querySelector('#projectIdEditAllDate');
+                var modalProjectNo = myModalEl.querySelector('#projectNo');
+                var modalProjectName = myModalEl.querySelector('#projectName');
+                var modalProjectCustomer = myModalEl.querySelector('#projectCustomer');
+                var modalQuoteNo = myModalEl.querySelector('#quoteNo');
+
+                modalProjectId.value = projectId;
+                modalProjectIdEditAllDate.value = projectId;
+                modalProjectNo.textContent = projectNo;
+                modalProjectName.textContent = projectName;
+                modalProjectCustomer.textContent = projectCustomer;
+                modalQuoteNo.textContent = quoteNo;
             })
-        </script>
-        <script>
-            const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+        })
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('editDocumentModal');
 
-            // Save checkbox state to localStorage with a timestamp
-            document.querySelectorAll('.form-check-input').forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    const columnClass = this.getAttribute('data-column');
-                    const columns = document.querySelectorAll(`.${columnClass}`);
-                    columns.forEach(column => {
-                        if (this.checked) {
-                            column.style.display = '';
-                            localStorage.setItem(columnClass, 'visible');
-                        } else {
-                            column.style.display = 'none';
-                            localStorage.setItem(columnClass, 'hidden');
+            myModalEl.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+
+                // Extract data from the button attributes
+                var projectId = button.getAttribute('data-project-id');
+                var projectNo = button.getAttribute('data-project-no');
+                var quoteNo = button.getAttribute('data-quote-no');
+                var projectName = button.getAttribute('data-project-name');
+                var current = button.getAttribute('data-current');
+                var projectType = button.getAttribute('data-project-type');
+                var customer = button.getAttribute('data-customer');
+                var paymentTerms = button.getAttribute('data-payment-terms');
+                var projectEngineers = button.getAttribute('data-project-engineer'); // Ensure this attribute is set
+                var customerAddress = button.getAttribute('data-customer-address');
+
+                // Update the modal's content with the extracted data
+                var modalProjectId = myModalEl.querySelector('#projectIdToEdit');
+                var modalProjectNo = myModalEl.querySelector('#projectNoToEdit');
+                var modalQuoteNo = myModalEl.querySelector('#quoteNoToEdit');
+                var modalProjectName = myModalEl.querySelector('#projectNameToEdit');
+                var modalCurrent = myModalEl.querySelector('#currentToEdit');
+                var modalProjectType = myModalEl.querySelector('#projectTypeToEdit');
+                var modalCustomer = myModalEl.querySelector('#customerToEdit');
+                var modalPaymentTerms = myModalEl.querySelector('#paymentTermsToEdit');
+                var modalCustomerAddress = myModalEl.querySelector('#customerAddressToEdit');
+
+                // Assign the extracted values to the modal input fields
+                modalProjectId.value = projectId;
+                modalProjectNo.value = projectNo;
+                modalQuoteNo.value = quoteNo;
+                modalProjectName.value = projectName;
+                modalCurrent.value = current;
+                modalProjectType.value = projectType;
+                modalCustomer.value = customer;
+                modalPaymentTerms.value = paymentTerms;
+                modalCustomerAddress.value = customerAddress;
+
+                // Preselect engineers in the dropdown (if any)
+                if (projectEngineers) {
+                    var selectedEngineers = projectEngineers.split(','); // Assuming a comma-separated list of engineer IDs
+
+                    selectedEngineers.forEach(function (engineerId) {
+                        var engineerCheckbox = myModalEl.querySelector('#engineer_' + engineerId);
+                        if (engineerCheckbox) {
+                            engineerCheckbox.checked = true;
                         }
                     });
-                    localStorage.setItem(columnClass + '_timestamp', Date.now()); // Save current timestamp
-                })
-            });
 
-            // Initialize checkboxes based on current column visibility
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.form-check-input').forEach(checkbox => {
-                    const columnClass = checkbox.getAttribute('data-column');
-                    const columns = document.querySelectorAll(`.${columnClass}`);
+                    // Update the button text to reflect the selected engineers
+                    updateSelectedEngineersText();
+                }
+            })
+        })
 
-                    // Retrieve stored visibility state and timestamp
-                    const storedVisibility = localStorage.getItem(columnClass);
-                    const storedTimestamp = localStorage.getItem(columnClass + '_timestamp');
-                    const currentTime = Date.now();
+        // Function to update the selected engineers' names on the button
+        function updateSelectedEngineersText() {
+            const projectEngineerDropdown = document.getElementById("projectEngineerDropdownToEdit");
+            const checkboxes = projectEngineerDropdown.querySelectorAll('input[type="checkbox"]');
+            const selectedEngineerText = document.getElementById("selectedEngineerToEdit");
 
-                    // Check if stored timestamp is within the expiration time
-                    if (storedTimestamp && (currentTime - storedTimestamp <= STORAGE_EXPIRATION_TIME)) {
-                        if (storedVisibility === 'hidden') {
-                            columns.forEach(column => column.style.display = 'none');
-                            checkbox.checked = false;
-                        } else {
-                            columns.forEach(column => column.style.display = '');
-                            checkbox.checked = true;
-                        }
+            const selected = Array.from(checkboxes).filter(cb => cb.checked);
+
+            const selectedNames = selected.map(cb => {
+                const label = cb.nextElementSibling;
+                return label ? label.innerHTML : '';
+            }).filter(name => name !== '');
+
+            const buttonText = selectedNames.length > 0
+                ? selectedNames.join("<br>")
+                : "Select Project Engineer(s)";
+
+            if (selectedNames.length > 0) {
+                selectedEngineerText.innerHTML = "Selected:<br>" + buttonText;
+                selectedEngineerText.style.display = 'block';
+            } else {
+                selectedEngineerText.innerHTML = '';
+                selectedEngineerText.style.display = 'none';
+            }
+        }
+    </script>
+    <script>
+        function updatePage(page) {
+            // Check if page number is valid
+            if (page < 1) return;
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        function updateURLWithRecordsPerPage() {
+            const selectElement = document.getElementById('recordsPerPage');
+            const recordsPerPage = selectElement.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('recordsPerPage', recordsPerPage);
+            url.searchParams.set('page', 1);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        function updateSort(sort, order) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', sort);
+            url.searchParams.set('order', order);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        document.querySelectorAll('.dropdown-menu .dropdown-status-item').forEach(item => {
+            item.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent default anchor click behavior
+                let status = this.getAttribute('data-status-filter');
+                if (status === "All Status") {
+                    document.getElementById('selectedStatusFilter').value = "";
+                } else {
+                    document.getElementById('selectedStatusFilter').value = status;
+                }
+                this.closest('form').submit();
+            })
+        })
+    </script>
+    <script>
+        const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+
+        // Save checkbox state to localStorage with a timestamp
+        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const columnClass = this.getAttribute('data-column');
+                const columns = document.querySelectorAll(`.${columnClass}`);
+                columns.forEach(column => {
+                    if (this.checked) {
+                        column.style.display = '';
+                        localStorage.setItem(columnClass, 'visible');
                     } else {
-                        // Clear the localStorage if timestamp is expired
-                        localStorage.removeItem(columnClass);
-                        localStorage.removeItem(columnClass + '_timestamp');
+                        column.style.display = 'none';
+                        localStorage.setItem(columnClass, 'hidden');
+                    }
+                });
+                localStorage.setItem(columnClass + '_timestamp', Date.now()); // Save current timestamp
+            })
+        });
+
+        // Initialize checkboxes based on current column visibility
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                const columnClass = checkbox.getAttribute('data-column');
+                const columns = document.querySelectorAll(`.${columnClass}`);
+
+                // Retrieve stored visibility state and timestamp
+                const storedVisibility = localStorage.getItem(columnClass);
+                const storedTimestamp = localStorage.getItem(columnClass + '_timestamp');
+                const currentTime = Date.now();
+
+                // Check if stored timestamp is within the expiration time
+                if (storedTimestamp && (currentTime - storedTimestamp <= STORAGE_EXPIRATION_TIME)) {
+                    if (storedVisibility === 'hidden') {
+                        columns.forEach(column => column.style.display = 'none');
+                        checkbox.checked = false;
+                    } else {
                         columns.forEach(column => column.style.display = '');
                         checkbox.checked = true;
                     }
-                });
-            });
-
-            function resetColumnFilter() {
-                // Get all checkboxes
-                document.querySelectorAll('.form-check-input').forEach(checkbox => {
-                    // Check each checkbox
+                } else {
+                    // Clear the localStorage if timestamp is expired
+                    localStorage.removeItem(columnClass);
+                    localStorage.removeItem(columnClass + '_timestamp');
+                    columns.forEach(column => column.style.display = '');
                     checkbox.checked = true;
-
-                    // Get the column class associated with the checkbox
-                    const columnClass = checkbox.getAttribute('data-column');
-
-                    // Get all columns with that class
-                    const columns = document.querySelectorAll(`.${columnClass}`);
-
-                    // Show all columns
-                    columns.forEach(column => {
-                        column.style.display = '';
-                    });
-
-                    // Also update localStorage to reflect the reset state
-                    localStorage.setItem(columnClass, 'visible');
-                    localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
-                });
-            }
-        </script>
-        <script>
-            // Listen for the modal close event
-            $('#detailsModal').on('hidden.bs.modal', function () {
-                // Reload the page and keep the parameters in the URL
-                location.reload();  // This reloads the page
+                }
             });
-        </script>
+        });
+
+        function resetColumnFilter() {
+            // Get all checkboxes
+            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                // Check each checkbox
+                checkbox.checked = true;
+
+                // Get the column class associated with the checkbox
+                const columnClass = checkbox.getAttribute('data-column');
+
+                // Get all columns with that class
+                const columns = document.querySelectorAll(`.${columnClass}`);
+
+                // Show all columns
+                columns.forEach(column => {
+                    column.style.display = '';
+                });
+
+                // Also update localStorage to reflect the reset state
+                localStorage.setItem(columnClass, 'visible');
+                localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
+            });
+        }
+    </script>
+    <script>
+        // Listen for the modal close event
+        $('#detailsModal').on('hidden.bs.modal', function () {
+            // Reload the page and keep the parameters in the URL
+            location.reload();  // This reloads the page
+        });
+    </script>
     </div>
 </body>

@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Connect to the database
@@ -73,7 +73,7 @@ if ($pj_cancelled_result->num_rows > 0) {
     $pj_completed_count = 0;
 }
 
-// Check total QA document count
+// Check total PJ document count
 $pjDataPoints = [];
 $colors = [
     "#3498db", // Medium Blue
@@ -173,7 +173,7 @@ if ($pj_rd_result->num_rows > 0) {
 
 $pj_service_sql = "SELECT COUNT(*) AS pj_service_count FROM projects WHERE project_type = 'Service'";
 $pj_service_result = $conn->query($pj_service_sql);
-if($pj_service_result->num_rows > 0) {
+if ($pj_service_result->num_rows > 0) {
     $row = $pj_service_result->fetch_assoc();
     $pj_service_count = $row['pj_service_count'];
     $total_pj_document_type_count += $pj_service_count;
@@ -211,7 +211,6 @@ if ($total_pj_document_type_count > 0) {
 <html>
 
 <head>
-    <title>Quality Assurances</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -287,6 +286,8 @@ if ($total_pj_document_type_count > 0) {
                         </li>
                     </ol>
                 </nav>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#projectReportModal">Report <i
+                        class="fa-solid fa-square-poll-vertical"></i></button>
             </div>
         </div>
         <div class="row">
@@ -393,6 +394,21 @@ if ($total_pj_document_type_count > 0) {
                         </div>
                     </div>
                     <div class="" id="chartContainer2" style="height: 370px;"></div>
+                </div>
+            </div>
+            <caption></caption>
+        </div>
+    </div>
+    <div class="modal fade" id="projectReportModal" tabindex="-1" aria-labelledby="projectReportModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Project Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="true"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require("../PageContent/ModalContent/project-report.php") ?>
                 </div>
             </div>
         </div>

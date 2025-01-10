@@ -21,8 +21,8 @@
 </style>
 
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["deleteProjectDetails"])) {
@@ -53,13 +53,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     $unitPrice = $_POST["unitPrice"];
     $quantity = $_POST["quantity"];
     $subTotal = bcmul($quantity, $unitPrice, 2);
+    $invoiced = 0;
 
     // Prepare SQL query
-    $add_project_details_sql = "INSERT INTO project_details (`date`, `description`, unit_price, quantity, sub_total, project_id) VALUES (?, ?, ?, ?, ?, ?)";
+    $add_project_details_sql = "INSERT INTO project_details (`date`, `description`, unit_price, quantity, sub_total, project_id, invoiced) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $add_project_details_result = $conn->prepare($add_project_details_sql);
 
     // Bind parameters (s = string, d = double, i = integer)
-    $add_project_details_result->bind_param("ssdidi", $date, $description, $unitPrice, $quantity, $subTotal, $projectId);
+    $add_project_details_result->bind_param("ssdidii", $date, $description, $unitPrice, $quantity, $subTotal, $projectId, $invoiced);
 
     // Execute the statement and handle result
     if ($add_project_details_result->execute()) {
@@ -94,7 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     </div>
 </div>
 
-<div class="table-responsive rounded-3 mb-0" style="overflow-y: hidden;">
+<div class="rounded-3 mb-0" style="overflow-y: hidden;">
     <table class="table table-bordered table-hover mb-0 pb-0">
         <thead class="print-table-head">
             <tr>
@@ -151,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
 </div>
 
 <div class="hide-print">
-    <div class="d-flex justify-content-center mb-2" id="groupBtn">
+    <div class="d-flex justify-content-center mb-2 mt-5" id="groupBtn">
         <button class="btn signature-btn print-button me-1" onclick="printPage()">Print</button>
         <button class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Close</button>
         <button class="btn btn-dark btn-sm" id="addRowBtn">Add Project</button>
@@ -438,7 +439,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                 });
         }
     });
-
 </script>
 
 <script>
@@ -480,7 +480,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     });
 
 </script>
-
 
 <script>
     $(document).ready(function () {

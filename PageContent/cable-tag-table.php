@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 $loginEmployeeId = $_SESSION["employee_id"];
@@ -104,7 +104,7 @@ if ($cable_tag_no_result->num_rows > 0) {
     }
 
     // Format the next No
-    $next_cable_tag_no = "CTAG" . str_pad($next_number, 5, '0', STR_PAD_LEFT);
+    $next_cable_tag_no = "TAG" . str_pad($next_number, 5, '0', STR_PAD_LEFT);
 } else {
     echo "No records found";
 }
@@ -153,7 +153,7 @@ if ($all_employees_result->num_rows > 0) {
             <div id="barcodeContainer" class="mb-5 text-center bg-white"
                 style="display: none; margin: 0 auto; max-width: 200px;">
                 <div style="transform: rotate(180deg);">
-                    <h5 class="fw-bold mb-0 pb-0">CABLE TEST TAG</h5>
+                    <h5 class="fw-bold mb-0 pb-0">TEST TAG</h5>
                     <div class="mx-2 mb-4">
                         <svg id="barcode" class="img-fluid"></svg>
                     </div>
@@ -221,7 +221,7 @@ if ($all_employees_result->num_rows > 0) {
 
 <div id="addCableTestTagFormPage" class="d-none">
     <form method="POST" id="addCableTestTagForm" novalidate>
-        <input type="hid" id="cableIdToBeAdded" name="cableIdToBeAdded">
+        <input type="hidden" id="cableIdToBeAdded" name="cableIdToBeAdded">
         <div class="row">
             <div class="form-group col-md-6">
                 <label for="cableTagNo" class="fw-bold">Cable No.</label>
@@ -281,7 +281,7 @@ if ($all_employees_result->num_rows > 0) {
         </div>
         <div class="d-flex justify-content-center mt-4"><button id="cancelAddCableTestTagBtn"
                 class="btn btn-secondary me-1" type="button">Cancel</button>
-            <button class="btn btn-dark" type="submit" id="addCableTestTagFormBtn"> Add Cable Test Tag</button>
+            <button class="btn btn-dark" type="submit" id="addCableTestTagFormBtn"> Add Test Tag</button>
         </div>
 
     </form>

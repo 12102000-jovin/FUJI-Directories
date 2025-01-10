@@ -168,7 +168,7 @@ $user_details_result->free();
                     } else if (htmlspecialchars($row['folder_name']) == "Work Health and Safety") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
                     } else if (htmlspecialchars($row['folder_name']) == "Test and Tag") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
                     } else {
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                     }

@@ -115,7 +115,7 @@ $folders_result->free();
                         $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
                         break;
                     case 'test and tag':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
                         break;
                     default:
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";

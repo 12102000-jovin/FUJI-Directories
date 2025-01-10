@@ -67,9 +67,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
                     $insert_location_stmt->bind_param("s", $otherLocation);
 
                     if ($insert_location_stmt->execute()) {
-                          // Get the auto-incremented ID of the newly inserted location
-                          $location_id  = $conn->insert_id;
-                          $location = $location_id;
+                        // Get the auto-incremented ID of the newly inserted location
+                        $location_id = $conn->insert_id;
+                        $location = $location_id;
                     } else {
                         echo "Error: " . $insert_location_stmt->error;
                         $insert_location_stmt->close();
@@ -83,10 +83,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
 
     $testFrequency = $_POST["testFrequency"];
     $description = !empty($_POST["description"]) ? $_POST["description"] : null;
+    $cablePurchaseDate = !empty($_POST["cablePurchaseDate"]) ? $_POST["cablePurchaseDate"] : null;
+    $assetNo = !empty($_POST["assetNo"]) ? $_POST["assetNo"] : null;
 
-    $add_cable_sql = "INSERT INTO cables (cable_no, `location_id`, test_frequency, `description`) VALUES (?, ?, ?, ?)";
+    $add_cable_sql = "INSERT INTO cables (cable_no, `location_id`, test_frequency, `description`, purchase_date, asset_no) VALUES (?, ?, ?, ?, ?, ?)";
     $add_cable_result = $conn->prepare($add_cable_sql);
-    $add_cable_result->bind_param("siis", $cableNo, $location, $testFrequency, $description);
+    $add_cable_result->bind_param("siisss", $cableNo, $location, $testFrequency, $description, $cablePurchaseDate, $assetNo);
 
     // Execute the prepared statement
     if ($add_cable_result->execute()) {
@@ -137,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
         </div>
 
         <div class="form-group col-md-6 mt-3 d-none" id="otherLocationInput">
-            <label for="otehrLocation" class="fw-bold">Other Location</label>
+            <label for="otherLocation" class="fw-bold">Other Location</label>
             <input class="form-control" type="text" name="otherLocation" id="otherLocation">
             <div class="invalid-feedback">
                 Please provide the other location.
@@ -160,6 +162,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
         <div class="form-group col-md-6 mt-3">
             <label for="description" class="fw-bold">Description</label>
             <textarea name="description" class="form-control" id="description" rows="1"></textarea>
+        </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="cablePurchaseDate" class="fw-bold">Cable Purchase Date</label>
+            <input type="date" name="cablePurchaseDate" class="form-control" id="cablePurchaseDate">
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6 mt-3">
+                <label for="assetSelectionRadioButton" class="fw-bold">Is the cable part of an asset?</label><br>
+                <input type="radio" id="showAssetYes" name="assetSelectionRadioButton" value="yes"
+                    class="form-check-input" required>
+                <label for="showAssetYes" class="form-check-label">Yes</label>
+                <input type="radio" id="showAssetNo" name="assetSelectionRadioButton" value="no"
+                    class="form-check-input ms-3" required>
+                <label for="showAssetNo" class="form-check-label">No</label>
+            </div>
+
+            <div class="form-group col-md-6 mt-3 d-none" id="assetIdInputGroup">
+                <label for="assetNo" class="fw-bold">FE Number</label>
+                <div class="input-group">
+                    <span class="input-group-text rounded-start">FE</span>
+                    <input type="number" min="0" step="any" class="form-control rounded-end" id="assetNo" name="assetNo"
+                        aria-describedby="assetNo">
+                    <div class="invalid-feedback">
+                        Please provide the FE Number.
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="d-flex justify-content-center mt-4 mb-4">
             <button class="btn btn-dark" name="addCable" type="submit" id="addCableBtn">Add Cable</button>
@@ -271,4 +300,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
         //Initialize fields based on the currently selected option
         updateLocationFields();
     })
+</script>
+
+<script>
+    // Function to toggle based on radio button selection
+    document.querySelectorAll('input[name="assetSelectionRadioButton"]').forEach((radio) => {
+        radio.addEventListener("change", function () {
+            var assetIdInputGroup = document.getElementById("assetIdInputGroup");
+            var assetNumberInput = document.getElementById("assetNo");
+
+            if (document.getElementById("showAssetYes").checked) {
+                assetIdInputGroup.classList.remove("d-none");  // Show the input group
+                assetNumberInput.setAttribute("required", "true");  // Make the input required
+            } else if (document.getElementById("showAssetNo").checked) {
+                assetIdInputGroup.classList.add("d-none");  // Hide the input group
+                assetNumberInput.removeAttribute("required");  // Remove the required attribute
+            }
+        });
+    });
+
 </script>

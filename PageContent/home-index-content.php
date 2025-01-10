@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 $config = include('./../config.php');
@@ -84,7 +84,7 @@ $folders_result = $conn->query($folders_sql);
 
                     // Set custom href for 'test' and 'tag'
                     if ($folderName === 'test and tag') {
-                        $href = "http://$serverAddress/$projectName/Pages/test-tag-table.php";
+                        $href = "http://$serverAddress/$projectName/Pages/cable-table.php";
                     } else {
                         $href = "http://$serverAddress/$projectName/Pages/" . strtolower($initials) . "-index.php";
                     }

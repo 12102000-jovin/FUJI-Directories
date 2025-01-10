@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once '../vendor/autoload.php';
@@ -187,6 +187,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                         <th class="py-4 align-middle text-center">Test Frequency</th>
                         <th class="py-4 align-middle text-center">Last Date Tested</th>
                         <th class="py-4 align-middle text-center">Test Due Date</th>
+                        <th class="py-4 align-middle text-center">FE No.</th>
+                        <th class="py-4 align-middle text-center">Purchase Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -200,8 +202,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     <button class="btn text-signature" data-bs-toggle="modal" data-bs-target="#editCableModal"
                                         data-cable-id="<?= $row['cable_id'] ?>" data-cable-no="<?= $row['cable_no'] ?>"
                                         data-location="<?= $row['location_id'] ?>"
-                                        data-test-frequency="<?= $row['test_frequency'] ?>"
-                                        data-description="<?= $row['description'] ?>"><i
+                                        data-test-frequency="<?= $row['test_frequency'] ?>" data-purchase-date="<?= $row['purchase_date']?>"
+                                        data-description="<?= $row['description'] ?>" data-asset-no="<?= $row['asset_no'] ?>"><i
                                             class="fa-regular fa-pen-to-square"></i></button>
                                     <button class="btn text-warning" data-bs-toggle="modal" data-bs-target="#cableTestTagModal"
                                         data-cable-id="<?= $row['cable_id'] ?>" data-cable-no="<?= $row['cable_no'] ?>"> <i
@@ -247,6 +249,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                         echo $lastDateTested->format('d F Y');
                                     } else {
                                         echo 'N/A';
+                                    }
+                                    ?>
+                                </td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['asset_no']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= isset($row['asset_no']) ? "FE" . htmlspecialchars($row['asset_no']) : 'N/A' ?>
+                                </td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?php
+                                    if (isset($row['purchase_date']) && $row['purchase_date'] !== NULL) {
+                                        // Convert purchase_date to DateTime and format it
+                                        $date = new DateTime($row['purchase_date']);
+                                        echo htmlspecialchars($date->format('d F Y')); // Format as "10 Nov 2023"
+                                    } else {
+                                        echo 'N/A'; // Display N/A if purchase_date is not set
                                     }
                                     ?>
                                 </td>
@@ -368,7 +386,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     </div>
                                     <h5 class="fw-bold mb-2" style="transform: rotate(180deg)">CABLE TAG</h5>
                                     <p class="text-center fw-bold" style="width:200px">
-                                        ---------------------------------------</p>
+                                        -----------------------------------</p>
 
                                     <h5 class="fw-bold mt-2 mb-0 pb-0">CABLE TAG</h5>
                                     <svg id="barcode2"></svg>
@@ -589,6 +607,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 var location = button.getAttribute('data-location');
                 var testFrequency = button.getAttribute('data-test-frequency');
                 var description = button.getAttribute('data-description');
+                var purchaseDate = button.getAttribute('data-purchase-date');
+                var assetNo = button.getAttribute('data-asset-no');
 
                 // Update the modal's content with the extracted info
                 var modalCableNo = myModalEl.querySelector('#cableNoToEdit');
@@ -596,12 +616,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 var modalLocation = myModalEl.querySelector('#locationToEdit');
                 var modalTestFrequency = myModalEl.querySelector('#testFrequencyToEdit')
                 var modalDescription = myModalEl.querySelector('#descriptionToEdit');
+                var modalPurchaseDate = myModalEl.querySelector('#cablePurchaseDateToEdit');
+                var modalAssetNo = myModalEl.querySelector('#assetNoToEdit');
 
                 modalCableNo.value = cableNo;
                 modalCableId.value = cableId;
                 modalLocation.value = location;
                 modalTestFrequency.value = testFrequency;
                 modalDescription.value = description;
+                modalPurchaseDate.value = purchaseDate;
+                modalAssetNo.value = assetNo;
             });
         })
     </script>
