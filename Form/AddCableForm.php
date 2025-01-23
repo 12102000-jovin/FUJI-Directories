@@ -84,7 +84,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableNo"])) {
     $testFrequency = $_POST["testFrequency"];
     $description = !empty($_POST["description"]) ? $_POST["description"] : null;
     $cablePurchaseDate = !empty($_POST["cablePurchaseDate"]) ? $_POST["cablePurchaseDate"] : null;
-    $assetNo = !empty($_POST["assetNo"]) ? $_POST["assetNo"] : null;
+    $assetNo = !empty($_POST["assetNo"]) ? "FE" . $_POST["assetNo"] : null;
+
 
     $add_cable_sql = "INSERT INTO cables (cable_no, `location_id`, test_frequency, `description`, purchase_date, asset_no) VALUES (?, ?, ?, ?, ?, ?)";
     $add_cable_result = $conn->prepare($add_cable_sql);

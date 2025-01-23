@@ -30,7 +30,7 @@ if (isset($_POST['project_id'])) {
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='item_number_" . $row['project_details_id'] . "'>" . htmlspecialchars($item_number) . "</td>
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='description_" . $row['project_details_id'] . "'>" . htmlspecialchars($row['description']) . "</td>
         <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='date_" . $row['project_details_id'] . "'>";
-        
+
         if (!empty($row['date'])) {
             $formattedDate = date("d F Y", strtotime($row['date']));
             $output .= htmlspecialchars($formattedDate);
@@ -148,9 +148,22 @@ if (isset($_POST['project_id'])) {
                     td.innerHTML = `<input type="text" class="form-control" value="${parseFloat(numericValue).toLocaleString()}" id="edit_${id}_${row.dataset.id}" required 
             oninput="this.value = this.value.replace(/[^0-9,.]/g, '')">`; // Allow only numbers and commas
                 } else if (id === "date") {
-                    // For the "date" field, create an <input type="date"> without the required attribute
-                    td.innerHTML = `<input type="date" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}">`;
-                } else if (id === "quantity") {
+                    // Convert the value to Date object
+                    let dateValue = new Date(value);
+
+                    // Adjust for timezone (Sydney is UTC+11 during daylight savings, adjust accordingly)
+                    let offset = dateValue.getTimezoneOffset() * 60000; // Get the offset in milliseconds
+                    let adjustedDate = new Date(dateValue.getTime() - offset); // Adjust the date to local time
+
+                    // Convert the adjusted date to ISO format (YYYY-MM-DD)
+                    let isoDate = adjustedDate.toISOString().split('T')[0];
+
+                    // Set the value in the input field
+                    td.innerHTML = `<input type="date" class="form-control" value="${isoDate}" id="edit_${id}_${row.dataset.id}">`;
+                }
+
+
+                else if (id === "quantity") {
                     // Use 'text' to allow numeric formatting
                     td.innerHTML = `<input type="text" class="form-control" value="${value}" id="edit_${id}_${row.dataset.id}" required 
             oninput="this.value = this.value.replace(/[^0-9]/g, '')">`; // Allow only whole numbers

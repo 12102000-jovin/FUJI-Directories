@@ -186,9 +186,6 @@ $urlParams = $_GET;
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
-                        <li class="breadcrumb-item"><a
-                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php">HR
-                                Dashboard</a></li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">All
                             Employees
                         </li>
@@ -197,7 +194,8 @@ $urlParams = $_GET;
             </div>
             <?php if ($role == "admin" || $role == "supervisor") { ?>
                 <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
-                    <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                    <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a>
+                    <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
                         <i class="fa-solid fa-user-plus"></i> Add Employee
                     </a>
                 </div>

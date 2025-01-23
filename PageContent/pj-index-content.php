@@ -281,13 +281,16 @@ if ($total_pj_document_type_count > 0) {
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
+                        <li class="breadcrumb-item"><a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php">Project
+                            Table</a></li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Project
                             Dashboard
                         </li>
                     </ol>
                 </nav>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#projectReportModal">Report <i
-                        class="fa-solid fa-square-poll-vertical"></i></button>
+                <!-- <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#projectReportModal">Report <i
+                        class="fa-solid fa-square-poll-vertical"></i></button> -->
             </div>
         </div>
         <div class="row">
@@ -299,8 +302,8 @@ if ($total_pj_document_type_count > 0) {
                             aria-control="projectStatusCollapse" style="cursor:pointer">
                             Status
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
-                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
+                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
                     <div class="collapse" id="projectStatusCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
@@ -349,8 +352,8 @@ if ($total_pj_document_type_count > 0) {
                             aria-control="projectTypeCollapse" style="cursor:pointer">
                             Type
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
-                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
+                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
                     <div class="collapse" id="projectTypeCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
@@ -399,20 +402,7 @@ if ($total_pj_document_type_count > 0) {
             <caption></caption>
         </div>
     </div>
-    <div class="modal fade" id="projectReportModal" tabindex="-1" aria-labelledby="projectReportModal"
-        aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Project Report</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="true"></button>
-                </div>
-                <div class="modal-body">
-                    <?php require("../PageContent/ModalContent/project-report.php") ?>
-                </div>
-            </div>
-        </div>
-    </div>
+  
 </body>
 
 </html>

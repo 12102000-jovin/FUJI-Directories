@@ -160,7 +160,7 @@ if ($all_employees_result->num_rows > 0) {
                     <!-- <div class="mb-3"></div> -->
                     <img class="mb-5 img-fluid" src="../Images/FSMBE-Harwal-Logo.png" style="max-width: 180px;">
                 </div>
-                <p class="fw-bold" style="width: 100%;">---------------------------------------</p>
+                <p class="fw-bold" style="width: 100%;">-------------------------------------</p>
 
                 <!-- Information & Caution Sections -->
                 <div class="d-flex justify-content-center">
@@ -211,7 +211,10 @@ if ($all_employees_result->num_rows > 0) {
         <div id="cancelAndSaveImgBtn">
             <div class="d-flex justify-content-end align-items-center">
                 <button class="btn btn-secondary me-1" id="closeImageBtn">Close Image Tag</button>
-                <button onclick="saveAsImage2(this)" class="btn btn-dark">Save as PNG</button>
+                <button onclick="saveAsImage2(this)" class="btn btn-dark me-1"><i
+                        class="fa-solid fa-download me-1"></i>Save</button>
+                <button class="btn btn-dark" onclick="printTestTag()"><i
+                        class="fa-solid fa-print me-1"></i>Print</button>
             </div>
         </div>
     </div>
@@ -383,6 +386,83 @@ if ($all_employees_result->num_rows > 0) {
         selectedRow = $(this); // Store reference to the clicked row
     });
 
+
+    function printTestTag() {
+        // Select the element to capture
+        var elementToCapture = document.getElementById('barcodeContainer');
+
+        // Get the cable number from the selected row
+        var cableTagId = selectedRow.find('td:nth-child(2)').text().trim();
+
+        // Use html2canvas to convert the element to a cabvas wiht a higher scale for better resolution
+        html2canvas(elementToCapture, {
+            scale: 10
+        }).then(function (canvas) {
+            // Get the data URL of the canvas (in PNG format)
+            var imageData = canvas.toDataURL("image/png");
+
+            // Create a new window for printing
+            var printWindow = window.open('', '', 'height=600,width=800');
+
+            // Write content to the new window
+            printWindow.document.write('<html><head><title>Print Test Tag</title>');
+            printWindow.document.write('<style>');
+
+            // Define the size of the page as the Zebra printer label dimensions (100mm x 150mm)
+            printWindow.document.write(`
+@page {
+    size: 75mm 150mm; /* Zebra label size */
+    margin: 0; /* Remove margins */
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: white;
+}
+#printContent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;  /* Ensure image does not exceed label width */
+    max-height: 100%; /* Ensure image does not exceed label height */
+}
+`);
+
+            printWindow.document.write('</style></head><body>');
+
+            // Insert the image into the new window
+            printWindow.document.write('<div id="printContent"><img src="' + imageData + '" /></div>');
+            printWindow.document.write('</body></html>');
+
+            // Close the document to finish writing to it
+            printWindow.document.close();
+
+            // Wait for the content to load and then trigger the print dialog
+            printWindow.onload = function () {
+                printWindow.print();
+            };
+
+            // Automatically close the window after the print job is finished
+            printWindow.onafterprint = function () {
+                printWindow.close();
+            };
+        });
+    }
+
     // Save button function
     function saveAsImage2() {
         if (!selectedRow) {
@@ -480,10 +560,10 @@ if ($all_employees_result->num_rows > 0) {
                             $firstName = $employee['first_name'];
                             $lastName = $employee['last_name'];
                             ?>
-                                    <option value="<?= $employeeId ?>" data-full-name="<?= $firstName ?>         <?= $lastName ?>">
-                                        <?= $firstName ?>         <?= $lastName ?>
-                                    </option>
-                                    <?php
+                                                                            <option value="<?= $employeeId ?>" data-full-name="<?= $firstName ?>                                                 <?= $lastName ?>">
+                                                                                <?= $firstName ?>                                                 <?= $lastName ?>
+                                                                            </option>
+                                                                            <?php
                         }
                     }
                     ?>

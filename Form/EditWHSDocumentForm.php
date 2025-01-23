@@ -188,7 +188,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
             </div>
         </div>
         <div class="row">
-            <input type="text" name="whsIdToEdit" id="whsIdToEdit">
+            <input type="hidden" name="whsIdToEdit" id="whsIdToEdit">
             <div class="form-group col-md-6">
                 <label for="whsDocumentIdToEdit" class="fw-bold"> WHS Document ID</label>
                 <input type="text" name="whsDocumentIdToEdit" class="form-control" id="whsDocumentIdToEdit" required>
@@ -440,7 +440,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToEdit3"])) {
         const errorMessage = document.getElementById("resultError");
         const whsId = document.getElementById("whsIdToEdit");
         const whsDocumentId = document.getElementById("whsDocumentIdToEdit");
-
+        
         // Function to check for duplicate documents
         function checkDuplicateDocument() {
             return fetch('../AJAXphp/check-whs-duplicate.php', {

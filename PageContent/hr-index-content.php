@@ -9,7 +9,7 @@ require_once("../status_check.php");
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
 
-require_once ("../system_role_check.php");
+require_once("../system_role_check.php");
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
@@ -402,13 +402,17 @@ $folders_result->free();
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
-                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">HR
-                            Dashboard</li>
+                        <li class="breadcrumb-item active" style="color:#043f9d" aria-current="page"><a
+                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php">All
+                            Employees</a>
+                        </li>
+                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d">HR Dashboard</li>
+
                     </ol>
                 </nav>
-                <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php"
+                <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php"
                     class="btn btn-success"> <i class="fa-solid fa-users"></i> All
-                    Employees </a>
+                    Employees </a> -->
             </div>
             <div class="row">
                 <div class="col-lg-4">

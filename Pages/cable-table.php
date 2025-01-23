@@ -9,12 +9,15 @@ require_once '../vendor/autoload.php';
 require_once('../db_connect.php');
 require_once('../status_check.php');
 
-// $folder_name = "Project";
-// require_once("../group_role_check.php");
+$folder_name = "Asset";
+require_once("../group_role_check.php");
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
+
+// Set the timezone to Sydney
+date_default_timezone_set('Australia/Sydney');
 
 // Get search term 
 $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
@@ -68,8 +71,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
     $delete_cable_result->bind_param("i", $cableIdToDelete);
 
     if ($delete_cable_result->execute()) {
-        $current_url = $_SERVER['QUERY_STRING'];
-        if (!empty($_SERVER['PHP_SELF'])) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
         header("Location: " . $current_url);
@@ -127,7 +130,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
                     <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php">Cable
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-index.php">Asset
                             Dashboard</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Cable Table
                     </li>
@@ -202,7 +205,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     <button class="btn text-signature" data-bs-toggle="modal" data-bs-target="#editCableModal"
                                         data-cable-id="<?= $row['cable_id'] ?>" data-cable-no="<?= $row['cable_no'] ?>"
                                         data-location="<?= $row['location_id'] ?>"
-                                        data-test-frequency="<?= $row['test_frequency'] ?>" data-purchase-date="<?= $row['purchase_date']?>"
+                                        data-test-frequency="<?= $row['test_frequency'] ?>"
+                                        data-purchase-date="<?= $row['purchase_date'] ?>"
                                         data-description="<?= $row['description'] ?>" data-asset-no="<?= $row['asset_no'] ?>"><i
                                             class="fa-regular fa-pen-to-square"></i></button>
                                     <button class="btn text-warning" data-bs-toggle="modal" data-bs-target="#cableTestTagModal"
@@ -237,32 +241,58 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     }
                                     ?>
                                 </td>
-                                <td class="py-3 align-middle text-center"
-                                    style="<?= empty($row['last_date_tested']) ? 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' : '' ?>">
-                                    <?php
-                                    if ($row['last_date_tested']) {
+                                <td class="py-3 align-middle text-center 
+                                <?php
+                                    if (!empty($row['last_date_tested'])) {
                                         $lastDateTested = new DateTime($row['last_date_tested']);
                                         $testFrequency = $row['test_frequency'];
 
                                         // Add test frequency (in months) to last date tested
-                                        $lastDateTested->modify("+$testFrequency months");
-                                        echo $lastDateTested->format('d F Y');
+                                        $dueDate = $lastDateTested->modify("+$testFrequency months");
+                                        $currentDate = new DateTime();
+
+                                        // Calculate the interval between the current date and the due date
+                                        $interval = $currentDate->diff($dueDate);
+
+                                        if ($currentDate > $dueDate) {
+                                            // Due date has already passed
+                                            echo 'bg-danger text-white';
+                                        } elseif ($interval->m < 1 && $interval->invert == 0) {
+                                            // Less than a month due
+                                            echo 'bg-danger bg-opacity-25';
+                                        }
+                                    } else {
+                                        echo 'bg-secondary text-white'; // Optional for N/A case
+                                    }
+                                    ?>" style="<?= empty($row['last_date_tested']) ? 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' : '' ?>">
+                                    <?php
+                                    if ($row['last_date_tested']) {
+                                        echo $dueDate->format('d F Y');
                                     } else {
                                         echo 'N/A';
                                     }
                                     ?>
                                 </td>
+
+
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['asset_no']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
-                                    <?= isset($row['asset_no']) ? "FE" . htmlspecialchars($row['asset_no']) : 'N/A' ?>
+                                    <?php if (isset($row['asset_no'])): ?>
+                                        <a href="asset-table.php?search=<?= urlencode($row['asset_no']) ?>">
+                                            <?= htmlspecialchars($row['asset_no']) ?>
+                                        </a>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
                                 </td>
+
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?php
                                     if (isset($row['purchase_date']) && $row['purchase_date'] !== NULL) {
                                         // Convert purchase_date to DateTime and format it
                                         $date = new DateTime($row['purchase_date']);
-                                        echo htmlspecialchars($date->format('d F Y')); // Format as "10 Nov 2023"
+                                        echo htmlspecialchars($date->format('d F Y'));
                                     } else {
                                         echo 'N/A'; // Display N/A if purchase_date is not set
                                     }
@@ -405,9 +435,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary me-1" data-bs-dismiss="modal">Close</button>
-                    <button onclick="saveAsImage()" class="btn btn-dark" data="">Save as PNG</button>
+                    <button onclick="saveAsImage()" class="btn btn-dark" data=""><i
+                            class="fa-solid fa-download me-1"></i>Save</button>
+                    <button class="btn btn-dark" onclick="printCableTag()"><i
+                            class="fa-solid fa-print me-1"></i>Print</button>
                 </div>
-
             </div>
         </div>
     </div>
@@ -468,11 +500,90 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
         </div>
     </div>
 
+    <?php require_once("../logout.php") ?>
     <script src="../html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
+    <script>
+        // Print the cable tag
+        function printCableTag() {
+            // Select the element to capture (you can change this selector based on what you want to capture)
+            var elementToCapture = document.getElementById('cableTag');
+
+            // Get the cable number from the modal
+            var cableNo = document.getElementById('cableNo').textContent.trim();
+
+            // Use html2canvas to convert the element to a canvas with a higher scale for better resolution
+            html2canvas(elementToCapture, {
+                scale: 10 // Increase scale for better resolution (higher scale = better resolution)
+            }).then(function (canvas) {
+                // Get the data URL of the canvas (in PNG format)
+                var imageData = canvas.toDataURL("image/png");
+
+                // Create a new window for printing
+                var printWindow = window.open('', '', 'height=600,width=800');
+
+                // Write content to the new window
+                printWindow.document.write('<html><head><title>Print Cable Tag</title>');
+                printWindow.document.write('<style>');
+
+                // Define the size of the page as the Zebra printer label dimensions (100mm x 150mm)
+                printWindow.document.write(`
+@page {
+    size: 85mm 150mm; /* Zebra label size */
+    margin: 0; /* Remove margins */
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: white;
+}
+#printContent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;  /* Ensure image does not exceed label width */
+    max-height: 100%; /* Ensure image does not exceed label height */
+}
+`);
+
+                printWindow.document.write('</style></head><body>');
+
+                // Insert the image into the new window
+                printWindow.document.write('<div id="printContent"><img src="' + imageData + '" /></div>');
+                printWindow.document.write('</body></html>');
+
+                // Close the document to finish writing to it
+                printWindow.document.close();
+
+                // Wait for the content to load and then trigger the print dialog
+                printWindow.onload = function () {
+                    printWindow.print();
+                };
+
+                // Automatically close the window after the print job is finished
+                printWindow.onafterprint = function () {
+                    printWindow.close();
+                };
+            });
+        }
+    </script>
     <script>
         function clearURLParameters() {
             // Use the URL API to manipulate the URL
@@ -625,7 +736,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 modalTestFrequency.value = testFrequency;
                 modalDescription.value = description;
                 modalPurchaseDate.value = purchaseDate;
-                modalAssetNo.value = assetNo;
+                modalAssetNo.value = assetNo.startsWith("FE") ? assetNo.substring(2) : assetNo;
             });
         })
     </script>

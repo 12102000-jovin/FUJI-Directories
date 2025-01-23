@@ -160,8 +160,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php">Work Health and Safety</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">WHS Table</li>
                 </ol>
             </nav>
@@ -219,8 +217,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                 </div>
                 <?php if ($role === "admin") { ?>
                     <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                        <a class="btn btn-primary me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
-                                class="fa-solid fa-plus"></i> Add WHS Document</button>
+                                class="fa-solid fa-plus"></i> Add WHS</button>
                     </div>
                 <?php } ?>
             </div>
@@ -476,8 +475,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 <td class="py-2 align-middle text-center involvedPersonNameColumn">
                                     <?= $employee_name ?>
                                 </td>
-                                <td class="py-2 align-middle text-center incidentDateColumn"><?= date("j F Y", strtotime($row['incident_date'])) ?>
-</td>
+                                <td class="py-2 align-middle text-center incidentDateColumn">
+                                    <?= date("j F Y", strtotime($row['incident_date'])) ?>
+                                </td>
                                 <td class="py-2 align-middle text-center departmentColumn"><?= $row['department'] ?></td>
                                 <td
                                     class="py-2 align-middle text-center statusColumn <?= $row['status'] == "Open" ? 'bg-danger text-white ' : 'bg-success text-white' ?>">
@@ -519,7 +519,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                 <?= $row['director_notified'] == 1 ? 'bg-danger text-white' : '' ?>">
                                     <?= $row['director_notified'] == 1 ? 'Yes' : 'No' ?>
                                 </td>
-                                <td class="py-2 align-middle text-center dateRaisedColumn"><?= date("j F Y", strtotime($row['date_raised'])) ?></td>
+                                <td class="py-2 align-middle text-center dateRaisedColumn">
+                                    <?= date("j F Y", strtotime($row['date_raised'])) ?>
+                                </td>
                                 <td class="py-2 align-middle text-center dateClosedColumn" <?= isset($row['date_closed']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['date_closed']) ? date("j F Y", strtotime($row['date_closed'])) : "N/A" ?>
                                 </td>
@@ -1341,7 +1343,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                 var openForm = myModalEl.querySelector('#openForm');
 
                 var documentCloseText = myModalEl.querySelector('#documentCloseText');
-                
+
                 console.log("Heret");
                 console.log(status);
 

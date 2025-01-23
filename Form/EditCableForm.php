@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['cableIdToEdit'])) {
 
     // Check if 'assetSelectionRadioButtonToEdit' is 'yes' or 'no'
     if (isset($_POST['assetSelectionRadioButtonToEdit']) && $_POST['assetSelectionRadioButtonToEdit'] === 'yes') {
-        $assetNo = $_POST['assetNoToEdit'];  // Get the asset number from the form
+        $assetNo = "FE" . $_POST['assetNoToEdit'];  // Get the asset number from the form
     }
 
     // Validate and process locations

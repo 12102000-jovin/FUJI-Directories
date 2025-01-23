@@ -103,19 +103,19 @@ $folders_result->free();
                 // Determine folder page
                 switch (strtolower($folder_name)) {
                     case 'human resources':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/hr-index.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
                         break;
                     case 'quality assurances':
                         $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
                         break;
                     case 'project':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/pj-index.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
                         break;
                     case 'work health and safety':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-index.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
                         break;
-                    case 'test and tag':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
+                    case 'asset':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/asset-index.php";
                         break;
                     default:
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";

@@ -38,11 +38,13 @@ $asset_cable_sql = "
         cable_tags ON cable_tags.cable_id = cables.cable_id
     WHERE 
         cables.asset_no = '$asset_no'
+        AND (cables.location_id IS NULL OR location.location_id IS NOT NULL)
     GROUP BY 
         cables.cable_no
     ORDER BY 
         MAX(cable_tags.test_date) DESC
 ";
+
 
 $asset_cable_result = $conn->query($asset_cable_sql);
 
@@ -61,7 +63,7 @@ $asset_calibration_result = $conn->query($asset_calibration_sql);
 
 // Handle photo upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photos'])) {
-    $uploadDir = '../Images/' . $asset_no . '/00 - Photos/';
+    $uploadDir = 'D:/FSMBEH-Data/00 - QA/04 - Assets/' . $asset_no . '/00 - Photos/';
 
     // Create the directory if it doesn't exist
     if (!is_dir($uploadDir)) {
@@ -98,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photos'])) {
 // Check if the request is a POST for deleting a photo
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $file_name = $_POST['file'] ?? '';
-    $image_folder = '../Images/' . htmlspecialchars($_GET['asset_no']) . '/00 - Photos/';
+    $image_folder = 'D:/FSMBEH-Data/00 - QA/04 - Assets/' . $asset_no . '/00 - Photos/';
     $file_path = $image_folder . basename($file_name);
 
     // Check if the file exists and delete it
@@ -121,20 +123,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
 
     // Determine the folder path based on the category
     switch ($categories) {
+        case 'Manual':
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/01 - Manual";
+            break;
         case 'Warranty':
-            $folderPath = "../Images/$asset_no/03 - Warranty";
-            break;
-        case 'Maintenance':
-            $folderPath = "../Images/$asset_no/04 - Maintenance Logs";
-            break;
-        case 'Repair':
-            $folderPath = "../Images/$asset_no/05 - Service and Repairs Certificates";
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/02 - Warranty";
             break;
         case 'Calibration':
-            $folderPath = "../Images/$asset_no/03 - Calibration Certificates";
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/03 - Calibration Certificates";
+            break;
+        case 'Maintenance':
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/04 - Maintenance Logs";
+            break;
+        case 'Repair':
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/05 - Service and Repairs Certificates";
             break;
         default:
-            $folderPath = "../Images/$asset_no/Other"; // Default folder
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/Other"; // Default folder
             break;
     }
 
@@ -183,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
     }
 
     // Only insert into the database if the category is not 'Warranty'
-    if ($categories !== 'Warranty') {
+    if ($categories !== 'Warranty' || $categories !== 'Manual') {
         // Insert asset details into the database
         $add_asset_details_sql = "INSERT INTO asset_details (performed_date, due_date, categories, source, description, asset_id) VALUES (?, ?, ?, ?, ?, ?)";
         $add_asset_details_result = $conn->prepare($add_asset_details_sql);
@@ -281,6 +286,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                 margin-bottom: 0px;
             }
 
+            .smallScreenText {
+                font-size: 8px;
+            }
+
             .delete-btn {
                 font-size: 11px;
             }
@@ -308,47 +317,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         </div>
 
         <?php
-        $image_folder = "../Images/$asset_no/00 - Photos"; // Path to the folder with images
+        $image_folder = "/assets/$asset_no/00 - Photos"; // Public URL path
         $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         $photo_found = false; // Initialize the flag here
         ?>
 
         <div class="d-flex flex-wrap">
-            <?php
-            $photo_found = false; // Initialize photo_found
-            if (is_dir($image_folder)) {
-                $files = scandir($image_folder); // Get all files in the folder
-                foreach ($files as $file) {
-                    $file_path = $image_folder . '/' . $file;
-                    $file_extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            <div class="d-flex flex-wrap">
+                <?php
+                $photo_found = false; // Initialize photo_found
+                $image_dir = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/00 - Photos"; // Path to the actual folder on the server
+                $public_url_base = "http://192.168.0.7/assets/$asset_no/00%20-%20Photos"; // Public URL base for assets
+                
+                if (is_dir($image_dir)) {
+                    $files = scandir($image_dir); // Get all files in the folder
+                    foreach ($files as $file) {
+                        $file_path = $public_url_base . '/' . urlencode($file); // Construct public URL path
+                        $file_extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-                    // Check if the file is an image
-                    if (in_array($file_extension, $allowed_extensions)) {
-                        echo '
-                        <div class="photo-container position-relative me-1 rounded-2">
-                            <img src="' . htmlspecialchars($file_path) . '" 
-                                 alt="' . htmlspecialchars($file) . '" 
-                                 width="200" 
-                                 height="200" 
-                                 class="rounded-2 asset-photo">
-                            <button class="btn btn-danger btn-sm delete-btn position-absolute top-0 end-0 m-1" 
-                                    data-file="' . htmlspecialchars($file) . '">
-                                &times;
-                            </button>
-                        </div>';
-                        $photo_found = true; // Set flag to true if an image is found
+                        // Check if the file is an image
+                        if (in_array($file_extension, $allowed_extensions)) {
+                            echo '
+                    <div class="photo-container position-relative me-1 rounded-2">
+                        <img src="' . htmlspecialchars($file_path) . '" 
+                             alt="' . htmlspecialchars($file) . '" 
+                             width="200" 
+                             height="200" 
+                             class="rounded-2 asset-photo" 
+                             data-bs-toggle="modal" 
+                             data-bs-target="#imageModal" 
+                             data-bs-image="' . htmlspecialchars($file_path) . '">
+                        <button class="btn btn-danger btn-sm delete-btn position-absolute top-0 end-0 m-1" 
+                                data-file="' . htmlspecialchars($file) . '">
+                            &times;
+                        </button>
+                    </div>';
+                            $photo_found = true; // Set flag to true if an image is found
+                        }
                     }
                 }
-            }
 
-            // If no photos were found, display the Asset No. image container
-            if (!$photo_found) {
-                echo '<div class="me-1 rounded-2 signature-bg-color asset-photo" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
-            <span class="fw-bold text-white"> No Photo - ' . htmlspecialchars($asset_no) . '</span>
-          </div>';
-            }
-            ?>
+                // If no photos were found, display the Asset No. image container
+                if (!$photo_found) {
+                    echo '<div class="me-1 rounded-2 signature-bg-color asset-photo" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
+                <span class="fw-bold text-white text-nowrap smallScreenText"> No Photo - ' . htmlspecialchars($asset_no) . '</span>
+            </div>';
+                }
+                ?>
+            </div>
 
             <!-- Add More Photos Button -->
             <button
@@ -358,6 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                 <i class="fa-regular fa-images addPhotoSmallIcon" style="font-size: 50px;"></i>
             </button>
         </div>
+
 
         <?php if ($asset_details_result->num_rows > 0) { ?>
             <?php while ($row = $asset_details_result->fetch_assoc()) { ?>
@@ -430,7 +448,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                                 <h5 class="fw-bold mb-0 pb-0">Maintenance</h5>
                                 <div>
                                     <button class="btn btn-sm btn-info">
-                                        <a href="../open-asset-folder.php?folder=<?php echo $asset_no ?>&sub_folder=04%20-%20Maintenance%20Logs"
+                                        <?php
+                                        $subFolder = '04 - Maintenance Logs';
+                                        $encodedSubFolder = urlencode($subFolder);
+                                        ?>
+                                        <a href="../open-asset-folder.php?folder=<?php echo urlencode($asset_no) ?>&sub_folder=<?php echo $encodedSubFolder ?>"
                                             target="_blank">
                                             <i class="fa-solid fa-folder"></i>
                                         </a>
@@ -478,7 +500,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                                     </li>
                                 </ul>
                             <?php } else { ?>
-                                <div class="alert alert-warning mt-0 mt-md-3 mb-0" role="alert">
+                                <div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">
                                     No maintenance records available.
                                 </div>
                             <?php } ?>
@@ -489,6 +511,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 pb-0">Repair</h5>
                                 <div>
+                                    <button class="btn btn-sm btn-info">
+                                        <?php
+                                        $subFolder = '05 - Service and Repairs Certificates';
+                                        $encodedSubFolder = urlencode($subFolder);
+                                        ?>
+                                        <a href="../open-asset-folder.php?folder=<?php echo urlencode($asset_no) ?>&sub_folder=<?php echo $encodedSubFolder ?>"
+                                            target="_blank">
+                                            <i class="fa-solid fa-folder"></i>
+                                        </a>
+                                    </button>
                                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                         data-bs-target="#assetDetailsHistoryModal" data-details-type="Repair"
                                         data-asset-id="<?php echo $row["asset_id"] ?>"><i
@@ -542,6 +574,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 pb-0">Calibration</h5>
                                 <div>
+                                    <button class="btn btn-sm btn-info">
+                                        <?php
+                                        $subFolder = '03 - Calibration Certificates';
+                                        $encodedSubFolder = urlencode($subFolder);
+                                        ?>
+                                        <a href="../open-asset-folder.php?folder=<?php echo urlencode($asset_no) ?>&sub_folder=<?php echo $encodedSubFolder ?>"
+                                            target="_blank">
+                                            <i class="fa-solid fa-folder"></i>
+                                        </a>
+                                    </button>
                                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                         data-bs-target="#assetDetailsHistoryModal" data-details-type="Calibration"
                                         data-asset-id="<?php echo $row["asset_id"] ?>"><i
@@ -594,26 +636,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 pb-0">Warranty</h5>
-                                <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
-                                    data-bs-toggle="modal" data-details-type="Warranty"
-                                    data-asset-id="<?php echo $row["asset_id"] ?>"><i
-                                        class="fa-solid fa-plus fa-sm"></i></button>
+                                <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                    data-bs-target="#addAssetDetailsModal" data-details-type="Warranty"
+                                    data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
+                                    <i class="fa-solid fa-plus fa-sm"></i>
+                                </button>
                             </div>
-                            <div class="alert alert-warning mt-3 mt-md-4 mb-0 mb-0" role="alert">
-                                No warranty records available.
-                            </div>
+
+                            <?php
+                            $directoryPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/02 - Warranty";
+
+                            // Check if the directory exists
+                            if (is_dir($directoryPath)) {
+                                $files = scandir($directoryPath); // Get all files and directories in the specified folder
+                                $files = array_diff($files, ['.', '..']); // Remove '.' and '..' entries
+                    
+                                if (count($files) > 0) {
+                                    // Display the list of files
+                                    echo '<div class="bg-white p-3 rounded-3 mt-4">';
+                                    foreach ($files as $file) {
+                                        $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+                                        // Determine the icon based on file extension
+                                        if ($fileExtension === 'pdf') {
+                                            $icon = 'fa-file-pdf text-danger';
+                                        } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                                            $icon = 'fa-file-word text-primary';
+                                        } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                            $icon = 'fa-file-image text-success';
+                                        } else {
+                                            $icon = 'fa-file';
+                                        }
+
+                                        // Output the file name with the icon
+                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=02 - Warranty&file=' . urlencode($file) . '">';
+                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
+                                    }
+                                    echo '</div>';
+                                } else {
+                                    // If no files exist
+                                    echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">No warranty records available.</div>';
+                                }
+                            } else {
+                                // If directory does not exist
+                                echo '<div class="alert alert-danger mt-3 mt-md-4 mb-0" role="alert">The warranty directory does not exist.</div>';
+                            }
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 pb-0">Manual</h5>
-                                <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#addManualModal"><i
-                                        class="fa-solid fa-plus fa-sm"></i></button>
+                                <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                    data-bs-target="#addAssetDetailsModal" data-details-type="Manual"
+                                    data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
+                                    <i class="fa-solid fa-plus fa-sm"></i>
+                                </button>
                             </div>
-                            <div class="alert alert-warning mt-3 mt-md-4 mb-0 mb-0" role="alert">
-                                No manual records available.
-                            </div>
+
+                            <?php
+                            $directoryPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/01 - Manual";
+
+                            // Check if the directory exists
+                            if (is_dir($directoryPath)) {
+                                $files = scandir($directoryPath); // Get all files and directories in the specified folder
+                                $files = array_diff($files, ['.', '..']); // Remove '.' and '..' entries
+                    
+                                if (count($files) > 0) {
+                                    // Display the list of files
+                                    echo '<div class="bg-white p-3 rounded-3 mt-4">';
+                                    foreach ($files as $file) {
+                                        $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+                                        // Determine the icon based on file extension
+                                        if ($fileExtension === 'pdf') {
+                                            $icon = 'fa-file-pdf text-danger';
+                                        } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                                            $icon = 'fa-file-word text-primary';
+                                        } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                            $icon = 'fa-file-image text-success';
+                                        } else {
+                                            $icon = 'fa-file';
+                                        }
+
+                                        // Output the file name with the icon
+                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=02 - Warranty&file=' . urlencode($file) . '">';
+                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
+                                    }
+                                    echo '</div>';
+                                } else {
+                                    // If no files exist
+                                    echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">No manual records available.</div>';
+                                }
+                            } else {
+                                // If directory does not exist
+                                echo '<div class="alert alert-danger mt-3 mt-md-4 mb-0" role="alert">The manual directory does not exist.</div>';
+                            }
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -623,7 +743,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                             </div>
 
                             <?php if ($asset_cable_result->num_rows > 0) { ?>
-                                <div class="rounded-3 mb-0 mt-4" style="overflow-y: hidden;">
+                                <div class="rounded-3 mb-0 mt-3 mt-md-4" style="overflow-y: hidden;">
                                     <table class="table table-bordered table-hover mb-0 pb-0">
                                         <thead>
                                             <tr class="custom-table">
@@ -658,7 +778,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                                     </table>
                                 </div>
                             <?php } else { ?>
-                                <div class="alert alert-warning mt-md-4 mb-0 mb-0" role="alert">
+                                <div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">
                                     No test & tag records found for this asset.
                                 </div>
                             <?php } ?>
@@ -792,6 +912,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         </div>
     </div>
 
+    <!-- ========================  Modal for Displaying Larger Image ======================== -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Asset Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="Asset Image" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const deleteButtons = document.querySelectorAll('.delete-btn');
@@ -858,7 +993,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                 modalCategoriesToAdd.value = detailsTypeText;
 
                 // Handle "Warranty" specific conditions
-                if (detailsTypeText === "Warranty") {
+                if (detailsTypeText === "Warranty" || detailsTypeText === "Manual") {
                     // Hide all elements except the Choose Files field
                     var fieldsToHide = myModalEl.querySelectorAll('.form-group');
                     fieldsToHide.forEach(function (field) {
@@ -926,7 +1061,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         function formatDate(dateString) {
             const date = new Date(dateString);
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return date.toLocaleDateString('en-AU', options); 
+            return date.toLocaleDateString('en-AU', options);
         }
         document.addEventListener('DOMContentLoaded', function () {
             var myModalEl = document.getElementById('assetDetailsHistoryModal');
@@ -1043,6 +1178,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
 
         document.getElementById('addFiveYearBtn').addEventListener('click', function () {
             updateDueDate('5years');
+        });
+    </script>
+
+    <script>
+        // JavaScript to update the modal with the clicked image's source
+        const images = document.querySelectorAll('.asset-photo');
+        images.forEach(image => {
+            image.addEventListener('click', function () {
+                const imageUrl = this.getAttribute('data-bs-image');
+                document.getElementById('modalImage').src = imageUrl;
+            });
         });
     </script>
 

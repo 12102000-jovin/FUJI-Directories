@@ -82,9 +82,15 @@ $folders_result = $conn->query($folders_sql);
                         }
                     }
 
-                    // Set custom href for 'test' and 'tag'
-                    if ($folderName === 'test and tag') {
-                        $href = "http://$serverAddress/$projectName/Pages/cable-table.php";
+                    // Set custom href
+                    if ($folderName === 'asset') {
+                        $href = "http://$serverAddress/$projectName/Pages/asset-index.php";
+                    } else if ($folderName === 'human resources') {
+                        $href = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                    } else if ($folderName === 'project') {
+                        $href = "http://$serverAddress/$projectName/Pages/project-table.php";
+                    } else if ($folderName === 'work health and safety') {
+                        $href = "http://$serverAddress/$projectName/Pages/whs-table.php";
                     } else {
                         $href = "http://$serverAddress/$projectName/Pages/" . strtolower($initials) . "-index.php";
                     }

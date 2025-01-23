@@ -40,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupIdToEdit'])) {
     echo $groupIdToEdit . " " . $groupNameToEdit;
 
     // Query to edit group name 
-    $edit_group_name_sql = "UPDATE groups SET group_name = ? WHERE group_id = ?";
+    $edit_group_name_sql = "UPDATE `groups` SET group_name = ? WHERE group_id = ?";
     $edit_group_name_result = $conn->prepare($edit_group_name_sql);
     $edit_group_name_result->bind_param("si", $groupNameToEdit, $groupIdToEdit);
 

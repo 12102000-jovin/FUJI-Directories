@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username']) && isset(
                         <div class="form-group mt-3 position-relative">
                             <label for="password" class="fw-bold">Password</label>
                             <input type="password" class="form-control" id="password" name="password"
-                                value="<?php echo htmlspecialchars($row['password']); ?>">
+                                value="">
                             <a class="position-absolute top-50 end-0 mt-1 me-2 signature-color" type="button" id="togglePassword">
                                 <i class="fas fa-eye"></i>
                             </a>

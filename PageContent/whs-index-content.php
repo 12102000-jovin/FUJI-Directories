@@ -154,7 +154,9 @@ if ($latest_whs_result->num_rows > 0) {
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
-                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Work Health and Safety</li>
+                        <li class="breadcrumb-item"><a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-table.php">WHS Table</a></li>
+                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">WHS Dashboard</li>
                     </ol>
                 </nav>
             </div>

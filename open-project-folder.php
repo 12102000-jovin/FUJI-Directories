@@ -8,19 +8,17 @@
 
 <body class="background-color">
     <?php
-    // $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
     $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
     $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
 
     $baseDirectory = 'D:\FSMBEH-Data\04 - PJ\03 - Projects';
-    $directory = $baseDirectory . "/" . $folder;
+    $directory = realpath($baseDirectory . DIRECTORY_SEPARATOR . $folder);
 
-    $currentDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
-    $fullDirectory = $directory . ($currentDir ? '/' . $currentDir : '');
+    $currentDir = isset($_GET['dir']) ? $_GET['dir'] : '';
+    $fullDirectory = realpath($directory . ($currentDir ? DIRECTORY_SEPARATOR . $currentDir : ''));
 
-    // Ensure the directory exists
-    if (is_dir($fullDirectory)) {
-        // Get all files and directories within the specified directory
+    // Ensure the directory exists and is within the base directory
+    if ($fullDirectory && strpos($fullDirectory, $baseDirectory) === 0 && is_dir($fullDirectory)) {
         $filesAndDirs = scandir($fullDirectory);
 
         // Extract parent directory for navigation
@@ -28,21 +26,19 @@
         $parentDirName = basename($parentDir);
         $currentDirName = basename($fullDirectory);
 
-        // Filter results based on search query
         if ($searchQuery) {
             $filesAndDirs = array_filter($filesAndDirs, function ($item) use ($searchQuery) {
                 return stripos($item, $searchQuery) !== false;
             });
         }
 
-        echo "<div class='container mt-3'>"; // Container for Bootstrap styling
+        echo "<div class='container mt-3'>";
         echo "<div class='mb-3'>";
-        echo '<button class="btn btn-sm signature-btn mb-4" id="closeButton"> <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Close Tab</button>';
-        echo "<h5>  Directory: <span class='text-decoration-underline'>$fullDirectory </span> </h5>";
+        echo '<button class="btn btn-sm signature-btn mb-4" id="closeButton"><i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Close Tab</button>';
+        echo "<h5>Directory: <span class='text-decoration-underline'>$fullDirectory</span></h5>";
 
         echo '<div class="mb-5">';
         echo '<form method="get" class="d-flex w-100">';
-        // echo '<input type="hidden" name="employee_id" value="' . htmlspecialchars($employeeId) . '">';
         echo '<input type="hidden" name="folder" value="' . htmlspecialchars($folder) . '">';
         echo '<input type="hidden" name="dir" value="' . htmlspecialchars($currentDir) . '">';
         echo '<div class="input-group me-2">';
@@ -53,20 +49,20 @@
         echo '</form>';
         echo '</div>';
 
-        if ($currentDir && $currentDir !== ".") {
-            // Link to go back to the parent directory
-            echo "<a href='?folder=" . urlencode($folder) . "&dir=" . urlencode(dirname($currentDir)) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
+        if ($currentDir) {
+            $parentDirPath = dirname($currentDir);
+            echo "<a href='?folder=" . urlencode($folder) . "&dir=" . urlencode($parentDirPath) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> Back</a>";
         }
-        echo "</div>";
 
+        echo "</div>";
         echo "<div class='list-group rounded-3'>";
+
         foreach ($filesAndDirs as $item) {
-            // Skip the current (.) and parent (..) directories
             if ($item === '.' || $item === '..')
                 continue;
 
-            $itemPath = $fullDirectory . '/' . $item;
-            $itemUrl = '?folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery);
+            $itemPath = realpath($fullDirectory . DIRECTORY_SEPARATOR . $item);
+            $itemUrl = '?folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . DIRECTORY_SEPARATOR . $item) . '&search=' . urlencode($searchQuery);
             $itemName = htmlspecialchars($item);
             $fileExtension = strtolower(pathinfo($item, PATHINFO_EXTENSION));
 
@@ -77,17 +73,12 @@
             } else {
                 $fileUrl = 'open-project-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&dir=" . urlencode($currentDir);
 
-                // Determine the icon based on file extension
-                if ($fileExtension === 'pdf') {
-                    $icon = 'fa-file-pdf text-danger'; // PDF icon
-                } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
-                    $icon = 'fa-file-word text-primary'; // Word icon
-                } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $icon = 'fa-file-image text-success'; // Image icon
-                } else {
-                    $icon = 'fa-file'; // Default icon for other file types
-                }
-
+                $icon = match ($fileExtension) {
+                    'pdf' => 'fa-file-pdf text-danger',
+                    'doc', 'docx' => 'fa-file-word text-primary',
+                    'jpg', 'jpeg', 'png', 'gif' => 'fa-file-image text-success',
+                    default => 'fa-file',
+                };
 
                 echo "<a href='" . $fileUrl . "' class='list-group-item list-group-item-action d-flex align-items-center' target='_blank'>";
                 echo "<i class='fa-solid " . $icon . " me-2'></i><span class='me-2'>" . $itemName . "</span>";
@@ -99,11 +90,10 @@
         echo "</div>";
     } else {
         echo "<div class='container mt-3'>";
-        echo "<div class='alert alert-danger' role='alert'>Directory does not exist.</div>";
+        echo "<div class='alert alert-danger' role='alert'>Directory does not exist or access is restricted.</div>";
         echo "</div>";
     }
     ?>
-
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>

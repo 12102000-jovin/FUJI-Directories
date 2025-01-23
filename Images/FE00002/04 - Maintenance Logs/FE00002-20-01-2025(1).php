@@ -1,5 +1,5 @@
 <?php
-require_once 'vendor/autoload.php';// Include the Composer autoload file
+require_once '/Applications/XAMPP/xamppfiles/htdocs/FUJI-Directoriess/vendor/autoload.php';// Include the Composer autoload file
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 

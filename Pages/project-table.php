@@ -29,7 +29,7 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : 'project_id';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
 // Pagination
-$records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 10; // Number of records per page
+$records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 30; // Number of records per page
 $page = isset($_GET["page"]) ? intval($_GET["page"]) : 1; // Current Page
 $offset = ($page - 1) * $records_per_page; // Offset for SQL query  
 
@@ -112,6 +112,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="shortcut icon" type="image/x-icon" href="../Images/FE-logo-icon.ico" />
     <style>
+        .canvasjs-chart-credit {
+            display: none !important;
+        }
+
+        .canvasjs-chart-canvas {
+            border-radius: 12px;
+        }
+
         .table-responsive {
             transform: scale(0.75);
             transform-origin: top left;
@@ -158,9 +166,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php">Project
-                            Dashboard</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Project Table
                     </li>
                 </ol>
@@ -225,6 +230,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 </div>
                 <?php if ($role === "admin") { ?>
                     <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                        <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#projectReportModal">
+                            <i class="fa-solid fa-square-poll-vertical"></i> Report</button>
+                        <a class="btn btn-primary me-2"
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php"> <i
+                                class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add Project</button>
                     </div>
@@ -640,8 +650,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
     </div>
 
-    <?php require_once("../logout.php") ?>
+    <div class="modal fade" id="projectReportModal" tabindex="-1" aria-labelledby="projectReportModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Project Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="true"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require("../PageContent/ModalContent/project-report.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <?php require_once("../logout.php") ?>
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <script src=" https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 

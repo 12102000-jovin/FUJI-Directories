@@ -99,10 +99,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     <table class="table table-bordered table-hover mb-0 pb-0">
         <thead class="print-table-head">
             <tr>
-                <th class="py-3 align-middle text-center hide-print" style="max-width: 10px">Action</th>
-                <th class="py-3 align-middle text-center print-mode" style="max-width: 40px">Item No.</th>
+                <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
+                <th class="py-3 align-middle text-center print-mode" style="min-width: 120px">Item No.</th>
                 <th class="py-3 align-middle text-center" style="min-width: 240px">Description</th>
-                <th class="py-3 align-middle text-center" style="max-width: 40px">
+                <th class="py-3 align-middle text-center" style="min-width: 200px">
                     <div class="dropdown">
                         <a class="text-decoration-none text-white" data-bs-toggle="dropdown" style="cursor: pointer"
                             aria-expanded="false">
@@ -115,9 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                         </ul>
                     </div>
                 </th>
-                <th class="py-3 align-middle text-center">Unit Price</th>
+                <th class="py-3 align-middle text-center" style="min-width: 160px">Unit Price</th>
                 <th class="py-3 align-middle text-center">Qty</th>
-                <th class="py-3 align-middle text-center">Sub-Total</th>
+                <th class="py-3 align-middle text-center" style="min-width: 200px">Sub-Total</th>
                 <th class="py-3 align-middle text-center">Invoiced</th>
             </tr>
         </thead>

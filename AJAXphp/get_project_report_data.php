@@ -17,7 +17,6 @@ $endDate = isset($_POST['endDate']) ? $_POST['endDate'] : null;
 $projectType = isset($_POST['projectType']) && $_POST['projectType'] !== "" ? $_POST['projectType'] : null;
 $paymentTerms = isset($_POST['paymentTerms']) && $_POST['paymentTerms'] !== "" ? $_POST['paymentTerms'] : null;
 
-
 // Initialize project type condition
 $projectTypeCondition = "";
 if ($projectType) {
@@ -40,7 +39,6 @@ if ($endDate) {
     $endDateCondition = " AND date <= '$endDate'"; // Add end date filter
 }
 
-
 // Query to get project details, including invoiced and non-invoiced projects, within the date range
 $pj_details_sql = "SELECT pd.*, p.* 
                    FROM project_details pd
@@ -52,20 +50,26 @@ $pj_details_sql = "SELECT pd.*, p.*
                    $paymentTermsCondition
                    ORDER BY pd.date";
 
-
 // Execute the query to fetch project details
 $pj_details_result = $conn->query($pj_details_sql);
 
-$total_pj_total_count = 0;
-
 // Initialize an array to store project details for table rows
 $projectDetails = array();
+$invoicedTotal = 0;
+$nonInvoicedTotal = 0;
 
 // Check if there are any results
 if ($pj_details_result->num_rows > 0) {
     while ($row = $pj_details_result->fetch_assoc()) {
         $projectDetails[] = $row;  // Add project details to the array
         $total_pj_total_count += $row['sub_total'];  // Accumulate the sub_total
+
+        // Accumulate total for invoiced and non-invoiced projects
+        if ($row['invoiced'] == 1) {
+            $invoicedTotal += $row['sub_total'];
+        } else {
+            $nonInvoicedTotal += $row['sub_total'];
+        }
     }
 }
 
@@ -85,21 +89,20 @@ $pj_invoiced_sql = "SELECT
                     ORDER BY YEAR(pd.date), MONTH(pd.date)";
 
 // Query to sum sub_total for non-invoiced projects, grouped by month and year
+// Query to sum sub_total for non-invoiced projects (invoiced = 0 or NULL), grouped by month and year
 $pj_non_invoiced_sql = "SELECT 
                             MONTH(pd.date) AS month, 
                             YEAR(pd.date) AS year, 
                             SUM(pd.sub_total) AS total_non_invoiced_sub_total
                         FROM project_details pd
                         JOIN projects p ON pd.project_id = p.project_id
-                        WHERE pd.invoiced = '0' 
+                        WHERE (pd.invoiced = 0 OR pd.invoiced IS NULL)
                         $startDateCondition
                         $endDateCondition
                         $projectTypeCondition
                         $paymentTermsCondition
                         GROUP BY YEAR(pd.date), MONTH(pd.date)
                         ORDER BY YEAR(pd.date), MONTH(pd.date)";
-
-$total_pj_total_count = 0;
 
 // Initialize empty arrays for data points
 $dataPoints8 = array();  // Invoiced projects data points
@@ -126,9 +129,6 @@ if ($pj_invoiced_result->num_rows > 0) {
 
         // Keep track of the month-year combination for invoiced projects
         $invoiced_months_years[] = $label;
-
-        // Update the total for invoiced projects
-        $total_pj_total_count += $total_invoiced_sub_total;
     }
 }
 
@@ -152,33 +152,30 @@ if ($pj_non_invoiced_result->num_rows > 0) {
     }
 }
 
-// Combine all months and years from both invoiced and non-invoiced data
-$all_months_years = array_merge($invoiced_months_years, $non_invoiced_months_years);
-$all_months_years = array_unique($all_months_years);  // Remove duplicates
-
-// Add missing months/years with 0 value
-foreach ($all_months_years as $month_year) {
-    // Check if this month-year combination exists in invoiced data
-    if (!in_array($month_year, $invoiced_months_years)) {
-        $dataPoints8[] = array("label" => $month_year, "y" => 0);
-    }
-    // Check if this month-year combination exists in non-invoiced data
-    if (!in_array($month_year, $non_invoiced_months_years)) {
-        $dataPoints9[] = array("label" => $month_year, "y" => 0);
-    }
+// Merge and ensure no duplicate months
+$mergedData = [];
+foreach ($dataPoints8 as $dp8) {
+    $mergedData[$dp8['label']]['invoiced'] = $dp8['y'];
+}
+foreach ($dataPoints9 as $dp9) {
+    $mergedData[$dp9['label']]['non_invoiced'] = $dp9['y'];
 }
 
-// Sort the data points by month-year to ensure they appear in the correct order
-usort($dataPoints8, function ($a, $b) {
-    return strcmp($a['label'], $b['label']);
-});
-usort($dataPoints9, function ($a, $b) {
-    return strcmp($a['label'], $b['label']);
-});
+// Sort merged data by month-year (chronologically)
+ksort($mergedData);
+
+// Prepare the final sorted data points for the chart
+$finalDataPoints8 = [];
+$finalDataPoints9 = [];
+
+foreach ($mergedData as $label => $data) {
+    $finalDataPoints8[] = ["label" => $label, "y" => $data['invoiced'] ?? 0];
+    $finalDataPoints9[] = ["label" => $label, "y" => $data['non_invoiced'] ?? 0];
+}
 
 // Calculate total values
-$totalInvoiced = array_sum(array_column($dataPoints8, 'y'));
-$totalNonInvoiced = array_sum(array_column($dataPoints9, 'y'));
+$totalInvoiced = $invoicedTotal;
+$totalNonInvoiced = $nonInvoicedTotal;
 
 // Prepare data points for Chart 6
 $pjTotalDataPoints = [
@@ -188,12 +185,11 @@ $pjTotalDataPoints = [
 
 // Return data in JSON format for AJAX response
 echo json_encode([
-    'dataPoints8' => $dataPoints8,
-    'dataPoints9' => $dataPoints9,
+    'dataPoints8' => $finalDataPoints8,
+    'dataPoints9' => $finalDataPoints9,
     'totalInvoiced' => $totalInvoiced,
     'totalNonInvoiced' => $totalNonInvoiced,
     'projectDetails' => $projectDetails,
     'totalCount' => $total_pj_total_count
 ]);
-
 ?>
