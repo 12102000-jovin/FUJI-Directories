@@ -31,10 +31,37 @@ $records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPag
 $page = isset($_GET["page"]) ? intval($_GET["page"]) : 1; // Current Page
 $offset = ($page - 1) * $records_per_page; // Offset for SQL query  
 
-// Search condition
-$whereClause = "cables.cable_no LIKE '%$searchTerm%' OR cable_tags.cable_tag_no LIKE '%$searchTerm%'";
+// Get the test status filter from the URL
+$testStatusFilter = isset($_GET['test_status']) ? $_GET['test_status'] : 'all'; // Default to 'all'
 
-// SQL query with JOINs and GROUP BY
+// Initialize the WHERE clause with the search term condition
+$whereClause = "(cables.cable_no LIKE '%$searchTerm%' OR cable_tags.cable_tag_no LIKE '%$searchTerm%')";
+
+// Add additional filtering based on test status, unless 'all' is selected
+if ($testStatusFilter != 'all') {
+    $currentDate = new DateTime(); // Get the current date
+
+    switch ($testStatusFilter) {
+        case 'almost_due':
+            // Filter cables that are almost due (due within 30 days)
+            $whereClause .= " AND DATE_ADD(cable_tags.test_date, INTERVAL cables.test_frequency MONTH) BETWEEN CURDATE() AND CURDATE() + INTERVAL 30 DAY";
+            break;
+        case 'already_due':
+            // Filter cables that are already due
+            $whereClause .= " AND DATE_ADD(cable_tags.test_date, INTERVAL cables.test_frequency MONTH) < CURDATE()";
+            break;
+        case 'not_tested':
+            // Filter cables that have not been tested
+            $whereClause .= " AND cable_tags.test_date IS NULL";
+            break;
+        case 'tested':
+            // Filter cables that have been tested
+            $whereClause .= " AND cable_tags.test_date IS NOT NULL";
+            break;
+    }
+}
+
+// Final SQL query with the dynamic WHERE clause
 $cables_sql = "
     SELECT 
         cables.*, 
@@ -49,18 +76,21 @@ $cables_sql = "
     LIMIT $offset, $records_per_page
 ";
 
-// Get total number of records
-$total_records_sql = " SELECT COUNT(DISTINCT cables.cable_id) AS total
-FROM cables
-LEFT JOIN cable_tags ON cables.cable_id = cable_tags.cable_id 
-LEFT JOIN location ON cables.location_id = location.location_id
-WHERE $whereClause";
+// Get total number of records based on the filtering
+$total_records_sql = " 
+    SELECT COUNT(DISTINCT cables.cable_id) AS total
+    FROM cables
+    LEFT JOIN cable_tags ON cables.cable_id = cable_tags.cable_id 
+    LEFT JOIN location ON cables.location_id = location.location_id
+    WHERE $whereClause";
 $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Execute the query
 $cables_result = $conn->query($cables_sql);
+
+
 
 // ========================= D E L E T E  C A B L E =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
@@ -136,28 +166,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                     </li>
                 </ol>
             </nav>
-            <!-- <div class="d-flex justify-content-end mb-3">
-                <div class="d-flex align-items-start me-2 mt-0 pt-0">
-                    <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#filterColumnModal">
-                        <i class="fa-solid fa-sliders me-1"></i>Filter Column</button>
-                </div>
-                <div class="btn-group shadow-lg" role="group" aria-label="Zoom Controls">
-                    <button class="btn btn-sm btn-light" style="cursor:pointer" onclick="zoom(0.8)"><i
-                            class="fa-solid fa-magnifying-glass-minus"></i></button>
-                    <button class="btn btn-sm btn-light" style="cursor:pointer" onclick="zoom(1.2)"><i
-                            class="fa-solid fa-magnifying-glass-plus"></i></button>
-                    <button class="btn btn-sm btn-danger" style="cursor:pointer" onclick="resetZoom()"><small
-                            class="fw-bold">Reset</small></button>
-                </div>
-            </div> -->
         </div>
 
         <div class="row mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="col-8 col-lg-5">
-                    <form method="GET" id="searchForm">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
+                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
                         <div class="d-flex align-items-center">
-                            <div class="input-group me-2">
+                            <div class="input-group me-2 flex-grow-1">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
@@ -169,10 +185,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                             <button class="btn btn-danger ms-2">
                                 <a class="dropdown-item" href="#" onclick="clearURLParameters()">Clear</a>
                             </button>
+                            <!-- Dropdown for filtering cable test status -->
+                            <div class="dropdown ms-2">
+                                <button class="btn btn-outline-dark dropdown-toggle" type="button"
+                                    id="testStatusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    All
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="testStatusDropdown">
+                                    <li><a class="dropdown-item status-check" href="#" data-value="all">All</a></li>
+                                    <li><a class="dropdown-item status-check" href="#" data-value="almost_due">Almost
+                                            Due (30
+                                            Days)</a></li>
+                                    <li><a class="dropdown-item status-check" href="#" data-value="already_due">Already
+                                            Due</a></li>
+                                    <li><a class="dropdown-item status-check" href="#" data-value="not_tested">Not
+                                            Tested</a></li>
+                                    <li><a class="dropdown-item status-check" href="#" data-value="tested">Tested</a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </form>
                 </div>
-                <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
                     <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                             class="fa-solid fa-plus"></i> Add Cable</button>
                 </div>
@@ -184,14 +219,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 <thead>
                     <tr>
                         <th style="max-width: 50px;"></th>
-                        <th class="py-4 align-middle text-center">Cable No.</th>
-                        <th class="py-4 align-middle text-center">Description</th>
-                        <th class="py-4 align-middle text-center">Location</th>
-                        <th class="py-4 align-middle text-center">Test Frequency</th>
-                        <th class="py-4 align-middle text-center">Last Date Tested</th>
-                        <th class="py-4 align-middle text-center">Test Due Date</th>
-                        <th class="py-4 align-middle text-center">FE No.</th>
-                        <th class="py-4 align-middle text-center">Purchase Date</th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('cable_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Cable No <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('description', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">Description <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('location_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">Location <i
+                                    class="fa-solid fa-sort famd ms-1"> </i></a></th>
+                        <th class=" py-4 align-middle text-center"> <a
+                                onclick="updateSort('test_frequency', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Test Frequency <i
+                                    class="fa-solid fa-sort fa-md ms-1"> </i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('last_date_tested', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Last Date Tested <i
+                                    class="fa-solid fa-sort fa-md ms-1"> </i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('last_date_tested', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Test Due Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"> </i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('asset_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> FE No. <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('purchase_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Purchase Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -216,7 +275,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                         data-cable-no="<?= $row['cable_no'] ?>" data-location="<?= $row['location_name'] ?>"
                                         data-test-frequency="<?= $row['test_frequency'] ?>"><i
                                             class="fa-solid fa-barcode"></i></button>
-
                                 </td>
                                 <td class="py-3 align-middle text-center"><?= $row['cable_no'] ?></td>
                                 <td class="py-3 align-middle text-center"
@@ -243,28 +301,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                 </td>
                                 <td class="py-3 align-middle text-center 
                                 <?php
-                                    if (!empty($row['last_date_tested'])) {
-                                        $lastDateTested = new DateTime($row['last_date_tested']);
-                                        $testFrequency = $row['test_frequency'];
+                                if (!empty($row['last_date_tested'])) {
+                                    $lastDateTested = new DateTime($row['last_date_tested']);
+                                    $testFrequency = $row['test_frequency'];
 
-                                        // Add test frequency (in months) to last date tested
-                                        $dueDate = $lastDateTested->modify("+$testFrequency months");
-                                        $currentDate = new DateTime();
+                                    // Add test frequency (in months) to last date tested
+                                    $dueDate = $lastDateTested->modify("+$testFrequency months");
+                                    $currentDate = new DateTime();
 
-                                        // Calculate the interval between the current date and the due date
-                                        $interval = $currentDate->diff($dueDate);
+                                    // Calculate the interval between the current date and the due date
+                                    $interval = $currentDate->diff($dueDate);
 
-                                        if ($currentDate > $dueDate) {
-                                            // Due date has already passed
-                                            echo 'bg-danger text-white';
-                                        } elseif ($interval->m < 1 && $interval->invert == 0) {
-                                            // Less than a month due
-                                            echo 'bg-danger bg-opacity-25';
-                                        }
-                                    } else {
-                                        echo 'bg-secondary text-white'; // Optional for N/A case
+                                    if ($currentDate > $dueDate) {
+                                        // Due date has already passed
+                                        echo 'bg-danger text-white';
+                                    }  elseif (($interval->y == 0 && $interval->m == 0) && $interval->invert == 0) {
+                                        // Less than a month left (same year and same month)
+                                        echo 'bg-danger bg-opacity-25';
                                     }
-                                    ?>" style="<?= empty($row['last_date_tested']) ? 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' : '' ?>">
+                                } else {
+                                    echo 'bg-secondary text-white'; // Optional for N/A case
+                                }
+                                ?>"
+                                    style="<?= empty($row['last_date_tested']) ? 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' : '' ?>">
                                     <?php
                                     if ($row['last_date_tested']) {
                                         echo $dueDate->format('d F Y');
@@ -320,6 +379,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                 <!-- Pagination controls -->
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
+                        <!-- First Page Button -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(1); return false;" aria-label="First"
+                                    style="cursor: pointer">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                        <?php endif; ?>
+
                         <!-- Previous Button -->
                         <?php if ($page > 1): ?>
                             <li class="page-item">
@@ -368,6 +441,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                         <?php else: ?>
                             <li class="page-item disabled">
                                 <span class="page-link">&raquo;</span>
+                            </li>
+                        <?php endif; ?>
+
+                        <!-- Last Page Button -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(<?php echo $total_pages; ?>); return false;"
+                                    aria-label="Last" style="cursor: pointer">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
                             </li>
                         <?php endif; ?>
                     </ul>
@@ -777,7 +864,48 @@ img {
             window.location.href = url.toString();
         }
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dropdownButton = document.getElementById("testStatusDropdown");
+            const dropdownItems = document.querySelectorAll(".dropdown-menu .status-check");
 
+            // Get test_status from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentFilter = urlParams.get("test_status") || "all"; // Default to "All"
+
+            // Mapping test_status values to text labels
+            const filterLabels = {
+                "all": "All",
+                "almost_due": "Almost Due (30 Days)",
+                "already_due": "Already Due",
+                "not_tested": "Not Tested",
+                "tested": "Tested"
+            };
+
+            // Set the dropdown button text based on current filter
+            dropdownButton.textContent = filterLabels[currentFilter] || "All";
+
+            // Function to update the dropdown button text and apply filter
+            dropdownItems.forEach(item => {
+                item.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    const selectedValue = this.getAttribute("data-value");
+
+                    // Update button text
+                    dropdownButton.textContent = this.textContent;
+
+                    // Apply filter (Redirect with selected test_status)
+                    applyTestStatusFilter(selectedValue);
+                });
+            });
+        });
+
+        function applyTestStatusFilter(testStatus) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("test_status", testStatus);
+            window.location.href = url.toString();
+        }
+    </script>
 </body>
 
 </html>

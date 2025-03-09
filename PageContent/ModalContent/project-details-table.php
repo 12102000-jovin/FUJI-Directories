@@ -10,8 +10,7 @@
 
         .column-print {
             display: block;
-            column-count: 2;
-            column-gap: 20px;
+            column-count: 2 column-gap: 20px;
         }
 
         .print-table-head {
@@ -20,10 +19,13 @@
     }
 </style>
 
+
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+$loginEmployeeId = $_SESSION["employee_id"];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["deleteProjectDetails"])) {
     $projectIdToBeDeleted = $_POST["projectIdToBeDeleted"];
@@ -76,6 +78,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
 }
 ?>
 
+<input type="hidden" id="loginEmployeeId" value="<?php echo $loginEmployeeId ?>">
+<input type="hidden" id="userRole" value="<?php echo $role ?>">
 <div class="row column-print">
     <div class="col-md-6">
         <h5 class="fw-bold signature-color mb-0">Project Name</h5>
@@ -99,7 +103,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     <table class="table table-bordered table-hover mb-0 pb-0">
         <thead class="print-table-head">
             <tr>
-                <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
+                <?php if ($role == "admin") { ?>
+                    <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
+                <?php } ?>
                 <th class="py-3 align-middle text-center print-mode" style="min-width: 120px">Item No.</th>
                 <th class="py-3 align-middle text-center" style="min-width: 240px">Description</th>
                 <th class="py-3 align-middle text-center" style="min-width: 200px">
@@ -119,6 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                 <th class="py-3 align-middle text-center">Qty</th>
                 <th class="py-3 align-middle text-center" style="min-width: 200px">Sub-Total</th>
                 <th class="py-3 align-middle text-center">Invoiced</th>
+                <th class="py-3 align-middle text-center">Approved By</th>
             </tr>
         </thead>
         <tbody id="projectDetailsTbody">

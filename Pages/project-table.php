@@ -187,11 +187,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
 
         <div class="row mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="col-8 col-lg-5">
-                    <form method="GET" id="searchForm">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
+                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
                         <div class="d-flex align-items-center">
-                            <div class="input-group me-2">
+                            <div class="input-group me-2 flex-grow-1">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
@@ -229,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     </form>
                 </div>
                 <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                    <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
                         <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#projectReportModal">
                             <i class="fa-solid fa-square-poll-vertical"></i> Report</button>
                         <a class="btn btn-primary me-2"
@@ -246,9 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <?php if ($role === "admin") { ?>
-                            <th></th>
-                        <?php } ?>
+                        <th></th>
                         <th class="py-4 align-middle text-center projectNoColumn" style="min-width:120px">
                             <a onclick="updateSort('project_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Project No <i
@@ -332,9 +330,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             }
                             ?>
                             <tr>
-                                <?php if ($role === "admin") { ?>
-                                    <td class="align-middle">
-                                        <div class="d-flex">
+
+                                <td class="align-middle">
+                                    <div class="d-flex">
+                                        <?php if ($role === "admin") { ?>
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
                                                 data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
                                                 data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
@@ -351,15 +350,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 data-project-no="<?= $row["project_no"] ?>"
                                                 data-quote-no="<?= $row["quote_no"] ?>"><i
                                                     class="fa-regular fa-trash-can text-danger"></i></button>
-                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#detailsModal"
-                                                data-project-id="<?= $row["project_id"] ?>"
-                                                data-project-name="<?= $row["project_name"] ?>"
-                                                data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
-                                                data-customer="<?= $row["customer"] ?>"><i
-                                                    class="fa-solid fa-file-pen text-warning text-opacity-50"></i></button>
-                                        </div>
-                                    </td>
-                                <?php } ?>
+                                        <?php } ?>
+                                        <button class="btn" data-bs-toggle="modal" data-bs-target="#detailsModal"
+                                            data-project-id="<?= $row["project_id"] ?>"
+                                            data-project-name="<?= $row["project_name"] ?>"
+                                            data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
+                                            data-customer="<?= $row["customer"] ?>"><i
+                                                class="fa-solid fa-file-pen text-warning text-opacity-50"></i></button>
+                                    </div>
+                                </td>
                                 <td class="py-3 align-middle text-center projectNoColumn"><a
                                         href="../open-project-folder.php?folder=<?= $row["project_no"] ?>"
                                         target="_blank"><?= $row['project_no'] ?></a></td>

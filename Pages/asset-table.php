@@ -168,15 +168,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                 <thead>
                     <tr>
                         <th style="max-width: 50px;"></th>
-                        <th class="py-4 align-middle text-center">Department</th>
-                        <th class="py-4 align-middle text-center">FE No.</th>
-                        <th class="py-4 align-middle text-center">Asset Name</th>
-                        <th class="py-4 align-middle text-center">Status</th>
-                        <th class="py-4 align-middle text-center">Serial Number</th>
-                        <th class="py-4 align-middle text-center">Asset Location</th>
-                        <th class="py-4 align-middle text-center">Accounts</th>
-                        <th class="py-4 align-middle text-center">WHS</th>
-                        <th class="py-4 align-middle text-center">Purchase Date</th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('department_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Department <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('asset_no', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> FE No. <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('asset_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer">Asset Name <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Status <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('serial_number', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Serial Number <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('location_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor: pointer"> Asset Location <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><as
+                                onclick="updateSort('accounts_asset', '<?= $order == 'asc' ? 'desc' : 'asc'?>')"
+                                class="text-decoration-none text-white" style="cursor: pointer">Accounts <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></as></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('whs_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="curdor: pointer">WHS <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('purchase_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Purchase Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -492,6 +519,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
             const url = new URL(window.location.href);
             url.searchParams.set('recordsPerPage', recordsPerPage);
             url.searchParams.set('page', 1);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        function updateSort(sort, order) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', sort);
+            url.searchParams.set('order', order);
             window.location.href = url.toString();
         }
     </script>

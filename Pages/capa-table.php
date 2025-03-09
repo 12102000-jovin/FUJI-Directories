@@ -26,7 +26,7 @@ $statusFilter = isset($_GET['status']) ? $conn->real_escape_string($_GET['status
 
 // Sorting Variables
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'capa_document_id';
-$order = isset($_GET['order']) ? $_GET['order'] : 'asc';
+$order = isset($_GET['order']) ? $_GET['order'] : 'desc';
 
 // Pagination
 $records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 10; // Number of records per page
@@ -167,11 +167,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
         </div>
 
         <div class="row mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="col-8 col-lg-5">
-                    <form method="GET" id="searchForm">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
+                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100"> 
                         <div class="d-flex align-items-center">
-                            <div class="input-group me-2">
+                            <div class="input-group me-2 flex-grow-1">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
@@ -203,7 +203,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                     </form>
                 </div>
                 <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                    <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add CAPA Document</button>
                     </div>
@@ -229,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 Date Raised<i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
-                        <th class="py-4 align-middle text-center capaDescriptionColumn" style="min-width:300px">
+                        <th class="py-4 align-middle text-center capaDescriptionColumn" style="min-width:500px">
                             <a onclick="updateSort('capa_description', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Description<i class="fa-solid fa-sort fa-md ms-1"></i>
@@ -307,7 +307,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 Key Takeaways <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
-                        <th class="py-4 align-middle text-center additionalCommentColumn" style="min-width:200px">
+                        <th class="py-4 align-middle text-center additionalCommentColumn" style="min-width:400px">
                             <a onclick="updateSort('additional_comments', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">
                                 Additional Comments <i class="fa-solid fa-sort fa-md ms-1"></i>
@@ -450,7 +450,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                     $targetCloseDate = new DateTime($row['target_close_date']);
                                     $currentDate = new DateTime();
                                     $interval = $currentDate->diff($targetCloseDate);
-                                    $daysLeft = $interval->format('%r%a');
+                                    $daysLeft = $interval->format('%a');
 
                                     // Check if overdue
                                     if ($daysLeft <= 0) {
@@ -481,12 +481,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 <td class="py-2 align-middle text-center dateClosedColumn" <?= isset($row['date_closed']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['date_closed']) ? $row['date_closed'] : "N/A" ?>
                                 </td>
-                                <td class="py-2 align-middle text-center keyTakeawayColumn" <?= isset($row['key_takeaways']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['key_takeaways']) ? $row['key_takeaways'] : "N/A" ?>
+                                <td class="py-2 align-middle text-center keyTakeawayColumn" 
+                                    <?= empty($row['key_takeaways']) ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
+                                    <?= !empty($row['key_takeaways']) ? htmlspecialchars($row['key_takeaways']) : "N/A" ?>
                                 </td>
+
                                 <td class="py-2 align-middle text-center additionalCommentColumn"
-                                    <?= isset($row['additional_comments']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($row['additional_comments']) ? $row['additional_comments'] : "N/A" ?>
+                                    <?= empty($row['additional_comments']) ? "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" : "" ?>>
+                                    <?= !empty($row['additional_comments']) ? htmlspecialchars($row['additional_comments']) : "N/A" ?>
                                 </td>
                             </tr>
                         <?php } ?>
@@ -514,6 +516,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 <!-- Pagination controls -->
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
+                        <!-- First Page Button -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(1); return false;" aria-label="First"
+                                    style="cursor: pointer">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                        <?php endif; ?>
+
+
                         <!-- Previous Button -->
                         <?php if ($page > 1): ?>
                             <li class="page-item">
@@ -564,6 +581,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                                 <span class="page-link">&raquo;</span>
                             </li>
                         <?php endif; ?>
+
+                        <!-- Last Page Button -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(<?php echo $total_pages; ?>); return false;"
+                                    aria-label="Last" style="cursor: pointer">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                        <?php endif;?>
                     </ul>
                 </nav>
             </div>

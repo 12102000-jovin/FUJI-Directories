@@ -9,7 +9,19 @@ if (isset($_POST['project_id'])) {
     $project_id = $_POST['project_id']; // Get project ID from AJAX request
 
     // Assuming you already have a database connection $conn
-    $project_detail_sql = "SELECT * FROM project_details WHERE project_id = ?";
+    $project_detail_sql = "SELECT 
+    project_details.*, 
+    employees.first_name, 
+    employees.last_name 
+FROM 
+    project_details 
+LEFT JOIN 
+    employees 
+ON 
+    project_details.approved_by = employees.employee_id 
+WHERE 
+    project_details.project_id = ?";
+
     $stmt = $conn->prepare($project_detail_sql);
     $stmt->bind_param("i", $project_id); // Bind the project ID as an integer
     $stmt->execute();
@@ -40,7 +52,6 @@ if (isset($_POST['project_id'])) {
 
         $output .= "</td>";
 
-
         // Format unit price with negative values in red
         $unitPrice = $row['unit_price'];
         $output .= "<td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='unitprice_" . $row['project_details_id'] . "'>";
@@ -54,7 +65,7 @@ if (isset($_POST['project_id'])) {
         $output .= "</td>";
 
         $output .= "<td class='align-middle text-center py-3  " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='quantity_" . $row['project_details_id'] . "'>" . $row['quantity'] . "</td>
-        <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='sub_total_" . $row['project_details_id'] . "'>";
+    <td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='sub_total_" . $row['project_details_id'] . "'>";
 
         // Format sub_total with negative values in red
         $subTotal = $row['sub_total'];
@@ -64,15 +75,26 @@ if (isset($_POST['project_id'])) {
             $output .= "$" . number_format($subTotal, 2);
         }
 
-        $output .= "</td>
-        
-        <td class='py-3 align-middle text-center  " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "'>
-            <input type='checkbox' class='form-check-input' data-project-details-id='" . htmlspecialchars($row['project_details_id']) . "'
-            " . ($row['invoiced'] == 1 ? 'checked' : '') . " 
-            style='transform: scale(1.5);'>
-        </td>
-        
-        </tr>";
+        $output .= "</td>";
+
+        $output .= "<td class='py-3 align-middle text-center  " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "'>
+        <input type='checkbox' class='form-check-input' data-project-details-id='" . htmlspecialchars($row['project_details_id']) . "'
+        " . ($row['invoiced'] == 1 ? 'checked' : '') . " 
+        style='transform: scale(1.5);'>
+    </td>";
+
+        // Add the "approved_by" column at the end
+        $output .= "<td class='align-middle text-center py-3 " . ($row['invoiced'] ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10') . "' id='approved_by_" . $row['project_details_id'] . "'>";
+
+        // Check if 'approved_by' is NULL or empty and display 'N/A' if so
+        if (empty($row['approved_by'])) {
+            $output .= "<span style='color: red; font-weight: bold;'>N/A</span>";
+        } else {
+            $output .= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+        }
+
+        $output .= "</td></tr>";
+
         $item_number += 1;
     }
 
@@ -289,18 +311,33 @@ if (isset($_POST['project_id'])) {
 </script>
 
 <script>
+    let requestInProgress = false;
     document.addEventListener('change', function (event) {
         if (event.target && event.target.classList.contains('form-check-input')) {
+            if (requestInProgress) return; // Prevents further requests if already in progress
+
+            requestInProgress = true;
+
             const checkbox = event.target;
             const row = checkbox.closest('tr');
             const projectDetailsId = row.dataset.projectDetailsId;
             const invoiced = checkbox.checked ? 1 : 0;
+            const projectId = row.dataset.projectId;
+
+            let approvedBy = document.getElementById('loginEmployeeId').value;
+
+            // If the checkbox is unchecked, set approvedBy to null
+            if (!checkbox.checked) {
+                approvedBy = '';
+            }
+
+            console.log("Test", approvedBy);
 
             // Send AJAX request to update status
             fetch('../AJAXphp/update_project_invoiced_status.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `project_details_id=${encodeURIComponent(projectDetailsId)}&invoiced=${encodeURIComponent(invoiced)}`
+                body: `project_details_id=${encodeURIComponent(projectDetailsId)}&invoiced=${encodeURIComponent(invoiced)}&approvedBy=${encodeURIComponent(approvedBy)}`
             })
                 .then(response => response.json())
                 .then(data => {
@@ -314,17 +351,21 @@ if (isset($_POST['project_id'])) {
                         cells.forEach(cell => {
                             if (invoiced) {
                                 cell.classList.add('bg-success', 'bg-opacity-10');
-                                cell.classList.remove('bg-danger', 'bg-capacity-10');
+                                cell.classList.remove('bg-danger', 'bg-opacity-10');
                             } else {
                                 cell.classList.remove('bg-success', 'bg-opacity-10');
                                 cell.classList.add('bg-danger', 'bg-opacity-10');
                             }
                         });
+                        requestInProgress = false;
+                        fetchProjectDetails(projectId);
+
                     } else {
                         console.error('Failed to update status:', data.message);
                         // Optionally, revert the checkbox state and display an error message
                         checkbox.checked = !checkbox.checked;
                         alert('Failed to update status: ' + data.message); // Example error message
+                        requestInProgress = false;
                     }
                 })
                 .catch(error => {
@@ -358,3 +399,27 @@ if (isset($_POST['project_id'])) {
         });
     }
 </script>
+
+<script>
+    function disableCheckboxIfNotAdmin() {
+        let userRole = document.getElementById("userRole").value;
+        let checkboxes = document.querySelectorAll(".form-check-input");
+        let actionButtons = document.querySelectorAll(".btn.editBtn, .btn.deleteProjectDetailsBtn");
+
+        if (userRole !== "admin") {
+            // Disable checkboxes
+            checkboxes.forEach(function (checkbox) {
+                checkbox.disabled = true;
+            });
+
+            // Hide action buttons (edit and delete)
+            actionButtons.forEach(function (button) {
+                button.closest('td').style.display = 'none';
+            });
+        }
+    }
+
+    // Run the function on page load or after AJAX response
+    disableCheckboxIfNotAdmin();
+</script>
+

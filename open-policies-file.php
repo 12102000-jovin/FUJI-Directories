@@ -4,6 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+require_once("db_connect.php");
+
 // Get the current file to display (if any)
 $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
 $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
@@ -31,7 +33,10 @@ if ($payroll_type === 'wage') {
     echo "Invalid payroll type or employee not found.";
     exit;
 }
-$filePath = $baseDirectory . $employeeId . "/" . $folder . "/" . $currentFile;
+
+$filePath = $baseDirectory . $employeeId . "/" . $folder . "/02 - Policies" . "/" . $currentFile;
+
+echo $filePath;
 
 // Check if the file exists
 if (file_exists($filePath)) {

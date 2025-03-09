@@ -174,7 +174,7 @@
             $edit_employee_detail_result->bind_param("sssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
 
             if ($edit_employee_detail_result->execute()) {
-                echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id= ' . $employeeIdToEdit . '");</script>';
+                echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . urlencode(trim($employeeIdToEdit)) . '");</script>';
                 exit();
             } else {
                 echo "Error: " . $edit_employee_detail_result . "<br>" . $conn->error;
@@ -202,7 +202,7 @@
                             <?php if ($isActive == 0) {
                                 echo '<form method="POST"> <input type="hidden" name="employeeIdToActivate" value="' . $employeeId . '"/> <button class="btn btn-sm btn-success mt-2">Activate Employee</button></form>';
                             } else if ($isActive == 1) {
-                                echo '<form method="POST"> <input type="hidden" name="employeeIdToDeactivate" value="' . $employeeId . '"/><button class="btn btn-sm btn-danger mt-2">Deactivate Employee</button></form>';
+                                echo '<button class="btn btn-sm btn-danger mt-2" data-bs-toggle="modal" data-bs-target="#deactivateFormModal">Deactivate Employee</button>';
                             }
                             ?>
                         </div>
@@ -546,8 +546,10 @@
                                         <label for="section" class="fw-bold">Section</label>
                                         <select class="form-select" aria-label="Section" name="section"
                                             id="section" required>
-                                            <option value="Office">Office</option>
-                                            <option value="Factory">Factory</option>
+                                            <option value="Office" <?php if (isset($section) && $section == "Office")
+                                                echo "selected"; ?>>Office</option>
+                                            <option value="Factory" <?php if (isset($section) && $section == "Factory")
+                                                echo "selected"; ?>>Factory</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Please select a section.

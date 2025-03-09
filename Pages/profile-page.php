@@ -77,7 +77,8 @@ $employee_group_access_sql = "SELECT DISTINCT
                                 `groups`.group_name, 
                                 folders.folder_name, 
                                 `groups`.group_id, 
-                                folders.folder_id
+                                folders.folder_id,
+                                users_groups.role
                               FROM `groups`
                               JOIN groups_folders ON `groups`.group_id = groups_folders.group_id
                               JOIN folders ON folders.folder_id = groups_folders.folder_id
@@ -368,28 +369,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // ========================= A D D  P O L I C I E S =========================
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['policiesToSubmit'])) {
-    $policiesToSubmit = $_POST['policiesToSubmit'];
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['policiesToSubmit']) && $_FILES['policiesToSubmit']['error'] === UPLOAD_ERR_OK) {
+    // Sanitize and assign POST variables
+    $empIdToAddPolicy = htmlspecialchars($_POST['empIdToAddPolicy']);
+    $empNameToAddPolicy = htmlspecialchars($_POST['empNameToAddPolicy']);
+    $selectedPolicyTypeToAdd = htmlspecialchars($_POST['selectedPolicyTypeToAdd']);
+    $addPolicyDate = htmlspecialchars($_POST['addPolicyDate']);
+    $policiesToSubmit = $_FILES['policiesToSubmit'];  // $_FILES now contains the file
 
-    $folderName = $employeeId . "_policies";
+    // Define policy folder path
+    $policyFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddPolicy\\00 - Employee Documents\\02 - Policies\\";
 
-    $directory = "../Policies/";
-
-    // Check if the directory exists or create it if not
-    if (!is_dir($directory)) {
-        mkdir($directory, 0777, true); // Create directory recursively if it doesn't exist
+    // Ensure the directory exists and has proper permissions
+    if (!file_exists($policyFolder)) {
+        if (!mkdir($policyFolder, 0777, true)) {
+            echo "Failed to create directory. Please check folder permissions.";
+            exit;
+        }
     }
 
-    // Check if the folder already exists
-    if (is_dir($directory . $folderName)) {
-        echo "Folder already exists.";
-    } else {
-        // Create new folder
-        if (mkdir($directory . $folderName)) {
-            echo "Folder created successfully.";
+    // Retrieve file name and check for errors
+    $fileName = $policiesToSubmit['name'];
+    if ($policiesToSubmit['error'] === UPLOAD_ERR_OK) {
+        // Construct the file name based on policy and employee info
+        $formattedDate = date("Y-m-d", strtotime($addPolicyDate));
+        $fileBaseName = $formattedDate . '-' . $selectedPolicyTypeToAdd . ' (' . $empIdToAddPolicy . ' ' . $empNameToAddPolicy . ') Signed';
+        $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
+        $uploadedFilePath = $policyFolder . $fileBaseName . '.' . $fileExtension;  // Add extension to the filename
+
+        // Move the uploaded file to the target directory
+        if (move_uploaded_file($policiesToSubmit['tmp_name'], $uploadedFilePath)) {
         } else {
-            echo "Failed to create folder.";
+            echo "Error uploading policy '$fileName'.<br>";
         }
+    } else {
+        echo "Error uploading policy '$fileName'.<br>";
     }
 }
 
@@ -403,7 +417,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToActivate'
 
     // Execute the prepared statement
     if ($activate_employee_result->execute()) {
-        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id= ' . $employeeId . '");</script>';
+        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId . '");</script>';
         exit();
     } else {
         $error_message = "Error: " . $activate_employee_result . "<br>" . $conn->error;
@@ -413,14 +427,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToActivate'
 //  ========================= D E A C T I V A T E  E M P L O Y E E ========================= 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["employeeIdToDeactivate"])) {
     $employeeIdToDeactivate = $_POST['employeeIdToDeactivate'];
+    $lastDate = $_POST['lastDate'];
 
-    $deactivate_employee_sql = "UPDATE employees SET is_active = 0 WHERE employee_id = ?";
+    $deactivate_employee_sql = "UPDATE employees SET is_active = 0, last_date = ? WHERE employee_id = ?";
     $deactivate_employee_result = $conn->prepare($deactivate_employee_sql);
-    $deactivate_employee_result->bind_param("i", $employeeIdToDeactivate);
+    $deactivate_employee_result->bind_param("si", $lastDate, $employeeIdToDeactivate);
 
     // Execute the prepared statement
     if ($deactivate_employee_result->execute()) {
-        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id= ' . $employeeId . '");</script>';
+        echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId . '");</script>';
         exit();
     } else {
         $error_message = "Error: " . $deactivate_employee_result . "<br>" . $conn->error;
@@ -641,14 +656,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .col-lg-6,
             .col-xl-3 {
-                width: 48%;
+                width: 45%;
                 /* Adjust columns to fit better in print */
             }
 
             .show-print {
                 display: block;
                 column-count: 2;
-                column-gap: 20px;
+                column-gap: 5px;
             }
 
             .hide-print {
@@ -669,11 +684,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             .print-name {
-                font-size: 24px;
+                font-size: 15px !important;
             }
 
             .print-position {
-                font-size: 16px;
+                font-size: 12px;
             }
 
             .no-shadow-print {
@@ -689,9 +704,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .mt-print-bank {
                 padding-top: 0px !important;
-                margin-top: 0 !important;
+                margin-top: 0px !important;
                 padding-bottom: 0px !important;
-                margin-bottom: 0 !important;
+                margin-bottom: 0px !important;
             }
 
             .mt-print-personal-information {
@@ -707,7 +722,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             .mt-print-employment-details {
-                padding-top: 60px !important;
+                padding-top: 20px !important;
             }
 
             .address-print {
@@ -716,6 +731,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .machineCompetencyPrint {
                 display: block !important;
+                top: 40px;
                 margin-top: 80px !important;
                 margin-left: 20px !important;
                 margin-right: 20px !important;
@@ -734,9 +750,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             #chartContainer,
             #chartContainer2 {
                 height: 240px !important;
-                /* Ensure it takes the full width */
-                box-shadow: none;
             }
+
 
             /* You can also adjust margins, padding, and other styles for print */
             .payRaiseHistoryPrint {
@@ -750,7 +765,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             .allowanceTablePrint {
                 display: table !important;
                 width: 95% !important;
-                page-break-before: always;
                 position: relative;
                 margin: auto;
                 /* Add this line */
@@ -776,6 +790,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .image-print-width {
                 margin-left: 30px !important;
+            }
+
+            .profile-pic,
+            .signature-bg-color {
+                width: 50px !important;
+                height: 50px !important;
+            }
+
+            @media print {
+                .print-profile {
+                    width: 60px !important;
+                    /* Smaller size when printing */
+                    height: 60px !important;
+                    box-shadow: none !important;
+                    /* Remove shadow */
+                }
+
+                .print-profile img {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                }
+
+                .print-initials {
+                    width: 60px !important;
+                    height: 60px !important;
+                    font-size: 18px !important;
+                    /* Adjust font size for initials */
+                    box-shadow: none !important;
+                    /* Remove shadow */
+                }
             }
 
             @page {
@@ -812,6 +857,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         color: "#043f9d",
                         markerColor: "#043f9d",
                         markerSize: 8,
+                        indexLabelFontSize: 12, // Font size for labels
+                        indexLabelFontColor: "#555", // Label color
+                        indexLabelPlacement: "outside", // Place label outside marker
+                        indexLabel: "${y}", // Show Y values as labels
                         dataPoints: <?php echo json_encode($wagesDataPoints, JSON_NUMERIC_CHECK); ?>
                     }]
                 });
@@ -832,6 +881,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         color: "#043f9d",
                         markerColor: "#043f9d",
                         markerSize: 8,
+                        indexLabelFontSize: 12, // Font size for labels
+                        indexLabelFontColor: "#555", // Label color
+                        indexLabelPlacement: "outside", // Place label outside marker
+                        indexLabel: "${y}", // Show Y values as labels
                         dataPoints: <?php echo json_encode($salariesDataPoints, JSON_NUMERIC_CHECK); ?>
                     }]
                 });
@@ -843,8 +896,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 window.addEventListener("beforeprint", function () {
                     chart.options.height = 250; // Fixed height in pixels
                     chart2.options.height = 250; // Fixed height in pixels
-                    chart.options.width = 650;  // Fixed width in pixels
-                    chart2.options.width = 650; // Fixed width in pixels
+                    chart.options.width = 600;  // Fixed width in pixels
+                    chart2.options.width = 600; // Fixed width in pixels
                     chart.render();
                     chart2.render();
                 });
@@ -897,6 +950,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $visaStatus = $row['visa'];
                         $visaName = $row['visa_name'];
                         $visaExpiryDate = $row['visa_expiry_date'];
+                        $lastDate = $row['last_date'];
                         $employeeId = $row['employee_id'];
                         $address = $row['address'];
                         $phoneNumber = $row['phone_number'];
@@ -946,7 +1000,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             <div class="d-flex align-items-center flex-wrap">
                                 <?php if (!empty($profileImage)) { ?>
                                     <!-- Profile image -->
-                                    <div class="bg-gradient shadow-lg rounded-circle me-3"
+                                    <div class="bg-gradient shadow-lg rounded-circle me-3 print-profile"
                                         style="width: 100px; height: 100px; overflow: hidden;">
                                         <a data-bs-toggle="modal" data-bs-target="#profileImageModal" style="cursor: pointer">
                                             <img src="data:image/jpeg;base64,<?php echo $profileImage; ?>" alt="Profile Image"
@@ -976,7 +1030,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } else { ?>
                                     <!-- Initials -->
-                                    <div class="signature-bg-color shadow-lg rounded-circle text-white d-flex justify-content-center align-items-center me-3"
+                                    <div class="signature-bg-color shadow-lg rounded-circle text-white d-flex justify-content-center align-items-center me-3 print-initials"
                                         style="width: 100px; height: 100px;">
                                         <h3 class="p-0 m-0">
                                             <?php echo strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1)); ?>
@@ -1057,6 +1111,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
                                     </h5>
                                 </div>
+                          
                                 <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                     <small>Visa Expiry Date</small>
                                     <?php
@@ -1100,6 +1155,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         echo '<h5 class="fw-bold"> N/A</h5>';
                                     }
                                     ?>
+                                </div>
+                                <div class="col-lg-6 col-xl-3 d-flex flex-column <?php if (isset($lastDate)) { echo "bg-danger text-white"; } ?> rounded-2">
+                                    <small>Last Date</small>
+                                    <h5 class="fw-bold rounded-2"><?php echo isset($lastDate) ? $lastDate : "N/A"; ?>
+                                    </h5>
                                 </div>
                             </div>
                         </div>
@@ -1645,64 +1705,68 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
 
                     <!-- ================= Pay Raise History Chart (Wage) ================= -->
-                    <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
-                    <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-wage <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
-                        <div class="p-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="fw-bold signature-color mb-0 d-flex align-items-center">
-                                    Pay Raise History
-                                    <span class="badge rounded-pill signature-btn mx-1">Wage</span>
-                                    <span class="mx-2 hideWageSalaryEdit">|</span>
-                                    <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn hideWageSalaryEdit"
-                                        role="button"></i>
-                                    <small
-                                        class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn hideWageSalaryEdit">
-                                        <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
-                                    </small>
-                                </p>
+                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                        <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
+                        <div
+                            class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-wage <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
+                            <div class="p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                        Pay Raise History
+                                        <span class="badge rounded-pill signature-btn mx-1">Wage</span>
+                                        <span class="mx-2 hideWageSalaryEdit">|</span>
+                                        <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn hideWageSalaryEdit"
+                                            role="button"></i>
+                                        <small
+                                            class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn hideWageSalaryEdit">
+                                            <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
+                                        </small>
+                                    </p>
 
-                                <?php if ($role === "admin") { ?>
-                                    <i id="payRaiseEditIconWage" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                        data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
-                                <?php } ?>
-                            </div>
-                            <div class="px-4 py-2">
-                                <div id="chartContainer" style="height: 300px; width: 100%;" class="d-block"></div>
+                                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                                        <i id="payRaiseEditIconWage" role="button"
+                                            class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                            data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                    <?php } ?>
+                                </div>
+                                <div class="px-4 py-2">
+                                    <div id="chartContainer" style="height: 300px; width: 100%;" class="d-block"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php } ?>
 
                     <!-- ================= Pay Raise History Chart (Salary) ================= -->
-                    <?php $latestSalary = !empty($salariesData) ? $salariesData[array_key_last($salariesData)]['amount'] : 0; ?>
-                    <div
-                        class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-salary <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
-                        <div class="p-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="fw-bold signature-color mb-0 d-flex align-items-center">
-                                    Pay Raise History
-                                    <span class="badge rounded-pill signature-btn mx-1">Salary</span>
-                                    <span class="mx-2 hideWageSalaryEdit">|</span>
-                                    <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit"
-                                        role="button"></i>
-                                    <small
-                                        class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit">
-                                        <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
-                                    </small>
-                                </p>
+                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                        <?php $latestSalary = !empty($salariesData) ? $salariesData[array_key_last($salariesData)]['amount'] : 0; ?>
+                        <div
+                            class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-salary <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
+                            <div class="p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                        Pay Raise History
+                                        <span class="badge rounded-pill signature-btn mx-1">Salary</span>
+                                        <span class="mx-2 hideWageSalaryEdit">|</span>
+                                        <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit"
+                                            role="button"></i>
+                                        <small
+                                            class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit">
+                                            <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
+                                        </small>
+                                    </p>
 
-                                <?php if ($role === "admin") { ?>
-                                    <i id="payRaiseEditIconSalary" role="button"
-                                        class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                        data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
-                                <?php } ?>
-                            </div>
-                            <div class="px-4 py-2">
-                                <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+                                    <?php if ($role === "admin") { ?>
+                                        <i id="payRaiseEditIconSalary" role="button"
+                                            class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                            data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                    <?php } ?>
+                                </div>
+                                <div class="px-4 py-2">
+                                    <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php } ?>
 
                     <?php if ($payrollType === "wage") { ?>
                         <div class="container-fluid px-3 currentWagePrint" style="display:none">
@@ -2075,73 +2139,108 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         <?php } ?>
 
-                        <!-- <div class="card bg-white border-0 rounded shadow-lg mt-4">
-                        <div class="p-3">
-                            <div class="d-flex justify-content-between">
-                                <p class="fw-bold signature-color">Policies</p>
-                                <p type="button"><i class="fa-solid fa-plus signature-color" data-bs-toggle="modal"
-                                        data-bs-target="#addPoliciesModal"></i></p>
-                            </div>
-                            <a href="http://localhost/FUJI-Directories/CheckDirectory/Sample_Smoking_Policy.jpeg">
-                                Smoking and Vaping Policy </a>
-                        </div>
-                    </div> -->
-
                         <div class="card bg-white border-0 rounded shadow-lg mt-4">
                             <div class="p-3">
                                 <p class="fw-bold signature-color">Access</p>
                                 <?php
-                                // Check if there are any results
-                                if ($employee_group_access_result->num_rows > 0) {
-                                    $current_group_id = null;
+                                    // Check if there are any results
+                                    if ($employee_group_access_result->num_rows > 0) {
+                                        $current_group_id = null;
 
-                                    // Initialize arrays to store unique group names and folder names
-                                    $unique_group_names = [];
-                                    $unique_folders = [];
+                                        // Initialize arrays to store unique group names, folder names, and roles
+                                        $unique_group_names = [];
+                                        $unique_folders = [];
 
-                                    // Fetch all rows from the result set
-                                    while ($row = $employee_group_access_result->fetch_assoc()) {
-                                        $group_id = $row['group_id'];
-                                        $group_name = htmlspecialchars($row['group_name']);
-                                        $folder_id = htmlspecialchars($row['folder_id']);
-                                        $folder_name = htmlspecialchars($row['folder_name']);
+                                        // Fetch all rows from the result set
+                                        while ($row = $employee_group_access_result->fetch_assoc()) {
+                                            $group_id = $row['group_id'];
+                                            $group_name = htmlspecialchars($row['group_name']);
+                                            $folder_id = htmlspecialchars($row['folder_id']);
+                                            $folder_name = htmlspecialchars($row['folder_name']);
+                                            $role_access = htmlspecialchars($row['role']); // Get role from the result set
 
-                                        // Collect unique group names
-                                        if (!isset($unique_group_names[$group_id])) {
-                                            $unique_group_names[$group_id] = $group_name;
+                                            // Capitalize the role
+                                            $role_access = ucwords(strtolower($role_access)); // Capitalize the first letter of each word
+
+                                            // Collect unique group names and roles
+                                            if (!isset($unique_group_names[$group_id])) {
+                                                $unique_group_names[$group_id] = ['name' => $group_name, 'role' => $role_access];
+                                            }
+
+                                            // Collect unique folder names
+                                            $unique_folders[$folder_id] = $folder_name;
                                         }
 
-                                        // Collect unique folder names
-                                        $unique_folders[$folder_id] = $folder_name;
-                                    }
-
-                                    // Output unique group names
-                                    if (!empty($unique_group_names)) {
-                                        echo "<strong>Groups:</strong><br>";
-                                        foreach ($unique_group_names as $group_id => $group_name) {
-                                            echo "<p>$group_name</p>";
+                                        // Output unique group names and roles in a table
+                                        if (!empty($unique_group_names)) {
+                                            echo "<strong>Groups:</strong><br>";
+                                            echo "<table class='table table-bordered'>";
+                                            echo "<thead><tr><th>Group Name</th><th>Role</th></tr></thead>";
+                                            echo "<tbody>";
+                                            foreach ($unique_group_names as $group_id => $group_info) {
+                                                echo "<tr><td>{$group_info['name']}</td><td>{$group_info['role']}</td></tr>";
+                                            }
+                                            echo "</tbody></table>";
+                                            echo "<hr>";
                                         }
-                                        echo "<hr>";
-                                    }
 
-                                    // Output unique folder names
-                                    if (!empty($unique_folders)) {
-                                        echo "<strong>Folders:</strong><br>";
-                                        foreach ($unique_folders as $folder_id => $folder_name) {
-                                            echo "<p>$folder_name</p>";
+                                        // Output unique folder names
+                                        if (!empty($unique_folders)) {
+                                            echo "<strong>Folders:</strong><br>";
+                                            echo "<ul>";
+                                            foreach ($unique_folders as $folder_id => $folder_name) {
+                                                echo "<li>$folder_name</li>";
+                                            }
+                                            echo "</ul>";
                                         }
+                                    } else {
+                                        echo '<p>No group or folder access found.</p>';
                                     }
-                                } else {
-                                    echo '<p>No group or folder access found.</p>';
-                                }
                                 ?>
                             </div>
                         </div>
                     </div>
                     <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
                         <div class="p-3">
-                            <p class="fw-bold signature-color">Machine Competency</p>
-                            <?php require_once("../open-machine-competency-folder.php") ?>
+                            <!-- Dropdown Toggle -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
+                                    data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
+                                    aria-expanded="false">
+                                    Machine Competency
+                                    <i class="fas fa-chevron-down"></i>
+                                </p>
+                                <?php if ($role === "admin" || $role === "supervisor") { ?>
+                                    <button class="btn btn-success btn-sm fw-bold"><i
+                                            class="fa-solid fa-plus me-1"></i>Upload</button>
+                                <?php } ?>
+                            </div>
+                            <!-- Collapsible Content -->
+                            <div id="machineCompetencyContent" class="collapse">
+                                <?php require_once("../open-machine-competency-folder.php") ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4 policiesPrint">
+                        <div class="p-3">
+                            <!-- Dropdown Toggle -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
+                                    data-bs-toggle="collapse" data-bs-target="#policiesContent" aria-expanded="false">
+                                    Policies
+                                    <i class="fas fa-chevron-down"></i>
+                                </p>
+                                <?php if ($role === "admin" || $role === "supervisor") { ?>
+                                    <button class="btn btn-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addPoliciesModal"><i
+                                            class="fa-solid fa-plus me-1"></i>Upload</button>
+                                <?php } ?>
+                            </div>
+
+                            <!-- Collapsible Content -->
+                            <div id="policiesContent" class="collapse">
+                                <?php require_once("../open-policies-folder.php") ?>
+                            </div>
                         </div>
                     </div>
 
@@ -2614,7 +2713,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <div class="d-flex justify-content-center">
                                             <button class="btn btn-secondary mt-4 me-1" data-bs-dismiss="modal"
                                                 aria-label="Close">Close</button>
-                                            <button class="btn btn-dark mt-4" id="showUpdateForm">Update Wage</button>
+                                            <button class="btn btn-dark mt-4" id="showUpdateForm">Add Wage</button>
                                         </div>
                                     </div>
 
@@ -2640,7 +2739,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                                                     <!-- Update Date Input -->
                                                     <div class="col-6">
-                                                        <label for="updateWageDate" class="form-label fw-bold">Update
+                                                        <label for="updateWageDate" class="form-label fw-bold">
                                                             Date</label>
                                                         <input type="date" max="9999-12-31" class="form-control"
                                                             id="updateWageDate" name="updateWageDate"
@@ -2766,7 +2865,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                                                 <!-- Update Date Input -->
                                                 <div class="col-6">
-                                                    <label for="updateSalaryDate" class="form-label fw-bold">Update
+                                                    <label for="updateSalaryDate" class="form-label fw-bold">
                                                         Date</label>
                                                     <input type="date" max="9999-12-31" class="form-control"
                                                         id="updateSalaryDate" name="updateSalaryDate"
@@ -2778,13 +2877,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                                                 <!-- Submit Button -->
                                                 <div class="col-12 text-center">
-                                                    <button type="submit" class="btn btn-dark rounded">Update
+                                                    <button type="submit" class="btn btn-dark rounded">Add
                                                         Salary</button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -2852,32 +2950,64 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="addPoliciesModalLabel">Add Policies Document</h5>
+                                    <h5 class="modal-title" id="addPoliciesModalLabel">Add Policies</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <!-- Drag and Drop area -->
-                                    <div class="border border-dashed p-4 text-center" id="dropZone">
-                                        <p class="mb-0">Drag & Drop your documents here or <br>
-                                            <button class="btn btn-primary btn-sm mt-2"
-                                                onclick="document.getElementById('fileInput').click()">Browse
-                                                Files</button>
-                                        </p>
-                                    </div>
-                                    <form method="POST">
-                                        <input type="file" id="fileInput" name="policiesToSubmit" class="d-none" multiple />
+                            
+                                        <form method="POST" enctype="multipart/form-data">
+                                            <input type="hidden" name="empIdToAddPolicy" value="<?php echo $employeeId ?>">
+                                            <input type="hidden" name="empNameToAddPolicy" value="<?php echo $firstName . " " . $lastName ?>">
+                                            <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="selectedPolicyTypeToAdd" class="fw-bold">Policy</label>
+                                                <?php 
+                                                    // Query for policy files that match the pattern
+                                                    $select_policy_file_sql = "SELECT qa_document, document_name FROM quality_assurance WHERE qa_document LIKE '09-HR-PO-%' ORDER BY qa_document";
+                                                    $select_policy_file_result = $conn->query($select_policy_file_sql);
+                                                ?>  
+                                                <select class="form-select" name="selectedPolicyTypeToAdd" required>
+                                                    <option value="">Select a Policy</option> <!-- Default option -->
+                                                    <?php if ($select_policy_file_result->num_rows > 0) { 
+                                                        while ($row = $select_policy_file_result->fetch_assoc()) { ?>
+                                                            <option value="<?= htmlspecialchars($row['qa_document']) ?>">
+                                                                <?= htmlspecialchars($row['document_name']) ?>
+                                                            </option>
+                                                        <?php } 
+                                                    } ?>
+                                                </select>
+                                            </div>
+
+
+                                            <div class="form-group col-md-6 mt-md-0 mt-2">
+                                                <label for="addPolicyDate" class="fw-bold">Date</label>
+                                                <input type="date" class="form-control" name="addPolicyDate" value="<?php echo date('Y-m-d') ?>" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Drag and Drop area -->
+                                        <div class="border rounded-2 p-4 text-center mt-3" id="dropZone">
+                                            <p class="mb-0">Drag & Drop your documents here or <br>
+                                                <button class="btn btn-primary btn-sm mt-2" type="button"
+                                                    onclick="document.getElementById('fileInput').click()">Browse
+                                                    Files</button>
+                                            </p>
+                                        </div>
+                                
+                                        <input type="file" id="fileInput" name="policiesToSubmit" class="d-none" required/>
                                         <!-- Display uploaded file names -->
                                         <div id="fileList" class="mt-3"></div>
                                         <div class="d-flex justify-content-center">
                                             <button type="submit" class="btn btn-dark btn-sm"> Add
-                                                Documents</button>
+                                                Policies</button>
                                         </div>
                                     </form>
-                                </div>
+                                </div> <!-- End modal-body -->
                             </div>
                         </div>
                     </div>
+
                     <!-- ================== Performance Review Modal (First Month)================== -->
                     <div class="modal fade" id="firstMonthPerformanceReviewModal" tabindex="-1"
                         aria-labelledby="firstMonthPerformanceReviewModalLabel" aria-hidden="true">
@@ -3273,124 +3403,644 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
+                    <!-- ================== Deactivate Modal Form ================== -->
+                    <div class="modal fade" id="deactivateFormModal" tabindex="-1"
+                        aria-labelledby="deactivateFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Deactivate Employee</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                                </div>
+                                <div class="modal-body">
+                                    <form method="POST">
+                                        <input type="hidden" name="employeeIdToDeactivate" class="form-control" value="<?php echo $employeeId ?>">
+                                        <label for="lastDate" class="fw-bold">Last Date </label>
+                                        <input type="date" class="form-control" name="lastDate" value="<?php echo date('Y-m-d')?>" required>
+                                        <div class="d-flex justify-content-end mt-2">
+                                            <button class="btn btn-danger">Deactivate Employee</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php require_once("../logout.php") ?>
                 </div>
-                <?php require_once("../logout.php") ?>
-            </div>
-            <?php
+                <?php
                 }
                 ?>
 
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 
-        <script>
-            // Reload the page when wagePayRaiseHistoryModal is hidden
-            $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
-                location.reload(); // Refresh the page
-            });
-
-            // Override behavior to prevent wagePayRaiseHistoryModal from hiding when deleteConfirmationModal opens
-            $('#deleteConfirmationModal').on('show.bs.modal', function (e) {
-                // Temporarily detach the event that hides wagePayRaiseHistoryModal
-                $('#wagePayRaiseHistoryModal').off('hidden.bs.modal');
-            });
-
-            // Restore reload functionality when deleteConfirmationModal is closed
-            $('#deleteConfirmationModal').on('hidden.bs.modal', function () {
-                // Reattach the hidden event to wagePayRaiseHistoryModal with reload behavior
+            <script>
+                // Reload the page when wagePayRaiseHistoryModal is hidden
                 $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
                     location.reload(); // Refresh the page
                 });
-            });
-        </script>
 
-        <script>
-            // Function to detect and prevent the default print action
-            document.addEventListener('keydown', function (event) {
-                // Check if Ctrl+P or Cmd+P is pressed
-                if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
-                    event.preventDefault(); // Prevent the print dialog
-                    alert("Command + P / Ctrl + P is not allowed in this page.");
-                }
-            });
-
-            function toggleAndPrint() {
-                if (document.getElementById('chartContainer').classList.contains('d-none')) {
-                    toggleWagePayRaiseHistory(); // Toggle the wagePayHistory first
-                }
-
-                if (document.getElementById('chartContainer2').classList.contains('d-none')) {
-                    toggleSalaryPayRaiseHistory(); // Toggle the wagePayHistory first
-                }
-
-                // Delay the print slightly to ensure the toggle is complete
-                setTimeout(function () {
-                    window.print(); // Show the print dialog after toggling
-                }, 300); // 300ms delay to ensure the toggle is visible before printing
-            }
-        </script>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var myModalEl = document.getElementById('deleteConfirmationModal');
-                myModalEl.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget; // Button that triggered the modal
-                    var wageDate = button.getAttribute('data-wagedate'); // Extract info from data-* attributes
-                    var wageAmount = button.getAttribute('data-wageamount');
-
-                    var wageIdToDelete = button.getAttribute('data-wages-id');
-
-                    // Update the modal's content with the extracted info
-                    var modalWageDate = myModalEl.querySelector('#wageDate');
-                    var modalWageAmount = myModalEl.querySelector('#wageAmount');
-                    var modalWageIdToDelete = myModalEl.querySelector('#wageIdToDelete');
-                    modalWageDate.textContent = wageDate;
-                    modalWageAmount.textContent = wageAmount;
-                    modalWageIdToDelete.value = wageIdToDelete;
+                // Override behavior to prevent wagePayRaiseHistoryModal from hiding when deleteConfirmationModal opens
+                $('#deleteConfirmationModal').on('show.bs.modal', function (e) {
+                    // Temporarily detach the event that hides wagePayRaiseHistoryModal
+                    $('#wagePayRaiseHistoryModal').off('hidden.bs.modal');
                 });
-            });
-        </script>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var myModalEl = document.getElementById('deleteConfirmationModalSalary');
-                myModalEl.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget; // Button that triggered the modal
-                    var salaryDate = button.getAttribute('data-salarydate'); // Extract info from data-* attributes
-                    var salaryAmount = button.getAttribute('data-salaryamount');
-
-                    var salaryIdToDelete = button.getAttribute('data-salary-id');
-
-                    // Update the modal's content with the extracted info
-                    var modalSalaryDate = myModalEl.querySelector('#salaryDate');
-                    var modalSalaryAmount = myModalEl.querySelector('#salaryAmount');
-                    var modalSalaryIdToDelete = myModalEl.querySelector('#salaryIdToDelete');
-                    modalSalaryDate.textContent = salaryDate;
-                    modalSalaryAmount.textContent = salaryAmount;
-                    modalSalaryIdToDelete.value = salaryIdToDelete;
+                // Restore reload functionality when deleteConfirmationModal is closed
+                $('#deleteConfirmationModal').on('hidden.bs.modal', function () {
+                    // Reattach the hidden event to wagePayRaiseHistoryModal with reload behavior
+                    $('#wagePayRaiseHistoryModal').on('hidden.bs.modal', function () {
+                        location.reload(); // Refresh the page
+                    });
                 });
-            });
-        </script>
+            </script>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Initialize Bootstrap modal
-                var payRaiseHistoryModal = new bootstrap.Modal(document.getElementById('payRaiseHistoryModal'));
-
-                // Pay Raise History edit icon click event
-                document.querySelector('#payRaiseEditIcon').addEventListener('click', function () {
-                    // Show the pay raise history modal
-                    payRaiseHistoryModal.show();
+            <script>
+                // Function to detect and prevent the default print action
+                document.addEventListener('keydown', function (event) {
+                    // Check if Ctrl+P or Cmd+P is pressed
+                    if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+                        event.preventDefault(); // Prevent the print dialog
+                        alert("Command + P / Ctrl + P is not allowed in this page.");
+                    }
                 });
-            });
-        </script>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.querySelectorAll('.edit-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
+                function toggleAndPrint() {
+                    if (document.getElementById('chartContainer').classList.contains('d-none')) {
+                        toggleWagePayRaiseHistory(); // Toggle the wagePayHistory first
+                    }
+
+                    if (document.getElementById('chartContainer2').classList.contains('d-none')) {
+                        toggleSalaryPayRaiseHistory(); // Toggle the wagePayHistory first
+                    }
+
+                    // Delay the print slightly to ensure the toggle is complete
+                    setTimeout(function () {
+                        window.print(); // Show the print dialog after toggling
+                    }, 300); // 300ms delay to ensure the toggle is visible before printing
+                }
+            </script>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var myModalEl = document.getElementById('deleteConfirmationModal');
+                    myModalEl.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var wageDate = button.getAttribute('data-wagedate'); // Extract info from data-* attributes
+                        var wageAmount = button.getAttribute('data-wageamount');
+
+                        var wageIdToDelete = button.getAttribute('data-wages-id');
+
+                        // Update the modal's content with the extracted info
+                        var modalWageDate = myModalEl.querySelector('#wageDate');
+                        var modalWageAmount = myModalEl.querySelector('#wageAmount');
+                        var modalWageIdToDelete = myModalEl.querySelector('#wageIdToDelete');
+                        modalWageDate.textContent = wageDate;
+                        modalWageAmount.textContent = wageAmount;
+                        modalWageIdToDelete.value = wageIdToDelete;
+                    });
+                });
+            </script>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var myModalEl = document.getElementById('deleteConfirmationModalSalary');
+                    myModalEl.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var salaryDate = button.getAttribute('data-salarydate'); // Extract info from data-* attributes
+                        var salaryAmount = button.getAttribute('data-salaryamount');
+
+                        var salaryIdToDelete = button.getAttribute('data-salary-id');
+
+                        // Update the modal's content with the extracted info
+                        var modalSalaryDate = myModalEl.querySelector('#salaryDate');
+                        var modalSalaryAmount = myModalEl.querySelector('#salaryAmount');
+                        var modalSalaryIdToDelete = myModalEl.querySelector('#salaryIdToDelete');
+                        modalSalaryDate.textContent = salaryDate;
+                        modalSalaryAmount.textContent = salaryAmount;
+                        modalSalaryIdToDelete.value = salaryIdToDelete;
+                    });
+                });
+            </script>
+
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Initialize Bootstrap modal
+                    var payRaiseHistoryModal = new bootstrap.Modal(document.getElementById('payRaiseHistoryModal'));
+
+                    // Pay Raise History edit icon click event
+                    document.querySelector('#payRaiseEditIcon').addEventListener('click', function () {
+                        // Show the pay raise history modal
+                        payRaiseHistoryModal.show();
+                    });
+                });
+            </script>
+
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.querySelectorAll('.edit-btn').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            // Get the parent row
+                            var row = this.closest('tr');
+
+                            // Toggle edit mode
+                            row.classList.toggle('editing');
+
+                            // Toggle visibility of view and edit elements
+                            row.querySelectorAll('.view-mode, .edit-mode').forEach(function (elem) {
+                                elem.classList.toggle('d-none');
+                            });
+                        });
+                    });
+                });
+            </script>
+
+            <script>
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+                const fileList = document.getElementById('fileList');
+                let selectedFiles = [];
+
+                dropZone.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    dropZone.classList.add('bg-light');
+                });
+
+                dropZone.addEventListener('dragleave', function () {
+                    dropZone.classList.remove('bg-light');
+                });
+
+                dropZone.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    dropZone.classList.remove('bg-light');
+                    const files = event.dataTransfer.files;
+                    handleFiles(files);
+                });
+
+                fileInput.addEventListener('change', function (event) {
+                    const files = event.target.files;
+                    handleFiles(files);
+                });
+
+                function handleFiles(files) {
+                    for (let i = 0; i < files.length; i++) {
+                        addFile(files[i]);
+                    }
+                    renderFileList();
+                }
+
+                function addFile(file) {
+                    selectedFiles.push(file);
+                }
+
+                function removeFile(index) {
+                    selectedFiles.splice(index, 1);
+                    renderFileList();
+                }
+
+                function renderFileList() {
+                    fileList.innerHTML = '';
+                    selectedFiles.forEach((file, index) => {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'd-flex justify-content-between align-items-center border p-2 mb-2';
+                        listItem.innerHTML = `
+                    <span>${file.name}</span>
+                    <button class="btn btn-danger btn-sm" onclick="removeFile(${index})">Remove</button>
+                `;
+                        fileList.appendChild(listItem);
+                    });
+                }
+
+                // Reset file input and selected files when the modal is closed
+                document.getElementById('addPoliciesModal').addEventListener('hidden.bs.modal', function () {
+                    resetFileInput();
+                });
+
+                function resetFileInput() {
+                    fileInput.value = ''; // Clear the file input
+                    selectedFiles = []; // Clear the array of selected files
+                    renderFileList(); // Clear the file list display
+                }
+            </script>
+
+            <script>
+                $(document).ready(function () {
+                    // Event listener for modal close event
+                    $('#payRaiseHistoryModal').on('hidden.bs.modal', function () {
+                        // For each row in the table
+                        $('#payRaiseHistoryModal tbody tr').each(function () {
+                            // Show view mode and hide edit mode
+                            $(this).find('.view-mode').removeClass('d-none');
+                            $(this).find('.edit-mode').addClass('d-none');
+                        });
+                    });
+                });
+            </script>
+
+            <script>
+                function copyDirectoryPath(button) {
+                    var directoryPathElement = button.parentElement.querySelector('input').value;
+
+                    console.log(directoryPathElement);
+                    var textArea = document.createElement("textarea");
+
+                    // Place the directory path text inside the textarea
+                    textArea.textContent = directoryPathElement;
+
+
+                    // Ensure textarea is non-visible
+                    textArea.style.position = "fixed";
+                    textArea.style.opacity = 0;
+
+                    // Append the textarea to the document
+                    document.body.appendChild(textArea);
+
+                    // Select the text inside the textarea
+                    textArea.select();
+
+                    try {
+                        // Execute the copy command
+                        document.execCommand('copy');
+                        console.log('Text copied successfully');
+
+                        // Change button text to "Copied"
+                        button.innerHTML = '<i class="fa-regular fa-check-circle text-success fa-xs"></i> <small class="text-success">Copied</small>';
+
+                        // Reset button text after 2 seconds
+                        setTimeout(function () {
+                            button.innerHTML = '<i class="fa-regular fa-copy text-primary fa-xs"></i> <small class="text-primary">Copy</small>';
+                        }, 2000); // 2000 milliseconds = 2 seconds
+
+                    } catch (err) {
+                        console.error('Unable to copy text', err);
+                    }
+
+                    // Remove the textarea from the document
+                    document.body.removeChild(textArea);
+                }
+
+            </script>
+
+            <script>
+                // Enabling the tooltip
+                const tooltips = document.querySelectorAll('.tooltips');
+                tooltips.forEach(t => {
+                    new bootstrap.Tooltip(t);
+                })
+            </script>
+
+            <script>
+                // Restore scroll position after page reload
+                window.addEventListener('load', function () {
+                    const scrollPosition = sessionStorage.getItem('scrollPosition');
+                    if (scrollPosition) {
+                        window.scrollTo(0, scrollPosition);
+                        sessionStorage.removeItem('scrollPosition'); // Remove after restoring
+                    }
+                });
+            </script>
+
+            <!-- Toggle hide and show Wage Pay Raise History -->
+            <script>
+                // Get the elements
+                const wagePayRaiseHistoryChart = document.getElementById('chartContainer');
+                const hideWagePayRaiseHistoryModalLabel = document.getElementById('hideWagePayRaiseHistoryModalLabel');
+                const showWagePayRaiseHistoryChartBtns = document.querySelectorAll('.showWagePayRaiseHistoryChartBtn');
+
+                // Delay adding the d-none class by 40 milliseconds on page load
+                document.addEventListener('DOMContentLoaded', function () {
+                    setTimeout(function () {
+                        wagePayRaiseHistoryChart.classList.add('d-none');
+                    }, 40);
+                });
+
+                // Function to toggle the visibility of the wage pay raise history chart
+                function toggleWagePayRaiseHistory() {
+                    if (wagePayRaiseHistoryChart.classList.contains('d-none')) {
+                        // Show the chart
+                        wagePayRaiseHistoryChart.classList.remove('d-none');
+                        wagePayRaiseHistoryChart.classList.add('d-block');
+                        hideWagePayRaiseHistoryModalLabel.innerHTML = "Hide";
+                        showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
+                        showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
+                    } else {
+                        // Hide the chart
+                        wagePayRaiseHistoryChart.classList.remove('d-block');
+                        wagePayRaiseHistoryChart.classList.add('d-none');
+                        hideWagePayRaiseHistoryModalLabel.innerHTML = "Show";
+                        showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
+                        showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye');
+                    }
+                }
+
+                // Add event listeners to each button
+                showWagePayRaiseHistoryChartBtns.forEach(btn => {
+                    btn.addEventListener('click', toggleWagePayRaiseHistory);
+                });
+            </script>
+
+            <!-- Toggle hide and show Salary Pay Raise History -->
+            <script>
+                // Get the Elements
+                const salaryPayRaiseHistoryChart = document.getElementById('chartContainer2');
+                const hideSalaryPayRaiseHistoryModalLabel = document.getElementById('hideSalaryPayRaiseHistoryModalLabel');
+                const showSalaryPayRaiseHistoryChartBtns = document.querySelectorAll('.showSalaryPayRaiseHistoryChartBtn');
+
+                // Delay adding the d-none class by 40 milliseconds on page load
+                document.addEventListener('DOMContentLoaded', function () {
+                    3
+                    setTimeout(function () {
+                        salaryPayRaiseHistoryChart.classList.add('d-none')
+                    }, 40);
+                })
+
+                // Function to toggle the visibility of the salary pay raise history chart
+                function toggleSalaryPayRaiseHistory() {
+                    if (salaryPayRaiseHistoryChart.classList.contains('d-none')) {
+                        // Show the chart
+                        salaryPayRaiseHistoryChart.classList.remove('d-none');
+                        salaryPayRaiseHistoryChart.classList.add('d-block');
+                        hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Hide";
+                        showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
+                        showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
+                    } else {
+                        // Hide the chart
+                        salaryPayRaiseHistoryChart.classList.remove('d-block');
+                        salaryPayRaiseHistoryChart.classList.add('d-none');
+                        hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Show";
+                        showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
+                        showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye');
+                    }
+                }
+
+                // Add event listeners to each button
+                showSalaryPayRaiseHistoryChartBtns.forEach(btn => {
+                    btn.addEventListener('click', toggleSalaryPayRaiseHistory);
+                })
+            </script>
+
+            <script>
+                // Initialize totalAllowance from PHP
+                let totalAllowance = 0;
+
+                // Track the state of all checkboxes
+                let toolAllowanceChecked = <?php echo isset($toolAllowance) && $toolAllowance == 1 ? 'true' : 'false'; ?>;
+                let firstAidAllowanceChecked = <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'true' : 'false'; ?>;
+                let teamLeaderAllowanceChecked = <?php echo isset($teamLeaderAllowanceChecked) && $teamLeaderAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let trainerAllowanceChecked = <?php echo isset($trainerAllowanceChecked) && $trainerAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let supervisorAllowanceChecked = <?php echo isset($supervisorAllowanceChecked) && $supervisorAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let painterAllowanceChecked = <?php echo isset($painterAllowanceChecked) && $painterAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let machineMaintenanceAllowanceChecked = <?php echo isset($machineMaintenanceAllowanceChecked) && $machineMaintenanceAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+
+                // Get the allowance amounts from PHP
+                const toolAllowanceAmount = <?php echo isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0; ?>;
+                const firstAidAllowanceAmount = <?php echo isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0; ?>;
+                let teamLeaderAllowanceAmount = <?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : 0; ?>; // Ensure this is set properly
+                let trainerAllowanceAmount = <?php echo isset($trainerAllowance) ? $trainerAllowance : 0; ?>;
+                let supervisorAllowanceAmount = <?php echo isset($supervisorAllowance) ? $supervisorAllowance : 0; ?>;
+                let painterAllowanceAmount = <?php echo isset($painterAllowance) ? $painterAllowance : 0; ?>;
+                let machineMaintenanceAllowanceAmount = <?php echo isset($machineMaintenanceAllowance) ? $machineMaintenanceAllowance : 0; ?>;
+
+                // Function to handle the checkbox change for Tool Allowance
+                function toolAllowanceCheckbox(checkbox, employeeId) {
+                    toolAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('tool_allowance', toolAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_tool_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Tool allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update tool allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating tool allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for First Aid Allowance
+                function firstAidAllowanceCheckbox(checkbox, employeeId) {
+                    firstAidAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('first_aid_allowance', firstAidAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_first_aid_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("First aid allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update first aid allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating first aid allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Team Leader Allowance
+                function teamLeaderAllowanceCheckbox(checkbox, employeeId) {
+                    teamLeaderAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('team_leader_allowance_check', teamLeaderAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Team Leader allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update team leader allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating team leader allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Trainer Allowance
+                function trainerAllowanceCheckbox(checkbox, employeeId) {
+                    trainerAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('trainer_allowance_check', trainerAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Trainer allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update trainer allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating trainer allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Supervisor Allowance
+                function supervisorAllowanceCheckbox(checkbox, employeeId) {
+                    supervisorAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('supervisor_allowance_check', supervisorAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Supervisor allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update supervisor allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating supervisor allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Painter Allowance
+                function painterAllowanceCheckbox(checkbox, employeeId) {
+                    painterAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('painter_allowance_check', painterAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Painter allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update painter allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating painter allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Machine Maintenance Allowance
+                function machineMaintenanceAllowanceCheckbox(checkbox, employeeId) {
+                    machineMaintenanceAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('machine_maintenance_allowance_check', machineMaintenanceAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Machine maintenance allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update machine maintenance allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating machine maintenance allowance:", error);
+                        });
+                }
+
+                // Function to update the total allowance based on the state of all checkboxes
+                function updateTotalAllowance() {
+                    totalAllowance = 0;
+
+                    if (toolAllowanceChecked) {
+                        totalAllowance += toolAllowanceAmount;
+                    }
+                    if (firstAidAllowanceChecked) {
+                        totalAllowance += firstAidAllowanceAmount;
+                    }
+                    if (teamLeaderAllowanceChecked) {
+                        totalAllowance += parseFloat(teamLeaderAllowanceAmount) || 0;
+                    }
+                    if (trainerAllowanceChecked) {
+                        totalAllowance += parseFloat(trainerAllowanceAmount) || 0;
+                    }
+                    if (supervisorAllowanceChecked) {
+                        totalAllowance += parseFloat(supervisorAllowanceAmount) || 0;
+                    }
+                    if (painterAllowanceChecked) {
+                        totalAllowance += parseFloat(painterAllowanceAmount) || 0;
+                    }
+                    if (machineMaintenanceAllowanceChecked) {
+                        totalAllowance += parseFloat(machineMaintenanceAllowanceAmount) || 0;
+                    }
+
+                    document.getElementById('currentTotalAllowance').innerText = `${totalAllowance.toFixed(2)}`;
+                }
+
+                document.addEventListener('DOMContentLoaded', updateTotalAllowance);
+            </script>
+
+            <script>
+                document.getElementById('showUpdateForm').addEventListener('click', function () {
+                    var form = document.getElementById('updateWageForm');
+                    var button = document.getElementById('showUpdateForm');
+                    var wageDetailTable = document.getElementById('wageDetailTable');
+                    var cancelUpdateWageBtn = document.getElementById('cancelUpdateWageBtn');
+
+                    // Toggle the form's visibility by toggling 'd-none'
+                    form.classList.toggle('d-none');
+
+                    // Change button text based on the form's visibility
+                    if (form.classList.contains('d-none')) {
+                        button.classList.remove('btn-danger');
+
+                    } else {
+                        wageDetailTable.classList.add('d-none');
+                    }
+
+                    cancelUpdateWageBtn.addEventListener('click', function () {
+                        wageDetailTable.classList.remove('d-none');
+                        form.classList.add('d-none');
+                    })
+                });
+            </script>
+
+
+            <!-- Tool Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editTeamLeaderAllowanceBtn').addEventListener('click', function () {
                         // Get the parent row
                         var row = this.closest('tr');
 
@@ -3398,899 +4048,436 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         row.classList.toggle('editing');
 
                         // Toggle visibility of view and edit elements
-                        row.querySelectorAll('.view-mode, .edit-mode').forEach(function (elem) {
+                        row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
                             elem.classList.toggle('d-none');
                         });
                     });
+
+                    // Cancel button click event handler
+                    document.getElementById('cancelTeamLeaderEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
+
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
+
+                    // Edit team leader button
+                    document.getElementById('saveTeamLeaderBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveTeamLeaderBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var teamLeaderAllowance = document.querySelector('input[name="teamLeaderAllowanceToEdit"]').value;
+
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('team_leader_allowance', teamLeaderAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Team leader allowance rate updated successfully.");
+
+
+                                    // Update the display of the team leader allowance in the modal
+                                    const formattedAllowance = parseFloat(teamLeaderAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.teamLeaderAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-team-leader').classList.add('d-none');
+                                    document.querySelector('.view-mode-team-leader').classList.remove('d-none');
+
+                                    teamLeaderAllowanceAmount = teamLeaderAllowance;
+
+                                    console.log(teamLeaderAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update team leader allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating team leader allowance:", error);
+                            });
+                    });
+
                 });
-            });
-        </script>
+            </script>
 
-        <script>
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-            const fileList = document.getElementById('fileList');
-            let selectedFiles = [];
+            <!-- Trainer Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editTrainerAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
 
-            dropZone.addEventListener('dragover', function (event) {
-                event.preventDefault();
-                dropZone.classList.add('bg-light');
-            });
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
 
-            dropZone.addEventListener('dragleave', function () {
-                dropZone.classList.remove('bg-light');
-            });
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
 
-            dropZone.addEventListener('drop', function (event) {
-                event.preventDefault();
-                dropZone.classList.remove('bg-light');
-                const files = event.dataTransfer.files;
-                handleFiles(files);
-            });
+                    // Cancel button click event handler
+                    document.getElementById('cancelTrainerEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
 
-            fileInput.addEventListener('change', function (event) {
-                const files = event.target.files;
-                handleFiles(files);
-            });
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
 
-            function handleFiles(files) {
-                for (let i = 0; i < files.length; i++) {
-                    addFile(files[i]);
-                }
-                renderFileList();
-            }
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
 
-            function addFile(file) {
-                selectedFiles.push(file);
-            }
+                    // Edit trainer button
+                    document.getElementById('saveTrainerBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveTrainerBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var trainerAllowance = document.querySelector('input[name="trainerAllowanceToEdit"]').value;
 
-            function removeFile(index) {
-                selectedFiles.splice(index, 1);
-                renderFileList();
-            }
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('trainer_allowance', trainerAllowance);
 
-            function renderFileList() {
-                fileList.innerHTML = '';
-                selectedFiles.forEach((file, index) => {
-                    const listItem = document.createElement('div');
-                    listItem.className = 'd-flex justify-content-between align-items-center border p-2 mb-2';
-                    listItem.innerHTML = `
-                    <span>${file.name}</span>
-                    <button class="btn btn-danger btn-sm" onclick="removeFile(${index})">Remove</button>
-                `;
-                    fileList.appendChild(listItem);
-                });
-            }
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Team leader allowance rate updated successfully.");
 
-            // Reset file input and selected files when the modal is closed
-            document.getElementById('addPoliciesModal').addEventListener('hidden.bs.modal', function () {
-                resetFileInput();
-            });
 
-            function resetFileInput() {
-                fileInput.value = ''; // Clear the file input
-                selectedFiles = []; // Clear the array of selected files
-                renderFileList(); // Clear the file list display
-            }
-        </script>
+                                    // Update the display of the trainer allowance in the modal
+                                    const formattedAllowance = parseFloat(trainerAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.trainerAllowanceAmount').innerHTML = `$${formattedAllowance}`;
 
-        <script>
-            $(document).ready(function () {
-                // Event listener for modal close event
-                $('#payRaiseHistoryModal').on('hidden.bs.modal', function () {
-                    // For each row in the table
-                    $('#payRaiseHistoryModal tbody tr').each(function () {
-                        // Show view mode and hide edit mode
-                        $(this).find('.view-mode').removeClass('d-none');
-                        $(this).find('.edit-mode').addClass('d-none');
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-trainer').classList.add('d-none');
+                                    document.querySelector('.view-mode-trainer').classList.remove('d-none');
+
+                                    trainerAllowanceAmount = trainerAllowance;
+
+                                    console.log(trainerAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update trainer allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating trainer allowance:", error);
+                            });
                     });
                 });
-            });
-        </script>
+            </script>
 
-        <script>
-            function copyDirectoryPath(button) {
-                var directoryPathElement = button.parentElement.querySelector('input').value;
+            <!-- Supervisor Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editSupervisorAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
 
-                console.log(directoryPathElement);
-                var textArea = document.createElement("textarea");
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
 
-                // Place the directory path text inside the textarea
-                textArea.textContent = directoryPathElement;
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
+
+                    // Cancel button click event handler
+                    document.getElementById('cancelSupervisorEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
+
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
+
+                    // Edit supervisor button
+                    document.getElementById('saveSupervisorBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveSupervisorBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var supervisorAllowance = document.querySelector('input[name="supervisorAllowanceToEdit"]').value;
+
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('supervisor_allowance', supervisorAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Team leader allowance rate updated successfully.");
 
 
-                // Ensure textarea is non-visible
-                textArea.style.position = "fixed";
-                textArea.style.opacity = 0;
+                                    // Update the display of the supervisor allowance in the modal
+                                    const formattedAllowance = parseFloat(supervisorAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.supervisorAllowanceAmount').innerHTML = `$${formattedAllowance}`;
 
-                // Append the textarea to the document
-                document.body.appendChild(textArea);
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-supervisor').classList.add('d-none');
+                                    document.querySelector('.view-mode-supervisor').classList.remove('d-none');
 
-                // Select the text inside the textarea
-                textArea.select();
+                                    supervisorAllowanceAmount = supervisorAllowance;
 
-                try {
-                    // Execute the copy command
-                    document.execCommand('copy');
-                    console.log('Text copied successfully');
+                                    console.log(supervisorAllowanceAmount);
 
-                    // Change button text to "Copied"
-                    button.innerHTML = '<i class="fa-regular fa-check-circle text-success fa-xs"></i> <small class="text-success">Copied</small>';
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
 
-                    // Reset button text after 2 seconds
-                    setTimeout(function () {
-                        button.innerHTML = '<i class="fa-regular fa-copy text-primary fa-xs"></i> <small class="text-primary">Copy</small>';
-                    }, 2000); // 2000 milliseconds = 2 seconds
+                                } else {
+                                    console.error("Failed to update supervisor allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating supervisor allowance:", error);
+                            });
+                    });
+                });
+            </script>
 
-                } catch (err) {
-                    console.error('Unable to copy text', err);
-                }
+            <!-- Painter Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editPainterAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
 
-                // Remove the textarea from the document
-                document.body.removeChild(textArea);
-            }
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
 
-        </script>
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
 
-        <script>
-            // Enabling the tooltip
-            const tooltips = document.querySelectorAll('.tooltips');
-            tooltips.forEach(t => {
-                new bootstrap.Tooltip(t);
-            })
-        </script>
+                    // Cancel button click event handler
+                    document.getElementById('cancelPainterEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
 
-        <script>
-            // Restore scroll position after page reload
-            window.addEventListener('load', function () {
-                const scrollPosition = sessionStorage.getItem('scrollPosition');
-                if (scrollPosition) {
-                    window.scrollTo(0, scrollPosition);
-                    sessionStorage.removeItem('scrollPosition'); // Remove after restoring
-                }
-            });
-        </script>
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
 
-        <!-- Toggle hide and show Wage Pay Raise History -->
-        <script>
-            // Get the elements
-            const wagePayRaiseHistoryChart = document.getElementById('chartContainer');
-            const hideWagePayRaiseHistoryModalLabel = document.getElementById('hideWagePayRaiseHistoryModalLabel');
-            const showWagePayRaiseHistoryChartBtns = document.querySelectorAll('.showWagePayRaiseHistoryChartBtn');
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
 
-            // Delay adding the d-none class by 40 milliseconds on page load
-            document.addEventListener('DOMContentLoaded', function () {
-                setTimeout(function () {
-                    wagePayRaiseHistoryChart.classList.add('d-none');
-                }, 40);
-            });
+                    // Edit painter button
+                    document.getElementById('savePainterBtn').addEventListener('click', function () {
+                        var button = document.getElementById('savePainterBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var painterAllowance = document.querySelector('input[name="painterAllowanceToEdit"]').value;
 
-            // Function to toggle the visibility of the wage pay raise history chart
-            function toggleWagePayRaiseHistory() {
-                if (wagePayRaiseHistoryChart.classList.contains('d-none')) {
-                    // Show the chart
-                    wagePayRaiseHistoryChart.classList.remove('d-none');
-                    wagePayRaiseHistoryChart.classList.add('d-block');
-                    hideWagePayRaiseHistoryModalLabel.innerHTML = "Hide";
-                    showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
-                    showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('painter_allowance', painterAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Team leader allowance rate updated successfully.");
+
+
+                                    // Update the display of the painter allowance in the modal
+                                    const formattedAllowance = parseFloat(painterAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.painterAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-painter').classList.add('d-none');
+                                    document.querySelector('.view-mode-painter').classList.remove('d-none');
+
+                                    painterAllowanceAmount = painterAllowance;
+
+                                    console.log(painterAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update painter allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating painter allowance:", error);
+                            });
+                    });
+                });
+            </script>
+
+            <!-- Machine Maintenance Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editMachineMaintenanceAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
+
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
+
+                    // Cancel button click event handler
+                    document.getElementById('cancelMachineMaintenanceEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
+
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
+
+                    // Edit machine maintenance button
+                    document.getElementById('saveMachineMaintenanceBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveMachineMaintenanceBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var machineMaintenanceAllowance = document.querySelector('input[name="machineMaintenanceAllowanceToEdit"]').value;
+
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('machine_maintenance_allowance', machineMaintenanceAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Team leader allowance rate updated successfully.");
+
+
+                                    // Update the display of the machine maintenance allowance in the modal
+                                    const formattedAllowance = parseFloat(machineMaintenanceAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.machineMaintenanceAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-machine-maintenance').classList.add('d-none');
+                                    document.querySelector('.view-mode-machine-maintenance').classList.remove('d-none');
+
+                                    machineMaintenanceAllowanceAmount = machineMaintenanceAllowance;
+
+                                    console.log(machineMaintenanceAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update machine maintenance allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating machine maintenance allowance:", error);
+                            });
+                    });
+                });
+            </script>
+            <script>
+                const nameElement = document.getElementById('print-name');
+                const nameLength = nameElement.innerText.length;
+
+                if (nameLength > 10) { // Adjust the number as needed
+                    nameElement.style.fontSize = '18px';  // Smaller font size for longer names
                 } else {
-                    // Hide the chart
-                    wagePayRaiseHistoryChart.classList.remove('d-block');
-                    wagePayRaiseHistoryChart.classList.add('d-none');
-                    hideWagePayRaiseHistoryModalLabel.innerHTML = "Show";
-                    showWagePayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
-                    showWagePayRaiseHistoryChartBtns[0].classList.add('fa-eye');
-                }
-            }
-
-            // Add event listeners to each button
-            showWagePayRaiseHistoryChartBtns.forEach(btn => {
-                btn.addEventListener('click', toggleWagePayRaiseHistory);
-            });
-        </script>
-
-        <!-- Toggle hide and show Salary Pay Raise History -->
-        <script>
-            // Get the Elements
-            const salaryPayRaiseHistoryChart = document.getElementById('chartContainer2');
-            const hideSalaryPayRaiseHistoryModalLabel = document.getElementById('hideSalaryPayRaiseHistoryModalLabel');
-            const showSalaryPayRaiseHistoryChartBtns = document.querySelectorAll('.showSalaryPayRaiseHistoryChartBtn');
-
-            // Delay adding the d-none class by 40 milliseconds on page load
-            document.addEventListener('DOMContentLoaded', function () {
-                3
-                setTimeout(function () {
-                    salaryPayRaiseHistoryChart.classList.add('d-none')
-                }, 40);
-            })
-
-            // Function to toggle the visibility of the salary pat raise history chart
-            function toggleSalaryPayRaiseHistory() {
-                if (salaryPayRaiseHistoryChart.classList.contains('d-none')) {
-                    // Show the chart
-                    salaryPayRaiseHistoryChart.classList.remove('d-none');
-                    salaryPayRaiseHistoryChart.classList.add('d-block');
-                    hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Hide";
-                    showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye');
-                    showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye-slash');
-                } else {
-                    // Hide the chart
-                    salaryPayRaiseHistoryChart.classList.remove('d-block');
-                    salaryPayRaiseHistoryChart.classList.add('d-none');
-                    hideSalaryPayRaiseHistoryModalLabel.innerHTML = "Show";
-                    showSalaryPayRaiseHistoryChartBtns[0].classList.remove('fa-eye-slash');
-                    showSalaryPayRaiseHistoryChartBtns[0].classList.add('fa-eye');
-                }
-            }
-
-            // Add event listeners to each button
-            showSalaryPayRaiseHistoryChartBtns.forEach(btn => {
-                btn.addEventListener('click', toggleSalaryPayRaiseHistory);
-            })
-        </script>
-
-        <script>
-            // Initialize totalAllowance from PHP
-            let totalAllowance = 0;
-
-            // Track the state of all checkboxes
-            let toolAllowanceChecked = <?php echo isset($toolAllowance) && $toolAllowance == 1 ? 'true' : 'false'; ?>;
-            let firstAidAllowanceChecked = <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'true' : 'false'; ?>;
-            let teamLeaderAllowanceChecked = <?php echo isset($teamLeaderAllowanceChecked) && $teamLeaderAllowanceChecked == 1 ? 'true' : 'false'; ?>;
-            let trainerAllowanceChecked = <?php echo isset($trainerAllowanceChecked) && $trainerAllowanceChecked == 1 ? 'true' : 'false'; ?>;
-            let supervisorAllowanceChecked = <?php echo isset($supervisorAllowanceChecked) && $supervisorAllowanceChecked == 1 ? 'true' : 'false'; ?>;
-            let painterAllowanceChecked = <?php echo isset($painterAllowanceChecked) && $painterAllowanceChecked == 1 ? 'true' : 'false'; ?>;
-            let machineMaintenanceAllowanceChecked = <?php echo isset($machineMaintenanceAllowanceChecked) && $machineMaintenanceAllowanceChecked == 1 ? 'true' : 'false'; ?>;
-
-            // Get the allowance amounts from PHP
-            const toolAllowanceAmount = <?php echo isset($toolAllowanceData[0]['amount']) ? $toolAllowanceData[0]['amount'] : 0; ?>;
-            const firstAidAllowanceAmount = <?php echo isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0; ?>;
-            let teamLeaderAllowanceAmount = <?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : 0; ?>; // Ensure this is set properly
-            let trainerAllowanceAmount = <?php echo isset($trainerAllowance) ? $trainerAllowance : 0; ?>;
-            let supervisorAllowanceAmount = <?php echo isset($supervisorAllowance) ? $supervisorAllowance : 0; ?>;
-            let painterAllowanceAmount = <?php echo isset($painterAllowance) ? $painterAllowance : 0; ?>;
-            let machineMaintenanceAllowanceAmount = <?php echo isset($machineMaintenanceAllowance) ? $machineMaintenanceAllowance : 0; ?>;
-
-            // Function to handle the checkbox change for Tool Allowance
-            function toolAllowanceCheckbox(checkbox, employeeId) {
-                toolAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('tool_allowance', toolAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_tool_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Tool allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update tool allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating tool allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for First Aid Allowance
-            function firstAidAllowanceCheckbox(checkbox, employeeId) {
-                firstAidAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('first_aid_allowance', firstAidAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_first_aid_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("First aid allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update first aid allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating first aid allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for Team Leader Allowance
-            function teamLeaderAllowanceCheckbox(checkbox, employeeId) {
-                teamLeaderAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('team_leader_allowance_check', teamLeaderAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_team_leader_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Team Leader allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update team leader allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating team leader allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for Trainer Allowance
-            function trainerAllowanceCheckbox(checkbox, employeeId) {
-                trainerAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('trainer_allowance_check', trainerAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_team_leader_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Trainer allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update trainer allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating trainer allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for Supervisor Allowance
-            function supervisorAllowanceCheckbox(checkbox, employeeId) {
-                supervisorAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('supervisor_allowance_check', supervisorAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_team_leader_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Supervisor allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update supervisor allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating supervisor allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for Painter Allowance
-            function painterAllowanceCheckbox(checkbox, employeeId) {
-                painterAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('painter_allowance_check', painterAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_team_leader_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Painter allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update painter allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating painter allowance:", error);
-                    });
-            }
-
-            // Function to handle the checkbox change for Machine Maintenance Allowance
-            function machineMaintenanceAllowanceCheckbox(checkbox, employeeId) {
-                machineMaintenanceAllowanceChecked = checkbox.checked;
-                const formData = new FormData();
-                formData.append('employeeId', employeeId);
-                formData.append('machine_maintenance_allowance_check', machineMaintenanceAllowanceChecked ? 1 : 0);
-
-                fetch('../AJAXphp/update_team_leader_allowance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log("Machine maintenance allowance updated successfully.");
-                            updateTotalAllowance();
-                        } else {
-                            console.error("Failed to update machine maintenance allowance.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error updating machine maintenance allowance:", error);
-                    });
-            }
-
-            // Function to update the total allowance based on the state of all checkboxes
-            function updateTotalAllowance() {
-                totalAllowance = 0;
-
-                if (toolAllowanceChecked) {
-                    totalAllowance += toolAllowanceAmount;
-                }
-                if (firstAidAllowanceChecked) {
-                    totalAllowance += firstAidAllowanceAmount;
-                }
-                if (teamLeaderAllowanceChecked) {
-                    totalAllowance += parseFloat(teamLeaderAllowanceAmount) || 0;
-                }
-                if (trainerAllowanceChecked) {
-                    totalAllowance += parseFloat(trainerAllowanceAmount) || 0;
-                }
-                if (supervisorAllowanceChecked) {
-                    totalAllowance += parseFloat(supervisorAllowanceAmount) || 0;
-                }
-                if (painterAllowanceChecked) {
-                    totalAllowance += parseFloat(painterAllowanceAmount) || 0;
-                }
-                if (machineMaintenanceAllowanceChecked) {
-                    totalAllowance += parseFloat(machineMaintenanceAllowanceAmount) || 0;
+                    nameElement.style.fontSize = '24px';  // Default font size
                 }
 
-                document.getElementById('currentTotalAllowance').innerText = `${totalAllowance.toFixed(2)}`;
-            }
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    var toggleElement = document.querySelector("[data-bs-target='#policiesContent']");
+                    var chevronIcon = toggleElement.querySelector("i");
 
-            document.addEventListener('DOMContentLoaded', updateTotalAllowance);
-        </script>
-
-        <script>
-            document.getElementById('showUpdateForm').addEventListener('click', function () {
-                var form = document.getElementById('updateWageForm');
-                var button = document.getElementById('showUpdateForm');
-                var wageDetailTable = document.getElementById('wageDetailTable');
-                var cancelUpdateWageBtn = document.getElementById('cancelUpdateWageBtn');
-
-                // Toggle the form's visibility by toggling 'd-none'
-                form.classList.toggle('d-none');
-
-                // Change button text based on the form's visibility
-                if (form.classList.contains('d-none')) {
-                    button.classList.remove('btn-danger');
-
-                } else {
-                    wageDetailTable.classList.add('d-none');
-                }
-
-                cancelUpdateWageBtn.addEventListener('click', function () {
-                    wageDetailTable.classList.remove('d-none');
-                    form.classList.add('d-none');
-                })
-            });
-        </script>
-
-
-        <!-- Tool Allowance -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.getElementById('editTeamLeaderAllowanceBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle edit mode
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                });
-
-                // Cancel button click event handler
-                document.getElementById('cancelTeamLeaderEditBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle back to view mode (exit edit mode)
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-team-leader, .edit-mode-team-leader').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                })
-
-                // Edit team leader button
-                document.getElementById('saveTeamLeaderBtn').addEventListener('click', function () {
-                    var button = document.getElementById('saveTeamLeaderBtn');
-                    var employeeId = button.getAttribute('data-employee-id');
-                    var teamLeaderAllowance = document.querySelector('input[name="teamLeaderAllowanceToEdit"]').value;
-
-                    // Prepare the data to send
-                    const formData = new FormData();
-                    formData.append('employeeId', employeeId);
-                    formData.append('team_leader_allowance', teamLeaderAllowance);
-
-                    // Use fetch to send the data to the server
-                    fetch('../AJAXphp/update_team_leader_allowance.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Team leader allowance rate updated successfully.");
-
-
-                                // Update the display of the team leader allowance in the modal
-                                const formattedAllowance = parseFloat(teamLeaderAllowance).toFixed(2); // Format to 2 decimal places
-                                document.querySelector('.teamLeaderAllowanceAmount').innerHTML = `$${formattedAllowance}`;
-
-                                // Optionally, hide the edit mode and show the view mode
-                                document.querySelector('.edit-mode-team-leader').classList.add('d-none');
-                                document.querySelector('.view-mode-team-leader').classList.remove('d-none');
-
-                                teamLeaderAllowanceAmount = teamLeaderAllowance;
-
-                                console.log(teamLeaderAllowanceAmount);
-
-                                // Update the total allowance display
-                                updateTotalAllowance();
-
+                    toggleElement.addEventListener("click", function () {
+                        setTimeout(() => {
+                            if (toggleElement.getAttribute("aria-expanded") === "true") {
+                                chevronIcon.classList.remove("fa-chevron-down");
+                                chevronIcon.classList.add("fa-chevron-up");
                             } else {
-                                console.error("Failed to update team leader allowance rate.");
+                                chevronIcon.classList.remove("fa-chevron-up");
+                                chevronIcon.classList.add("fa-chevron-down");
                             }
-                        })
-                        .catch(error => {
-                            console.error("Error updating team leader allowance:", error);
-                        });
-                });
-
-            });
-        </script>
-
-        <!-- Trainer Allowance -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.getElementById('editTrainerAllowanceBtn').addEventListener('click', function () {
-                    // Get the parent rows
-                    var row = this.closest('tr');
-
-                    // Toggle edit mode
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
+                        }, 200); // Small delay to allow Bootstrap collapse to update `aria-expanded`
                     });
                 });
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    var toggleElement = document.querySelector("[data-bs-target='#machineCompetencyContent']");
+                    var chevronIcon = toggleElement.querySelector("i");
 
-                // Cancel button click event handler
-                document.getElementById('cancelTrainerEditBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle back to view mode (exit edit mode)
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-trainer, .edit-mode-trainer').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                })
-
-                // Edit trainer button
-                document.getElementById('saveTrainerBtn').addEventListener('click', function () {
-                    var button = document.getElementById('saveTrainerBtn');
-                    var employeeId = button.getAttribute('data-employee-id');
-                    var trainerAllowance = document.querySelector('input[name="trainerAllowanceToEdit"]').value;
-
-                    // Prepare the data to send
-                    const formData = new FormData();
-                    formData.append('employeeId', employeeId);
-                    formData.append('trainer_allowance', trainerAllowance);
-
-                    // Use fetch to send the data to the server
-                    fetch('../AJAXphp/update_team_leader_allowance.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Team leader allowance rate updated successfully.");
-
-
-                                // Update the display of the trainer allowance in the modal
-                                const formattedAllowance = parseFloat(trainerAllowance).toFixed(2); // Format to 2 decimal places
-                                document.querySelector('.trainerAllowanceAmount').innerHTML = `$${formattedAllowance}`;
-
-                                // Optionally, hide the edit mode and show the view mode
-                                document.querySelector('.edit-mode-trainer').classList.add('d-none');
-                                document.querySelector('.view-mode-trainer').classList.remove('d-none');
-
-                                trainerAllowanceAmount = trainerAllowance;
-
-                                console.log(trainerAllowanceAmount);
-
-                                // Update the total allowance display
-                                updateTotalAllowance();
-
+                    toggleElement.addEventListener("click", function () {
+                        setTimeout(() => {
+                            if (toggleElement.getAttribute("aria-expanded") === "true") {
+                                chevronIcon.classList.remove("fa-chevron-down");
+                                chevronIcon.classList.add("fa-chevron-up");
                             } else {
-                                console.error("Failed to update trainer allowance rate.");
+                                chevronIcon.classList.remove("fa-chevron-up");
+                                chevronIcon.classList.add("fa-chevron-down");
                             }
-                        })
-                        .catch(error => {
-                            console.error("Error updating trainer allowance:", error);
-                        });
-                });
-            });
-        </script>
-
-        <!-- Supervisor Allowance -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.getElementById('editSupervisorAllowanceBtn').addEventListener('click', function () {
-                    // Get the parent rows
-                    var row = this.closest('tr');
-
-                    // Toggle edit mode
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
+                        }, 200); // Small delay to allow Bootstrap collapse to update `aria-expanded`
                     });
                 });
-
-                // Cancel button click event handler
-                document.getElementById('cancelSupervisorEditBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle back to view mode (exit edit mode)
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-supervisor, .edit-mode-supervisor').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                })
-
-                // Edit supervisor button
-                document.getElementById('saveSupervisorBtn').addEventListener('click', function () {
-                    var button = document.getElementById('saveSupervisorBtn');
-                    var employeeId = button.getAttribute('data-employee-id');
-                    var supervisorAllowance = document.querySelector('input[name="supervisorAllowanceToEdit"]').value;
-
-                    // Prepare the data to send
-                    const formData = new FormData();
-                    formData.append('employeeId', employeeId);
-                    formData.append('supervisor_allowance', supervisorAllowance);
-
-                    // Use fetch to send the data to the server
-                    fetch('../AJAXphp/update_team_leader_allowance.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Team leader allowance rate updated successfully.");
-
-
-                                // Update the display of the supervisor allowance in the modal
-                                const formattedAllowance = parseFloat(supervisorAllowance).toFixed(2); // Format to 2 decimal places
-                                document.querySelector('.supervisorAllowanceAmount').innerHTML = `$${formattedAllowance}`;
-
-                                // Optionally, hide the edit mode and show the view mode
-                                document.querySelector('.edit-mode-supervisor').classList.add('d-none');
-                                document.querySelector('.view-mode-supervisor').classList.remove('d-none');
-
-                                supervisorAllowanceAmount = supervisorAllowance;
-
-                                console.log(supervisorAllowanceAmount);
-
-                                // Update the total allowance display
-                                updateTotalAllowance();
-
-                            } else {
-                                console.error("Failed to update supervisor allowance rate.");
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error updating supervisor allowance:", error);
-                        });
-                });
-            });
-        </script>
-
-        <!-- Painter Allowance -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.getElementById('editPainterAllowanceBtn').addEventListener('click', function () {
-                    // Get the parent rows
-                    var row = this.closest('tr');
-
-                    // Toggle edit mode
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                });
-
-                // Cancel button click event handler
-                document.getElementById('cancelPainterEditBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle back to view mode (exit edit mode)
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-painter, .edit-mode-painter').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                })
-
-                // Edit painter button
-                document.getElementById('savePainterBtn').addEventListener('click', function () {
-                    var button = document.getElementById('savePainterBtn');
-                    var employeeId = button.getAttribute('data-employee-id');
-                    var painterAllowance = document.querySelector('input[name="painterAllowanceToEdit"]').value;
-
-                    // Prepare the data to send
-                    const formData = new FormData();
-                    formData.append('employeeId', employeeId);
-                    formData.append('painter_allowance', painterAllowance);
-
-                    // Use fetch to send the data to the server
-                    fetch('../AJAXphp/update_team_leader_allowance.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Team leader allowance rate updated successfully.");
-
-
-                                // Update the display of the painter allowance in the modal
-                                const formattedAllowance = parseFloat(painterAllowance).toFixed(2); // Format to 2 decimal places
-                                document.querySelector('.painterAllowanceAmount').innerHTML = `$${formattedAllowance}`;
-
-                                // Optionally, hide the edit mode and show the view mode
-                                document.querySelector('.edit-mode-painter').classList.add('d-none');
-                                document.querySelector('.view-mode-painter').classList.remove('d-none');
-
-                                painterAllowanceAmount = painterAllowance;
-
-                                console.log(painterAllowanceAmount);
-
-                                // Update the total allowance display
-                                updateTotalAllowance();
-
-                            } else {
-                                console.error("Failed to update painter allowance rate.");
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error updating painter allowance:", error);
-                        });
-                });
-            });
-        </script>
-
-        <!-- Machine Maintenance Allowance -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Edit button click event handler
-                document.getElementById('editMachineMaintenanceAllowanceBtn').addEventListener('click', function () {
-                    // Get the parent rows
-                    var row = this.closest('tr');
-
-                    // Toggle edit mode
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                });
-
-                // Cancel button click event handler
-                document.getElementById('cancelMachineMaintenanceEditBtn').addEventListener('click', function () {
-                    // Get the parent row
-                    var row = this.closest('tr');
-
-                    // Toggle back to view mode (exit edit mode)
-                    row.classList.toggle('editing');
-
-                    // Toggle visibility of view and edit elements
-                    row.querySelectorAll('.view-mode-machine-maintenance, .edit-mode-machine-maintenance').forEach(function (elem) {
-                        elem.classList.toggle('d-none');
-                    });
-                })
-
-                // Edit machine maintenance button
-                document.getElementById('saveMachineMaintenanceBtn').addEventListener('click', function () {
-                    var button = document.getElementById('saveMachineMaintenanceBtn');
-                    var employeeId = button.getAttribute('data-employee-id');
-                    var machineMaintenanceAllowance = document.querySelector('input[name="machineMaintenanceAllowanceToEdit"]').value;
-
-                    // Prepare the data to send
-                    const formData = new FormData();
-                    formData.append('employeeId', employeeId);
-                    formData.append('machine_maintenance_allowance', machineMaintenanceAllowance);
-
-                    // Use fetch to send the data to the server
-                    fetch('../AJAXphp/update_team_leader_allowance.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Team leader allowance rate updated successfully.");
-
-
-                                // Update the display of the machine maintenance allowance in the modal
-                                const formattedAllowance = parseFloat(machineMaintenanceAllowance).toFixed(2); // Format to 2 decimal places
-                                document.querySelector('.machineMaintenanceAllowanceAmount').innerHTML = `$${formattedAllowance}`;
-
-                                // Optionally, hide the edit mode and show the view mode
-                                document.querySelector('.edit-mode-machine-maintenance').classList.add('d-none');
-                                document.querySelector('.view-mode-machine-maintenance').classList.remove('d-none');
-
-                                machineMaintenanceAllowanceAmount = machineMaintenanceAllowance;
-
-                                console.log(machineMaintenanceAllowanceAmount);
-
-                                // Update the total allowance display
-                                updateTotalAllowance();
-
-                            } else {
-                                console.error("Failed to update machine maintenance allowance rate.");
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error updating machine maintenance allowance:", error);
-                        });
-                });
-            });
-        </script>
-        <script>
-            const nameElement = document.getElementById('print-name');
-            const nameLength = nameElement.innerText.length;
-
-            if (nameLength > 10) { // Adjust the number as needed
-                nameElement.style.fontSize = '18px';  // Smaller font size for longer names
-            } else {
-                nameElement.style.fontSize = '24px';  // Default font size
-            }
-
-        </script>
+            </script>
 </body>
 
 </html>

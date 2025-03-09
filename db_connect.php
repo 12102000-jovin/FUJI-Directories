@@ -1,4 +1,7 @@
 <?php
+// Set the timezone to Sydney
+date_default_timezone_set('Australia/Sydney');
+
 $servername = "127.0.0.1";
 $username = "root";
 $password = "";

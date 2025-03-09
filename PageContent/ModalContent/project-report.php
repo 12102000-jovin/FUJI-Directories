@@ -284,6 +284,7 @@ $projectName = $config['project_name'];
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Qty</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Sub Total</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Invoiced</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Approved By</th>
     `;
             table.appendChild(headers);
 
@@ -305,6 +306,9 @@ $projectName = $config['project_name'];
             <td class="py-2 text-center">${project.quantity}</td>
             <td class="py-2 text-center">$${parseFloat(project.sub_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="py-2 text-center ${invoicedClass}">${invoicedText}</td>
+            <td class="py-2 text-center">
+            ${project.first_name && project.last_name ? project.first_name + ' ' + project.last_name : 'N/A'}
+            </td>
         `;
                 table.appendChild(row);
             });

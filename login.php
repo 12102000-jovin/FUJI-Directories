@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="row">
                     <div class="col-md-6 d-flex flex-column justify-content-start p-5">
                         <img src="Images/FE-logo.png" alt="Logo" class="img-fluid">
-                        <h2 class="fw-bold">Directories</h2>
+                        <h2 class="fw-bold">PowerFusion</h2>
                     </div>
 
                     <div class="col-md-6 d-flex flex-column justify-content-center">

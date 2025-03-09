@@ -57,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
     $targetCloseDate = $_POST["targetCloseDate"];
     $capaOwnerEmail = $_POST["capaOwnerEmail"];
     $assignedToEmail = $_POST["assignedToEmail"];
+    $capaFiles = $_FILES['capaFiles'];
 
     $add_capa_document_sql = "INSERT INTO capa (capa_document_id, date_raised, capa_description, severity, raised_against, capa_owner, status, assigned_to, main_source_type, product_or_service, main_fault_category, target_close_date) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -69,6 +70,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
         $current_url = $_SERVER['PHP_SELF'];
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+
+        // Create a folder for the CAPA
+        $capaFolder = "D:\\FSMBEH-Data\\00 - QA\\05 - CAPA\\" . $capaDocumentId;
+        if (!file_exists($capaFolder)) {
+            mkdir($capaFolder, 0777, true);
+        }
+
+        // Upload Files to the Created Folder
+        if (!empty($_FILES['capaFiles']['name'][0])) {  // Check if files are uploaded
+            foreach ($_FILES['capaFiles']['name'] as $key => $filename) {
+                $fileTmpPath = $_FILES['capaFiles']['tmp_name'][$key];
+                $destinationPath = $capaFolder . DIRECTORY_SEPARATOR . basename($filename);
+                
+                if (move_uploaded_file($fileTmpPath, $destinationPath)) {
+                    echo "File '$filename' uploaded successfully.<br>";
+                } else {
+                    echo "Error uploading file '$filename'.<br>";
+                }
+            }
         }
 
         // Existing code for fetching CAPA owner name
@@ -263,7 +284,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
     }
 </style>
 
-<form method="POST" id="addCAPADocumentForm" novalidate>
+<form method="POST" id="addCAPADocumentForm" enctype="multipart/form-data" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
         id="result">
     </p>
@@ -353,7 +374,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
                 ?>
             </select>
             <!-- <input type="text" name="assignedTo" class="form-control" required> -->
-            <input type="hiddens" name="assignedToEmail" id="assignedToEmail" readonly>
+            <input type="hidden" name="assignedToEmail" id="assignedToEmail" readonly>
             <div class="invalid-feedback">
                 Please provide the assigned to.
             </div>
@@ -412,6 +433,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaDocumentId"])) {
             <div class="invalid-feedback">
                 Please provide the target close date.
             </div>
+        </div>
+        <div class="form-group col-md-12 mt-3">
+            <label for="capaFiles" class="fw-bold">File</label>
+            <input type="file" name="capaFiles[]" class="form-control" id="capaFiles" multiple>
         </div>
 
         <div class="d-flex justify-content-center mt-5 mb-4">

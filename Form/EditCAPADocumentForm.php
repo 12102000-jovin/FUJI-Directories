@@ -70,6 +70,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"])) {
             $current_url .= '?' . urlencode($_SERVER['QUERY_STRING']);
         }
 
+        // Create a folder for the CAPA
+        $capaFolder = "D:\\FSMBEH-Data\\00 - QA\\05 - CAPA\\" . $capaDocumentId;
+        if (!file_exists($capaFolder)) {
+            mkdir($capaFolder, 0777, true);
+        }
+
+        // Upload Files to the Created Folder
+        if (!empty($_FILES['capaFilesToEdit']['name'][0])) {  // Check if files are uploaded
+            foreach ($_FILES['capaFilesToEdit']['name'] as $key => $filename) {
+                $fileTmpPath = $_FILES['capaFilesToEdit']['tmp_name'][$key];
+                $destinationPath = $capaFolder . DIRECTORY_SEPARATOR . basename($filename);
+                
+                if (move_uploaded_file($fileTmpPath, $destinationPath)) {
+                    echo "File '$filename' uploaded successfully.<br>";
+                } else {
+                    echo "Error uploading file '$filename'.<br>";
+                }
+            }
+        }
+
         // Fetch CAPA owner name
         $capa_owner_name_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
         $capa_owner_name_result = $conn->prepare($capa_owner_name_sql);
@@ -125,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"])) {
                         <li><strong>Raised Against: </strong><b>$raisedAgainst</b></li>
                         <li><strong>CAPA Owner:</strong><b> $recipientName</b></li>
                         <li><strong>Assigned To:</strong><b> $assignedRecipientName</b></li>
-                        <li><strong>Target Closed Date:</strong><b> $targetCloseDate</b></li>
+                        <li><strong>Target Close Date:</strong><b> $targetCloseDate</b></li>
                     </ul>
                     <p>Please review the changes and take any necessary actions regarding this document.</p>
                     <p>This email is sent automatically. Please do not reply.</p>
@@ -149,7 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit"])) {
                         <li><strong>Raised Against: </strong><b>$raisedAgainst</b></li>
                         <li><strong>CAPA Owner:</strong><b> $recipientName</b></li>
                         <li><strong>Assigned To:</strong><b> $assignedRecipientName</b></li>
-                        <li><strong>Target Closed Date:</strong><b> $targetCloseDate</b></li>
+                        <li><strong>Target Close Date:</strong><b> $targetCloseDate</b></li>
                     </ul>
                     <p>Please review the changes and take any necessary actions regarding this document.</p>
                     <p>This email is sent automatically. Please do not reply.</p>
@@ -277,7 +297,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit2"])) {
                         <li><strong>Raised Against: </strong><b>$raisedAgainst </b></li>
                         <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
                         <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
-                        <li><strong>Target Closed Date: </strong> <b> $targetCloseDate </b></li>
+                        <li><strong>Target Close Date: </strong> <b> $targetCloseDate </b></li>
                         <li><strong>Date Closed: </strong> <b> $dateClosed </b></li>
                     </ul>
                     <p>Please review the changes and take any necessary actions regarding this document.</p>
@@ -302,7 +322,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit2"])) {
                         <li><strong>Raised Against: </strong><b>$raisedAgainst </b></li>
                         <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
                         <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
-                        <li><strong>Target Closed Date: </strong> <b> $targetCloseDate </b></li>
+                        <li><strong>Target Close Date: </strong> <b> $targetCloseDate </b></li>
                         <li><strong>Date Closed: </strong> <b> $dateClosed </b></li>
                     </ul>
                     <p>Please review the changes and take any necessary actions regarding this document.</p>
@@ -426,7 +446,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                         <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
                         <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
                         <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
-                        <li><strong>Target Closed Date: </strong><b> $targetCloseDate </b></li>
+                        <li><strong>Target Close Date: </strong><b> $targetCloseDate </b></li>
                         <li><strong>Date Closed: </strong><b> $dateClosed </b></li>
                     </ul>
                     <p>Please review the changes and take any necessary actions regarding this document.</p>
@@ -451,7 +471,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                         <li><strong>Raised Against: </strong><b> $raisedAgainst </b></li>
                         <li><strong>CAPA Owner: </strong><b> $recipientName </b></li>
                         <li><strong>Assigned To: </strong><b> $assignedRecipientName </b></li>
-                        <li><strong>Target Closed Date: </strong><b> $targetCloseDate </b></li>
+                        <li><strong>Target Close Date: </strong><b> $targetCloseDate </b></li>
                         <li><strong>Date Closed: </strong><b> $dateClosed </b></li>
                     </ul>
                     <p> Please review the changes and take any necessary actions regarding this document.</p>
@@ -629,6 +649,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
                 <input type="date" name="targetCloseDateToEdit" class="form-control" id="targetCloseDateToEdit"
                     required>
                 <div class="invalid-feedback">Please provide Target Close Date</div>
+            </div>
+            <div class="form-group col-md-12 mt-3">
+                <label for="capaFilesToEdit" class="fw-bold">File</label>
+                <input type="file" name="capaFilesToEdit[]" class="form-control" id="capaFilesToEdit" multiple>
             </div>
             <div class="d-flex justify-content-center mt-5 mb-4">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

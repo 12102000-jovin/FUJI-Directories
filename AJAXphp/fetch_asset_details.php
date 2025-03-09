@@ -5,14 +5,33 @@ require_once("../db_connect.php");
 
 // Get JSON input
 $data = json_decode(file_get_contents('php://input'), true);
+
+// Extract parameters
 $historyDetailsType = $data['historyDetailsType'] ?? '';
 $assetId = $data['assetId'] ?? '';
+$assetDetailsId = $data['asset_details_id'] ?? ''; // For deletion
 
-if (!$historyDetailsType || !$assetId) {
-    echo json_encode([]);
+// Check if either 'historyDetailsType' or 'assetId' is missing, but only if 'assetDetailsId' is not set
+if (!$assetDetailsId && (!$historyDetailsType || !$assetId)) {
+    echo json_encode(['error' => 'Missing required parameters']);
     exit;
 }
 
+// Handle Deletion if 'assetDetailsId' exists
+if ($assetDetailsId) {
+    // Handle Deletion
+    $deleteQuery = "DELETE FROM asset_details WHERE asset_details_id = '$assetDetailsId'";
+
+    if ($conn->query($deleteQuery) === TRUE) {
+        echo json_encode(['success' => true, 'message' => 'Asset detail deleted successfully']);
+        exit;
+    } else {
+        echo json_encode(['error' => 'Error deleting asset detail']);
+        exit;
+    }
+}
+
+// Query handling for fetching asset details
 $query = "";
 
 if ($historyDetailsType === 'Maintenance') {
@@ -34,10 +53,11 @@ if ($historyDetailsType === 'Maintenance') {
 
 $result = $conn->query($query);
 $data = [];
-
+ 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $data[] = [
+            'asset_details_id' => $row['asset_details_id'],
             'performed_date' => $row['performed_date'],
             'due_date' => $row['due_date'] ?? 'N/A',
             'description' => $row['description'] ?? 'N/A',
@@ -47,4 +67,5 @@ if ($result && $result->num_rows > 0) {
 }
 
 echo json_encode($data);
+
 ?>

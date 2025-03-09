@@ -11,7 +11,7 @@ $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
 $sub_folder = isset($_GET['sub_folder']) ? basename($_GET['sub_folder']) : '';
 
 $baseDirectory = 'D:\FSMBEH-Data\00 - QA\04 - Assets';
-$filePath = $baseDirectory . "/" . $assetNo . "/" . $folder . "/" . $sub_folder. "/" .$file;
+$filePath = $baseDirectory . "/" . $assetNo . "/" . $folder . "/" . $sub_folder . "/" . $file;
 
 echo $file;
 echo $assetNo;
@@ -48,3 +48,11 @@ if (file_exists($filePath)) {
     echo "File does not exist.";
 }
 ?>
+
+<head>
+    <title><?php echo $file ?></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="Images/FE-logo-icon.ico" />
+</head>

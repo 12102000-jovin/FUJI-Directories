@@ -13,15 +13,15 @@ $projectName = $config['project_name'];
 $errors = [];
 
 // Get all the visa status
-$visa_status_sql = "SELECT * FROM visa";
+$visa_status_sql = "SELECT * FROM visa ORDER BY visa_name ASC";
 $visa_status_result = $conn->query($visa_status_sql);
 
 // Get all the position
-$position_sql = "SELECT * FROM position";
+$position_sql = "SELECT * FROM position ORDER BY position_name ASC";
 $position_result = $conn->query($position_sql);
 
 // Get all the department
-$department_sql = "SELECT * FROM department";
+$department_sql = "SELECT * FROM department ORDER BY department_name ASC";
 $department_result = $conn->query($department_sql);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset($_POST['lastName'])) {
@@ -381,13 +381,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
 
     if ($payrollType === "wage") {
         // Prepare and execute SQL statement to insert data into 'wages' table
-        $insert_wages_sql = "INSERT INTO wages(employee_id, amount, date)  VALUES (?, ?, ?)";
+        $insert_wages_sql = "INSERT INTO wages(employee_id, amount, date) VALUES (?, ?, ?)";
         $insert_wages_result = $conn->prepare($insert_wages_sql);
         $insert_wages_result->bind_param("sds", $employeeId, $payRate, $currentDate);
-
-        // Execute the prepared statement for inserting into the 'wages' table
+    
         if ($insert_wages_result->execute()) {
             echo "New wages record inserted successfully.";
+    
+            // Create a folder for the employee
+            $employeeFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId;
+            if (!file_exists($employeeFolder)) {
+                mkdir($employeeFolder, 0777, true);
+            }
+    
+            // Define subfolders and their respective sub-subfolders
+            $folderStructure = [
+                "00 – Employee Documents" => [
+                    "00 - Superseded Documents",
+                    "01 - Employment Documents",
+                    "02 - Policies",
+                    "03 - Pay Review",
+                    "04 - Evaluations"
+                ],
+                "01 - Induction and Training Documents" => [
+                    "00 - Superseded Documents"
+                ],
+                "02 - Resume, ID and Qualifications" => [
+                    "00 - Superseded Documents"
+                ],
+                "03 - Accounts" => [
+                    "00 - Superseded Documents"
+                ],
+                "04 - Leave" => [
+                    "00 - Personal Leave",
+                    "01 - Annual Leave",
+                    "02 - Working From Home",
+                    "03 - Long Service Leave"
+                ],
+                "05 - HR Actions" => [],
+                "06 - Work Compensation" => [],
+                "07 - Exit Information" => []
+            ];
+    
+            // Create subfolders and sub-subfolders
+            foreach ($folderStructure as $subfolder => $subSubfolders) {
+                $subfolder = str_replace("–", "-", $subfolder); // Convert en dash to hyphen
+                $subfolderPath = $employeeFolder . "\\" . $subfolder;
+                if (!file_exists($subfolderPath)) {
+                    mkdir($subfolderPath, 0777, true);
+                }
+            
+                foreach ($subSubfolders as $subSubfolder) {
+                    $subSubfolder = str_replace("–", "-", $subSubfolder); // Convert en dash to hyphen
+                    $subSubfolderPath = $subfolderPath . "\\" . $subSubfolder;
+                    if (!file_exists($subSubfolderPath)) {
+                        mkdir($subSubfolderPath, 0777, true);
+                    }
+                }
+            }
+    
             // Redirect after successful insertion
             echo '<script>window.location.replace("http://' . $serverAddress . '/' . $projectName . '/Pages/employee-list-index.php");</script>';
         } else {
@@ -398,16 +450,69 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $insert_salaries_sql = "INSERT INTO salaries(employee_id, amount, date) VALUES (?, ?, ?)";
         $insert_salaries_result = $conn->prepare($insert_salaries_sql);
         $insert_salaries_result->bind_param("sds", $employeeId, $annualSalary, $currentDate);
-
-        // Execute the prepared statement for inserting into the 'wages' table
+    
         if ($insert_salaries_result->execute()) {
             echo "New salaries record inserted successfully.";
+    
+            // Create a folder for the employee
+            $employeeFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\" . $employeeId;
+            if (!file_exists($employeeFolder)) {
+                mkdir($employeeFolder, 0777, true);
+            }
+    
+            // Define subfolders and their respective sub-subfolders
+            $folderStructure = [
+                "00 - Employee Documents" => [
+                    "00 - Superseded Documents",
+                    "01 - Employment Documents",
+                    "02 - Policies",
+                    "03 - Pay Review",
+                    "04 - Evaluations"
+                ],
+                "01 - Induction and Training Documents" => [
+                    "00 - Superseded Documents"
+                ],
+                "02 - Resume, ID and Qualifications" => [
+                    "00 - Superseded Documents"
+                ],
+                "03 - Accounts" => [
+                    "00 - Superseded Documents"
+                ],
+                "04 - Leave" => [
+                    "00 - Personal Leave",
+                    "01 - Annual Leave",
+                    "02 - Working From Home",
+                    "03 - Long Service Leave"
+                ],
+                "05 - HR Actions" => [],
+                "06 - Work Compensation" => [],
+                "07 - Exit Information" => []
+            ];
+    
+            // Create subfolders and sub-subfolders
+            foreach ($folderStructure as $subfolder => $subSubfolders) {
+                $subfolder = str_replace("–", "-", $subfolder); // Convert en dash to hyphen
+                $subfolderPath = $employeeFolder . "\\" . $subfolder;
+                if (!file_exists($subfolderPath)) {
+                    mkdir($subfolderPath, 0777, true);
+                }
+            
+                foreach ($subSubfolders as $subSubfolder) {
+                    $subSubfolder = str_replace("–", "-", $subSubfolder); // Convert en dash to hyphen
+                    $subSubfolderPath = $subfolderPath . "\\" . $subSubfolder;
+                    if (!file_exists($subSubfolderPath)) {
+                        mkdir($subSubfolderPath, 0777, true);
+                    }
+                }
+            }            
+    
             // Redirect after successful insertion
             echo '<script>window.location.replace("http://' . $serverAddress . '/' . $projectName . '/Pages/employee-list-index.php");</script>';
         } else {
             echo "Error: " . $insert_salaries_result->error;
         }
     }
+    
 
     // Close prepared statements and database connection
     $stmt->close();
@@ -445,10 +550,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
             background-color: rgba(128, 128, 128, 0.50);
             /* Grey color with 75% opacity */
             backdrop-filter: blur(2px);
-            /* Apply blur effect */
         }
 
-        @media (max-width: 992px) {
+        @media print (max-width: 992px) {
             #visaStatusOptionsModal .modal-content {
                 border-radius: 10px;
             }
@@ -716,8 +820,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <label for="section" class="fw-bold"><small>Section</small></label>
                             <select class="form-select" aria-label="Section" name="section" id="section" required>
                                 <option disabled selected hidden></option>
-                                <option value="Office">Office</option>
                                 <option value="Factory">Factory</option>
+                                <option value="Office">Office</option>
                             </select>
                             <div class="invalid-feedback">
                                 Please select a section.

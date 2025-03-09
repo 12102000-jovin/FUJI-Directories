@@ -180,11 +180,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
         </div>
 
         <div class="row mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="col-8 col-lg-5">
-                    <form method="GET" id="searchForm">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
+                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
                         <div class="d-flex align-items-center">
-                            <div class="input-group me-2">
+                            <div class="input-group me-2 flex-grow-1">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
@@ -216,8 +216,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                     </form>
                 </div>
                 <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
-                        <a class="btn btn-primary me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                    <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                        <a class="btn btn-primary me-2"
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php"> <i
+                                class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add WHS</button>
                     </div>
@@ -553,6 +555,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                 <!-- Pagination controls -->
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
+                        <!-- First Page Button  -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(1); return false;" aria-label="First"
+                                    style="cursor: pointer">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                        <?php endif; ?>
                         <!-- Previous Button -->
                         <?php if ($page > 1): ?>
                             <li class="page-item">
@@ -601,6 +616,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                         <?php else: ?>
                             <li class="page-item disabled">
                                 <span class="page-link">&raquo;</span>
+                            </li>
+                        <?php endif; ?>
+
+                        <!-- Last Page Button -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(<?php echo $total_pages ?>); return false;"
+                                    aria-label="Last" style="cursor: pointer">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
                             </li>
                         <?php endif; ?>
                     </ul>

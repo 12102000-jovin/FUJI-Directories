@@ -289,85 +289,81 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             </div>
         </div>
         <div class="row mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="col-8 col-lg-5">
-                    <form method="GET" id="searchForm">
-                        <div class="d-flex align-items-center">
-                            <div class="input-group me-2">
-                                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-                                <input type="search" class="form-control" id="searchDocuments" name="search"
-                                    placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm); ?>">
-                            </div>
-                            <button class="btn" type="submit"
-                                style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">Search
-                            </button>
-                            <button class="btn btn-danger ms-2"><a class="dropdown-item" href="#"
-                                    onclick="clearURLParameters()">Clear</a></button>
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                <!-- Search & Filter Section -->
+                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
+                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
+                        <div class="input-group me-2 flex-grow-1">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="search" class="form-control" id="searchDocuments" name="search"
+                                placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm); ?>">
+                        </div>
+                        <button class="btn" type="submit"
+                            style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">Search</button>
+                        <button class="btn btn-danger ms-2"><a class="dropdown-item" href="#"
+                                onclick="clearURLParameters()">Clear</a></button>
 
-                            <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
-                                id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                <?php echo $departmentFilter ? $departmentFilter : "All Departments" ?>
-                            </button>
-                            <div class="dropdown">
-                                <form method="GET" action="">
-                                    <input type="hidden" id="selectedDepartmentFilter" name="department" value="">
-                                    <ul class="dropdown-menu" aria-labelledby="departmentDropdownMenuButton">
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="All Departments">All
-                                                Departments</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Accounts">Accounts</a>
-                                        </li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Company Compliance">Company Compliance</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Estimating">Estimating</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Electrical">Electrical</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Engineering">Engineering</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Human Resources">Human
-                                                Resources</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Management">Management</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Operations Support">Operations Support</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Projects">Projects</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Quality Assurance">Quality Assurance</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Quality Control">Quality
-                                                Control</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Research & Development">Research &
-                                                Development</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Sheet Metal">Sheet
-                                                Metal</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Special Projects">Special
-                                                Projects</a></li>
-                                        <li><a class="dropdown-item dropdown-department-item" href="#"
-                                                data-department-filter="Work, Health and Safety">Work, Health and
-                                                Safety</a>
-                                        </li>
-                                    </ul>
-                                </form>
-                            </div>
+                        <!-- Filter Dropdown -->
+                        <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
+                            id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <?php echo $departmentFilter ? $departmentFilter : "All Departments" ?>
+                        </button>
+                        <div class="dropdown">
+                            <form method="GET" action="">
+                                <input type="hidden" id="selectedDepartmentFilter" name="department" value="">
+                                <ul class="dropdown-menu" aria-labelledby="departmentDropdownMenuButton">
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="All Departments">All Departments</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Accounts">Accounts</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Company Compliance">Company Compliance</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Estimating">Estimating</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Electrical">Electrical</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Engineering">Engineering</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Human Resources">Human Resources</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Management">Management</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Operations Support">Operations Support</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Projects">Projects</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Quality Assurance">Quality Assurance</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Quality Control">Quality Control</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Research & Development">Research & Development</a>
+                                    </li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Sheet Metal">Sheet Metal</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Special Projects">Special Projects</a></li>
+                                    <li><a class="dropdown-item dropdown-department-item" href="#"
+                                            data-department-filter="Work, Health and Safety">Work, Health and Safety</a>
+                                    </li>
+                                </ul>
+                            </form>
                         </div>
                     </form>
                 </div>
 
+                <!-- Add Document Button (Admin only) -->
                 <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                    <div
+                        class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add Document</button>
                     </div>
                 <?php } ?>
             </div>
         </div>
+
+
         <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
             <table class="table table-hover mb-0 pb-0">
                 <thead>
@@ -608,7 +604,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 <?= $row["revision_status"] ?></span>
                                         </div>
                                     </td>
-                                    
+
                                 <?php } ?>
 
                                 <td class="py-2 align-middle text-center department">
@@ -713,6 +709,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 <!-- Pagination controls -->
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
+                        <!-- First Page Button -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(1); return false;" aria-label="First"
+                                    style="cursor: pointer">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                        <?php endif; ?>
+
                         <!-- Previous Button -->
                         <?php if ($page > 1): ?>
                             <li class="page-item">
@@ -762,6 +772,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                         <?php else: ?>
                             <li class="page-item disabled">
                                 <span class="page-link">&raquo;</span>
+                            </li>
+                        <?php endif; ?>
+
+                        <!-- Last Page Button -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" onclick="updatePage(<?php echo $total_pages; ?>); return false;"
+                                    aria-label="last" style="cursor: pointer">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
                             </li>
                         <?php endif; ?>
                     </ul>

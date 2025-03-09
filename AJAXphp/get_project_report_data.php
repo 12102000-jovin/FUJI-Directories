@@ -40,9 +40,10 @@ if ($endDate) {
 }
 
 // Query to get project details, including invoiced and non-invoiced projects, within the date range
-$pj_details_sql = "SELECT pd.*, p.* 
+$pj_details_sql = "SELECT pd.*, p.*, e.first_name, e.last_name
                    FROM project_details pd
                    JOIN projects p ON pd.project_id = p.project_id
+                   LEFT JOIN employees e ON pd.approved_by = e.employee_id
                    WHERE 1=1 
                    $startDateCondition
                    $endDateCondition

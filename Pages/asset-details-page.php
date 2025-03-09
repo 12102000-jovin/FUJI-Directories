@@ -721,7 +721,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                                         }
 
                                         // Output the file name with the icon
-                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=02 - Warranty&file=' . urlencode($file) . '">';
+                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=01 - Manual&file=' . urlencode($file) . '">';
                                         echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
                                     }
                                     echo '</div>';
@@ -895,6 +895,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                         <table class="table table-hover table-bordered">
                             <thead>
                                 <tr>
+                                    <th class="align-middle text-center">Action</th>
                                     <th class="align-middle text-center">Performed Date</th>
                                     <th class='align-middle text-center due-date-column' id="dueDateHeader"
                                         width='200px'>Due Date</th>
@@ -1063,6 +1064,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             return date.toLocaleDateString('en-AU', options);
         }
+
         document.addEventListener('DOMContentLoaded', function () {
             var myModalEl = document.getElementById('assetDetailsHistoryModal');
 
@@ -1079,28 +1081,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
 
                 // Clear previous table data
                 var tableBody = myModalEl.querySelector('#detailsHistoryTableBody');
-                var dueDateHeader = myModalEl.querySelector('#dueDateHeader'); // Get Due Date Header
-                var dueDateColumn = myModalEl.querySelectorAll('.due-date-column'); // Get Due Date Column Cells
-
-                // Show or hide Due Date column based on historyDetailsType
-                if (historyDetailsType === 'Repair') {
-                    if (dueDateHeader) {
-                        dueDateHeader.style.display = 'none'; // Hide Due Date header
-                    }
-                    dueDateColumn.forEach(function (cell) {
-                        cell.style.display = 'none'; // Hide Due Date column cells
-                    });
-                } else {
-                    if (dueDateHeader) {
-                        dueDateHeader.style.display = ''; // Show Due Date header
-                    }
-                    dueDateColumn.forEach(function (cell) {
-                        cell.style.display = ''; // Show Due Date column cells
-                    });
-                }
-
-                // Clear previous content
-                tableBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
 
                 // Fetch data using AJAX
                 fetch('../AJAXphp/fetch_asset_details.php', {
@@ -1116,29 +1096,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                         tableBody.innerHTML = ''; // Clear loading message
 
                         if (data.length === 0) {
-                            tableBody.innerHTML = '<tr><td class="text-center" colspan="4">No records found</td></tr>';
+                            tableBody.innerHTML = '<tr><td class="text-center" colspan="5">No records found</td></tr>';
                         } else {
                             data.forEach(item => {
-                                // Conditionally apply style to description if it's "N/A" or empty
-                                var descriptionStyle = (item.description === "N/A" || !item.description) ? "background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold" : "";
-
                                 // Add table rows with condition for the Due Date column
                                 tableBody.innerHTML += `
-                        <tr>
-                            <td class='align-middle text-center' width='200px'>${formatDate(item.performed_date)}</td>
-                            ${historyDetailsType === 'Repair' ? '' : `<td class='align-middle text-center due-date-column' width='200px'>${formatDate(item.due_date)}</td>`}
-                            <td class='align-middle text-center' width='100px'>${item.source}</td>
-                            <td class='align-middle text-center due-date-column' style='${descriptionStyle}'>${item.description || "N/A"}</td>
-                        </tr>`;
+                            <tr>
+                                <td class='align-middle text-center' width='80px'>
+                                    <button class="btn deleteBtn" data-asset-details-id="${item.asset_details_id}">
+                                        <i class="fa-regular fa-trash-can text-danger"></i>
+                                    </button>
+                                </td>
+                                <td class='align-middle text-center' width='200px'>${formatDate(item.performed_date)}</td>
+                                ${historyDetailsType === 'Repair' ? '' : `<td class='align-middle text-center due-date-column' width='200px'>${formatDate(item.due_date)}</td>`}
+                                <td class='align-middle text-center' width='100px'>${item.source}</td>
+                                <td class='align-middle text-center due-date-column'>${item.description || "N/A"}</td>
+                            </tr>`;
+                            });
+
+                            // Attach click event listener for delete buttons inside the modal
+                            myModalEl.querySelectorAll('.deleteBtn').forEach(button => {
+                                button.addEventListener('click', function () {
+                                    // Get the asset_details_id from the clicked button
+                                    const assetDetailsId = this.getAttribute('data-asset-details-id');
+                                    console.log('Asset Details ID:', assetDetailsId);  // Log the asset ID
+
+                                    // Confirm with the user before deleting
+                                    if (confirm('Are you sure you want to delete this asset?')) {
+                                        // Send a request to delete the asset from the server
+                                        fetch('../AJAXphp/fetch_asset_details.php', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify({ asset_details_id: assetDetailsId }), // Send the asset ID in the request body
+                                        })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    // If the asset was successfully deleted, remove the button's row from the UI
+                                                    this.closest('tr').remove(); // Assumes the button is inside a table row <tr>
+                                                    alert('Asset deleted successfully!');
+                                                } else {
+                                                    alert('Error deleting asset.');
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                alert('Error deleting asset.');
+                                            });
+                                    }
+                                });
                             });
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        tableBody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
                     });
             });
         });
+
     </script>
 
 
@@ -1191,7 +1209,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
             });
         });
     </script>
+    <script>
+        // Select all buttons with the class 'btn'
+        const buttons = document.querySelectorAll('.deleteBtn');
 
+        // Loop through each button and add an event listener
+        buttons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Log the value of the 'data-asset-details-id' attribute
+                const assetDetailsId = this.getAttribute('data-asset-details-id');
+                console.log('Asset Details ID:', assetDetailsId);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('assetDetailsHistoryModal');
+
+            // When the modal is closed, reload the page with the current URL parameters
+            myModalEl.addEventListener('hidden.bs.modal', function () {
+                // Get the current URL and reload it with the current parameters
+                window.location.href = window.location.href;
+            });
+        });
+
+    </script>
 </body>
 
 </html>

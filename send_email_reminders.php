@@ -3,6 +3,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Set the timezone to Sydney
+date_default_timezone_set('Australia/Sydney');
+
 require_once 'vendor/autoload.php';
 
 // Database connection
@@ -49,39 +52,43 @@ $emailSenderCapa8 = new emailSender();
 
 // ========================= Check Visa Expiry Dates =========================
 
-foreach ($employees as $employee_id => $employee) {
-    $expiryDate = $employee['visa_expiry_date'];
+if (date('N') == 1) { // 1 = Monday
+    foreach ($employees as $employee_id => $employee) {
+        $expiryDate = $employee['visa_expiry_date'];
 
-    // Check if expiryDate is a valida DateTime object
-    if ($expiryDate instanceof DateTime) {
-        $interval = $currentDate->diff($expiryDate);
-        $daysLeft = $interval->format('%r%a');
+        // Check if expiryDate is a valid DateTime object
+        if ($expiryDate instanceof DateTime) {
+            $interval = $currentDate->diff($expiryDate);
+            $daysLeft = $interval->format('%r%a');
 
-        echo "Days left for employee ID $employee_id: $daysLeft<br>";
+            echo "Days left for employee ID $employee_id: $daysLeft<br>";
 
-        // Check if the expiry date is within 30 days
-        if ($daysLeft < 30) {
-            $hrOfficerEmail = 'thi.tran@smbeharwal.fujielectric.com';
-            $recipientName = 'Thi Tran';
+            // Check if the expiry date is within 30 days
+            if ($daysLeft < 30) {
+                $hrOfficerEmail = 'thi.tran@smbeharwal.fujielectric.com';
+                $recipientName = 'Thi Tran';
 
-            // Send the email notification
-            $emailSenderVisaExpiry->sendEmail(
-                to: $hrOfficerEmail,
-                toName: $recipientName,
-                subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
-                body: "
-            <p> Dear $recipientName,</p>
+                // Send the email notification
+                $emailSenderVisaExpiry->sendEmail(
+                    to: $hrOfficerEmail,
+                    toName: $recipientName,
+                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                    body: "
+                    <p> Dear $recipientName,</p>
 
-            <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
+                    <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
 
-            <p>Please take the necessary actions.</p>
-            <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Please take the necessary actions.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
 
-            <p>Best regards,<br></p>
-            "
-            );
+                    <p>Best regards,<br></p>
+                    "
+                );
+            }
         }
     }
+} else {
+    echo "Today is not Monday. No emails sent.";
 }
 
 // ========================= Check CAPA Expiry Dates ========================= 
@@ -96,16 +103,22 @@ if ($capa_result->num_rows > 0) {
             $targetCloseDate = new DateTime($row['target_close_date']);
             $dateRaised = new DateTime($row['date_raised']);
             $currentDate = new DateTime();
+            $capaDocumentId = $row['capa_document_id'];
             $capaOwner = $row['capa_owner'];
             $assignedTo = $row['assigned_to'];
             $status = $row['status'];
             $interval = $currentDate->diff($targetCloseDate);
             $daysLeft = $interval->format('%r%a');
-
+            if ($daysLeft == 0) {
+                $daysLeft = '0'; // Ensuring no negative sign appears for zero
+            }
+            
             $timeframeInterval = $dateRaised->diff($targetCloseDate);
             $timeframeDays = $timeframeInterval->format('%r%a');
 
             $daysLeftReminder = floor(0.10 * $timeframeDays);  // Rounding to nearest integer
+
+            echo $daysLeft . " " . $capaDocumentId . " <br>";
 
             // Check if the days left is 30 and send email to the capa_owner
             if ($daysLeft == 30 && isset($employees[$capaOwner]) && $status === "Open") {
