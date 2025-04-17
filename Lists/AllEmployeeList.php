@@ -30,6 +30,7 @@ $selected_visa = [];
 $selected_payroll_types = [];
 $selected_section = [];
 $selected_status = [];
+$selected_work_shift = [];
 
 $filterApplied = false;  // Variable to check if any filter is applied
 
@@ -71,6 +72,14 @@ if (isset($_GET['apply_filters'])) {
         $selected_section = $_GET['section'];
         $section_placeholders = implode(',', array_fill(0, count($selected_section), '?'));
         $whereClause .= " AND section IN ($section_placeholders)";
+        $filterApplied = true;
+    }
+
+    // Capture the selected work shift
+    if (isset($_GET['work_shift']) && is_array($_GET['work_shift'])) {
+        $selected_work_shift = $_GET['work_shift'];
+        $work_shift_placeholders = implode(',', array_fill(0, count($selected_work_shift), '?'));
+        $whereClause .= " AND work_shift IN ($work_shift_placeholders)";
         $filterApplied = true;
     }
 
@@ -130,7 +139,12 @@ if (!empty($selected_payroll_types)) {
     $types .= str_repeat('s', count($selected_payroll_types)); // 's' for string binding
 }
 
-// If there are payroll_type filters, bind them to the prepared statement
+// If there are work_shift filters, bind them to the prepared statement
+if (!empty($selected_work_shift)) {
+    $types .= str_repeat('s', count($selected_work_shift)); // 's' for string binding
+}
+
+// If there are status filters, bind them to the prepared statement
 if (!empty($selected_status)) {
     $types .= str_repeat('i', count($selected_status)); // 'i' for integer binding
 }
@@ -141,7 +155,7 @@ if (isset($_GET['expiredVisa'])) {
 }
 
 // Bind parameters only if there are types to bind
-$params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status);
+$params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status, $selected_work_shift);
 if (isset($_GET['expiredVisa'])) {
     $params[] = $current_date; // Bind the current date for expired visas
 }
@@ -166,7 +180,7 @@ if ($employee_list_result->num_rows > 0) {
 }
 
 // Adjust the WHERE clause based on the role
-if ($role !== "admin") {
+if ($role !== "full control") {
     // Exclude payroll_type = 'salary' for non-admin roles
     $whereClause .= " AND payroll_type != 'salary'";
 }
@@ -213,7 +227,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["departmentCellToEdit"
 }
 
 // ========================= E D I T  E X P I R Y  D A T E ========================= 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["expiryDateCellToEdit"])) { 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["expiryDateCellToEdit"])) {
     $empIdToEditExpiryDateCell = $_POST["empIdToEditExpiryDateCell"];
     $expiryDateCellToEdit = $_POST["expiryDateCellToEdit"];
 
@@ -230,7 +244,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["expiryDateCellToEdit"
 }
 
 // ========================= A D D  W A G E ========================= 
-if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["wageCellToEdit"])) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["wageCellToEdit"])) {
     $empIdToEditWageCell = $_POST["empIdToEditWageCell"];
     $wageCellToEdit = $_POST["wageCellToEdit"];
     $wageDateCellToEdit = $_POST["wageDateCellToEdit"];
@@ -267,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["salaryCellToEdit"])) 
 
     // Execute the prepared statement
     if ($add_salary_result->execute()) {
-        
+
         $current_url = $_SERVER['PHP_SELF'];
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
@@ -282,7 +296,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["salaryCellToEdit"])) 
 }
 
 // ========================= E D I T  S T A T U S ========================= 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) { 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) {
     $empIdToEditStatusCell = $_POST["empIdToEditStatusCell"];
     $statusCellToEdit = $_POST["statusCellToEdit"];
 
@@ -294,10 +308,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
         echo "<script>window.location.href = window.location.href;</script>";
         exit(); // Stop further execution
     } else {
-        echo "Error updating department: " . $update_status_result->error;
+        echo "Error updating status: " . $update_status_result->error;
     }
 }
 
+// ========================= E D I T  W O R K  S H I F T ========================= 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"])) {
+    $empIdToEditWorkShiftCell = $_POST["empIdToEditWorkShiftCell"];
+    $workShiftCellToEdit = $_POST["workShiftCellToEdit"];
+
+    $update_work_shift_sql = "UPDATE employees SET work_shift = ? WHERE employee_id = ?";
+    $update_work_shift_result = $conn->prepare($update_work_shift_sql);
+    $update_work_shift_result->bind_param("ss", $workShiftCellToEdit, $empIdToEditWorkShiftCell);
+
+    if ($update_work_shift_result->execute()) {
+        echo "<script>window.location.href = window.location.href;</script>";
+        exit(); // Stop further execution
+    } else {
+        echo "Error updating work shift: " . $update_work_shift_result->error;
+    }
+}
 ?>
 
 <head>
@@ -307,7 +337,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
     <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
+
     <style>
         .table thead th {
             background-color: #043f9d;
@@ -315,7 +345,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
             border: 1px solid #043f9d !important;
         }
 
-    
+        .table tbody th {
+            background-color: #043f9d;
+            color: white;
+            border: 1px solid #043f9d !important;
+        }
     </style>
 </head>
 
@@ -323,7 +357,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
     <div class="container-fluid">
         <div class="row d-flex justify-content-between align-items-center">
             <div class="col-md-6">
-                <nav aria-label="breadcrumb">
+                <!-- <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
@@ -332,11 +366,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                             Employees
                         </li>
                     </ol>
-                </nav>
+                </nav> -->
             </div>
-            <?php if ($role == "admin" || $role == "supervisor") { ?>
+            <?php if ($role == "full control" || $role == "modify 1") { ?>
                 <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
-                    <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a>
+                    <!-- <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a> -->
+                    <a class="btn btn-primary fw-bold me-2" type="button" data-bs-toggle="modal"
+                        data-bs-target="#HRDashboardModal"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a>
                     <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
                         <i class="fa-solid fa-user-plus"></i> Add Employee
                     </a>
@@ -372,7 +408,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                             <i class="fa-solid fa-print ms-2"></i>
                         </button>
 
-                        <button class="btn btn-secondary fw-bold d-flex align-items-center" id="filterColumnBtn" data-bs-toggle="modal" data-bs-target="#filterTableColumnModal">
+                        <button class="btn btn-secondary fw-bold d-flex align-items-center" id="filterColumnBtn"
+                            data-bs-toggle="modal" data-bs-target="#filterTableColumnModal">
                             <small>Filter Column</small>
                             <i class="fa-solid fa-sliders ms-2"></i>
                         </button>
@@ -458,10 +495,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                     }
 
                     // Check if the value is the department filter
-                    if ($key === 'search'){ 
+                    if ($key === 'search') {
                         // Handle the search filter
                         ?>
-                       <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
                             <strong><span class="text-warning">Search:
                                 </span><?php echo htmlspecialchars($value); ?></strong>
                             <a href="?<?php
@@ -490,33 +527,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
 
                             // Display a separate badge for each department
                             ?>
-                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                <strong><?php echo htmlspecialchars($department_name); ?></strong>
-                                <a href="?<?php
-                                // Remove this specific department filter from the URL
-                                $filteredParams = $_GET;
-                                $filteredParams['department'] = array_diff($filteredParams['department'], [$department_id]);
-                                echo http_build_query($filteredParams);
-                                ?>" class="text-white ms-1">
-                                    <i class="fa-solid fa-times"></i>
-                                </a>
-                            </span>
-                            <?php
-                        }
-                    } else if ($key === 'employment_type' && is_array($value)) {
-                        foreach ($value as $employmentType) {
-                            ?>
                                 <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                    <strong><?php echo htmlspecialchars($employmentType); ?></strong>
+                                    <strong><?php echo htmlspecialchars($department_name); ?></strong>
                                     <a href="?<?php
-                                    // Remove this specific employment_type filter from the URL
+                                    // Remove this specific department filter from the URL
                                     $filteredParams = $_GET;
-                                    $filteredParams['employment_type'] = array_diff($filteredParams['employment_type'], [$employmentType]);
+                                    $filteredParams['department'] = array_diff($filteredParams['department'], [$department_id]);
                                     echo http_build_query($filteredParams);
                                     ?>" class="text-white ms-1">
                                         <i class="fa-solid fa-times"></i>
                                     </a>
                                 </span>
+                            <?php
+                        }
+                    } else if ($key === 'employment_type' && is_array($value)) {
+                        foreach ($value as $employmentType) {
+                            ?>
+                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                        <strong><?php echo htmlspecialchars($employmentType); ?></strong>
+                                        <a href="?<?php
+                                        // Remove this specific employment_type filter from the URL
+                                        $filteredParams = $_GET;
+                                        $filteredParams['employment_type'] = array_diff($filteredParams['employment_type'], [$employmentType]);
+                                        echo http_build_query($filteredParams);
+                                        ?>" class="text-white ms-1">
+                                            <i class="fa-solid fa-times"></i>
+                                        </a>
+                                    </span>
                             <?php
                         }
                     } else if ($key === 'visa' && is_array($value)) {
@@ -534,82 +571,103 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                             }
                             // Display a separate badge for each visa
                             ?>
-                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                        <strong><?php echo htmlspecialchars($visa_name); ?></strong>
-                                        <a href="?<?php
-                                        // Remove this specific visa filter from the URL
-                                        $filteredParams = $_GET;
-                                        $filteredParams['visa'] = array_diff($filteredParams['visa'], [$visa_id]);
-                                        echo http_build_query($filteredParams);
-                                        ?>" class="text-white ms-1">
-                                            <i class="fa-solid fa-times"></i>
-                                        </a>
-                                    </span>
+                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                            <strong><?php echo htmlspecialchars($visa_name); ?></strong>
+                                            <a href="?<?php
+                                            // Remove this specific visa filter from the URL
+                                            $filteredParams = $_GET;
+                                            $filteredParams['visa'] = array_diff($filteredParams['visa'], [$visa_id]);
+                                            echo http_build_query($filteredParams);
+                                            ?>" class="text-white ms-1">
+                                                <i class="fa-solid fa-times"></i>
+                                            </a>
+                                        </span>
                             <?php
                         }
                     } else if ($key === 'expiredVisa') {
                         // Handle the expiredVisa filter
                         ?>
-                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                <strong>Expired Visa</strong>
-                                <a href="?<?php
-                                // Remove the expiredVisa filter from the URL
-                                $filteredParams = $_GET;
-                                unset($filteredParams['expiredVisa']);
-                                echo http_build_query($filteredParams);
-                                ?>" class="text-white ms-1">
-                                    <i class="fa-solid fa-times"></i>
-                                </a>
-                            </span>
+                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                            <strong>Expired Visa</strong>
+                                            <a href="?<?php
+                                            // Remove the expiredVisa filter from the URL
+                                            $filteredParams = $_GET;
+                                            unset($filteredParams['expiredVisa']);
+                                            echo http_build_query($filteredParams);
+                                            ?>" class="text-white ms-1">
+                                                <i class="fa-solid fa-times"></i>
+                                            </a>
+                                        </span>
                         <?php
                     } else if ($key === 'payroll_type' && is_array($value)) {
                         foreach ($value as $payrollType) {
                             ?>
-                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                    <strong><?php echo htmlspecialchars(ucwords($payrollType)); ?></strong>
+                                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                    <strong><?php echo htmlspecialchars(ucwords($payrollType)); ?></strong>
 
-                                    <a href="?<?php
-                                    // Remove this specific payroll_type filter from URL
-                                    $filteredParams = $_GET;
-                                    $filteredParams['payroll_type'] = array_diff($filteredParams['payroll_type'], [$payrollType]);
-                                    echo http_build_query($filteredParams);
-                                    ?>" class="text-white ms-1">
-                                        <i class="fa-solid fa-times fa-"></i>
-                                    </a>
-                                </span>
+                                                    <a href="?<?php
+                                                    // Remove this specific payroll_type filter from URL
+                                                    $filteredParams = $_GET;
+                                                    $filteredParams['payroll_type'] = array_diff($filteredParams['payroll_type'], [$payrollType]);
+                                                    echo http_build_query($filteredParams);
+                                                    ?>" class="text-white ms-1">
+                                                        <i class="fa-solid fa-times fa-"></i>
+                                                    </a>
+                                                </span>
+                            <?php
+                        }
+                    } else if ($key === 'work_shift' && is_array($value)) {
+                        foreach ($value as $payrollType) {
+                            ?>
+                                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                        <strong><?php echo htmlspecialchars(ucwords($payrollType)); ?></strong>
+
+                                                        <a href="?<?php
+                                                        // Remove this specific work_shift filter from URL
+                                                        $filteredParams = $_GET;
+                                                        $filteredParams['work_shift'] = array_diff($filteredParams['work_shift'], [$payrollType]);
+                                                        echo http_build_query($filteredParams);
+                                                        ?>" class="text-white ms-1">
+                                                            <i class="fa-solid fa-times fa-"></i>
+                                                        </a>
+                                                    </span>
                             <?php
                         }
                     } else if ($key === 'section' && is_array($value)) {
                         foreach ($value as $section) {
                             ?>
-                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                <strong><?php echo htmlspecialchars(ucwords($section)); ?></strong>
-                                <a href="?<?php
-                                    // Remove this specific section filter from URL
-                                    $filteredParams = $_GET;
-                                    $filteredParams['section'] = array_diff($filteredParams['section'], [$section]);
-                                    echo http_build_query($filteredParams);
-                                    ?>" class="text-white ms-1">
-                                        <i class="fa-solid fa-times fa-"></i>
-                                    </a>
-                                </span>
-                            <?php 
+                                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                            <strong><?php echo htmlspecialchars(ucwords($section)); ?></strong>
+                                                            <a href="?<?php
+                                                            // Remove this specific section filter from URL
+                                                            $filteredParams = $_GET;
+                                                            $filteredParams['section'] = array_diff($filteredParams['section'], [$section]);
+                                                            echo http_build_query($filteredParams);
+                                                            ?>" class="text-white ms-1">
+                                                                <i class="fa-solid fa-times fa-"></i>
+                                                            </a>
+                                                        </span>
+                            <?php
                         }
-                    } else if ($key === 'status' && is_array($value)) { 
-                        foreach ($value as $status){ 
+                    } else if ($key === 'status' && is_array($value)) {
+                        foreach ($value as $status) {
                             ?>
-                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                    <strong><?php if ($status === "1") { echo "Active"; } else if ($status === "0")  {echo "Inactive"; } ?></strong>
-                                    <a href="?<?php 
-                                    // Remove this specific status filter from URL
-                                    $filteredParams = $_GET;
-                                    $filteredParams['status'] = array_diff($filteredParams['status'], [$status]);
-                                    echo http_build_query($filteredParams);
-                                    ?>" class="text-white ms-1">
-                                        <i class="fa-solid fa-times fa-"></i>    
-                                    </a>
-                                </span>
-                            <?php 
+                                                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                                <strong><?php if ($status === "1") {
+                                                                    echo "Active";
+                                                                } else if ($status === "0") {
+                                                                    echo "Inactive";
+                                                                } ?></strong>
+                                                                <a href="?<?php
+                                                                // Remove this specific status filter from URL
+                                                                $filteredParams = $_GET;
+                                                                $filteredParams['status'] = array_diff($filteredParams['status'], [$status]);
+                                                                echo http_build_query($filteredParams);
+                                                                ?>" class="text-white ms-1">
+                                                                    <i class="fa-solid fa-times fa-"></i>
+                                                                </a>
+                                                            </span>
+                            <?php
                         }
                     } else {
                         // Display other filters
@@ -626,11 +684,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
 
         <!-- Display message if filters are applied, and show total count or no results message -->
         <?php if ($filterApplied): ?>
-            <div class="alert <?php echo ($total_count == 0 && $total_active_count == 0) ? 'alert-danger' : 'alert-info'; ?>">
+            <div
+                class="alert <?php echo ($total_count == 0 && $total_active_count == 0) ? 'alert-danger' : 'alert-info'; ?>">
                 <?php if ($total_count > 0 || $total_active_count > 0): ?>
-                    <strong>Total Results:</strong> 
+                    <strong>Total Results:</strong>
                     <span class="fw-bold text-decoration-underline me-2"> <?php echo $total_count ?></span>
-                    <?php echo " (" . $total_active_count ?> Active, 
+                    <?php echo " (" . $total_active_count ?> Active,
                     <?php echo ($total_count - $total_active_count) ?> Inactive<?php echo ")"; ?>
                 <?php else: ?>
                     <strong>No results found for the selected filters.</strong>
@@ -652,17 +711,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                 $payrollType = $employee['payroll_type'];
 
                 // Check if the role is not "admin" and the payroll type is "Salary"
-                if ($role !== 'admin' && $payrollType == 'salary') {
+                if ($role !== 'full control' && $payrollType == 'salary') {
                     continue; // Skip this employee
                 }
                 ?>
                 <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                    <div class="card <?php if ($isActive == 0) { echo "bg-danger bg-opacity-25"; } ?>  positive-relative" style="min-height:140px">
+                    <div class="card <?php if ($isActive == 0) {
+                        echo "bg-danger bg-opacity-25";
+                    } ?>  positive-relative" style="min-height:140px">
                         <?php if ($isActive == 0) { ?>
                             <span class="badge rounded-pill bg-danger position-absolute bottom-0 end-0 m-2"><small>Inactive <?php if (!empty($lastDate)) {
                                 echo "(" . date('d M Y', strtotime($lastDate)) . ")";
                             } ?>
-                            </small></span>
+                                </small></span>
                         <?php } ?>
                         <div class="card-body d-flex justify-content-between align-items-center position-relative">
                             <div class="col-4 d-flex justify-content-center">
@@ -750,98 +811,127 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                     <thead>
                         <tr>
                             <th class="py-3 align-middle text-center no-print"></th>
-                            <th class="py-3 align-middle text-center employeeIdColumn employeeIdColumnPrint">Employee ID</th>
+                            <th class="py-3 align-middle text-center employeeIdColumn employeeIdColumnPrint">Employee ID
+                            </th>
                             <th class="py-3 align-middle text-center fullNameColumn">Name</th>
                             <th class="py-3 align-middle text-center nicknameColumn">Nickname</th>
                             <th class="py-3 align-middle text-center statusColumn">Status</th>
                             <th class="py-3 align-middle text-center departmentColumn">Department</th>
                             <th class="py-3 align-middle text-center payrollTypeColumn">Payroll Type</th>
+                            <th class="py-3 align-middle text-center workShiftColumn">Work Shift</th>
                             <th class="py-3 align-middle text-center startDateColumn">Start Date</th>
                             <th class="py-3 align-middle text-center durationColumn">Duration</th>
+                            <th class="py-3 align-middle text-center permanentDateColumn">Permanent Date</th>
                             <th class="py-3 align-middle text-center visaColumn">Visa</th>
                             <th class="py-3 align-middle text-center expiryDateColumn">Visa Expiry Date</th>
                             <th class="py-3 align-middle text-center lastDateColumn">Last Date</th>
+                            <th class="py-3 align-middle text-center lockerNumberColumn">Locker Number</th>
                             <th class="py-3 align-middle text-center performanceReviewColumn">Performance Review</th>
-                            <?php if ($role == "admin" || $role == "supervisor") { ?>
+                            <?php if ($role == "full control" || $role == "modify 1") { ?>
                                 <th class="py-3 align-middle text-center wageSalaryColumn">Wage/Salary</th>
                             <?php } ?>
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($employees as $employee) {
-                        $profileImage = $employee['profile_image'];
-                        $firstName = $employee['first_name'];
-                        $lastName = $employee['last_name'];
-                        $nickname = $employee['nickname'];
-                        $departmentId = $employee['department_id'];
-                        $departmentName = $employee['department_name'];
-                        $payrollType = $employee['payroll_type'];
-                        $startDate = $employee['start_date'];
-                        $lastDate = $employee['last_date'];
-                        $visaName = $employee['visa_name'];
-                        $employeeId = $employee['employee_id'];
-                        $visaExpiryDate = $employee['visa_expiry_date'];
-                        $isActive = $employee['is_active'];
-                        $payrollType = $employee['payroll_type'];
+                        <?php foreach ($employees as $employee) {
+                            $profileImage = $employee['profile_image'];
+                            $firstName = $employee['first_name'];
+                            $lastName = $employee['last_name'];
+                            $nickname = $employee['nickname'];
+                            $departmentId = $employee['department_id'];
+                            $departmentName = $employee['department_name'];
+                            $payrollType = $employee['payroll_type'];
+                            $startDate = $employee['start_date'];
+                            $permanentDate = $employee['permanent_date'];
+                            $lastDate = $employee['last_date'];
+                            $visaName = $employee['visa_name'];
+                            $employeeId = $employee['employee_id'];
+                            $visaExpiryDate = $employee['visa_expiry_date'];
+                            $isActive = $employee['is_active'];
+                            $workShift = $employee['work_shift'];
+                            $lockerNumber = $employee['locker_number'];
+                            $payrollType = $employee['payroll_type'];
 
-                        // Check if the role is not "admin" and the payroll type is "Salary"
-                        if ($role !== 'admin' && $payrollType == 'salary') {
-                            continue; // Skip this employee
-                        }
-                        ?>
-                        <tr>
-                            <td class="py-3 align-middle text-center no-print <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"> <a
-                                    href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">
-                                    <button class="btn text-dark"><small> <i
-                                                class="fa-solid fa-up-right-from-square"></i></small></button>
-                                </a></td>
-                            <td class="align-middle text-center employeeIdColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"><?php echo $employeeId ?></td>
-                            <td class="align-middle text-center fullNameColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"><?php echo $firstName . " " . $lastName ?></td>
-                            <td class="align-middle text-center nicknameColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>" 
-                            <?php if (!$nickname) echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
-                            <?php echo $nickname ? $nickname : "N/A"?></td> 
-                            <td class="align-middle text-center statusColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>" ondblclick="editStatus(this)">
-                                <form method="POST" class="edit-status-form" style="display: none">
-                                    <div class="d-flex align-items-center">
-                                        <input type="hidden" name="empIdToEditStatusCell" value="<?php echo $employeeId ?>">
-                                        <select name="statusCellToEdit" class="form-select" onchange="this.form.submit()">
-                                            <option value="1" <?php if($isActive == 1) {echo 'selected'; }  ?>> Active </option>;
-                                            <option value="0" <?php if($isActive == 0) {echo 'selected'; } ?>> Inactive </option>;
-                                        </select>
-                                        <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
-                                            onclick="cancelEditStatus(this)">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </form>
-                                <?php 
+                            // Check if the role is not "admin" and the payroll type is "Salary"
+                            if ($role !== 'full control' && $payrollType == 'salary') {
+                                continue; // Skip this employee
+                            }
+                            ?>
+                            <tr>
+                                <td
+                                    class="py-3 align-middle text-center no-print <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <a
+                                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">
+                                        <button class="btn text-dark"><small> <i
+                                                    class="fa-solid fa-up-right-from-square"></i></small></button>
+                                    </a>
+                                </td>
+                                <td
+                                    class="align-middle text-center employeeIdColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo $employeeId ?>
+                                </td>
+                                <td
+                                    class="align-middle text-center fullNameColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo $firstName . " " . $lastName ?>
+                                </td>
+                                <td class="align-middle text-center nicknameColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    <?php if (!$nickname)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
+                                    <?php echo $nickname ? $nickname : "N/A" ?>
+                                </td>
+                                <td class="align-middle text-center statusColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    ondblclick="editStatus(this)">
+                                    <form method="POST" class="edit-status-form" style="display: none">
+                                        <div class="d-flex align-items-center">
+                                            <input type="hidden" name="empIdToEditStatusCell"
+                                                value="<?php echo $employeeId ?>">
+                                            <select name="statusCellToEdit" class="form-select"
+                                                onchange="this.form.submit()">
+                                                <option value="1" <?php if ($isActive == 1) {
+                                                    echo 'selected';
+                                                } ?>> Active
+                                                </option>;
+                                                <option value="0" <?php if ($isActive == 0) {
+                                                    echo 'selected';
+                                                } ?>> Inactive
+                                                </option>;
+                                            </select>
+                                            <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
+                                                onclick="cancelEditStatus(this)">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </form>
+                                    <?php
                                     if ($isActive == 0) {
                                         echo '<span><small class="badge rounded-pill bg-danger mb-1">Inactive</small></span>';
                                     } else if ($isActive == 1) {
                                         echo '<span><small class="badge rounded-pill bg-success mb-1">Active</small></span>';
                                     }
-                                ?>
-                            </td>
-                            <td class="align-middle text-center departmentColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>" ondblclick="editDepartment(this)">
-                                <form method="POST" class="edit-department-form" style="display: none">
-                                    <div class="d-flex align-items-center">
-                                        <input type="hidden" name="empIdToEditDepartmentCell"
-                                            value="<?php echo $employeeId ?>">
-                                            <select name="departmentCellToEdit" class="form-select" onchange="this.form.submit()">
-                                                <?php 
+                                    ?>
+                                </td>
+                                <td class="align-middle text-center departmentColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    ondblclick="editDepartment(this)">
+                                    <form method="POST" class="edit-department-form" style="display: none">
+                                        <div class="d-flex align-items-center">
+                                            <input type="hidden" name="empIdToEditDepartmentCell"
+                                                value="<?php echo $employeeId ?>">
+                                            <select name="departmentCellToEdit" class="form-select"
+                                                onchange="this.form.submit()">
+                                                <?php
                                                 // Fetch departments from the database
                                                 $department_sql = "SELECT department_id, department_name FROM department";
                                                 $department_result = $conn->query($department_sql);
 
                                                 if ($department_result->num_rows > 0) {
                                                     while ($row = $department_result->fetch_assoc()) {
-                                                       // Check if the department ID matches $department_id and set 'selected' attribute
+                                                        // Check if the department ID matches $department_id and set 'selected' attribute
                                                         $selected = ($row['department_id'] == $departmentId) ? 'selected' : '';
                                                         echo '<option value="' . $row['department_id'] . '" ' . $selected . '>' . $row['department_name'] . '</option>';
                                                     }
-                                                } 
+                                                }
                                                 ?>
                                             </select>
                                             <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
@@ -850,192 +940,278 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
                                                     <i class="fa-solid fa-xmark"></i>
                                                 </div>
                                             </a>
-                                    </div>
-                                </form>
-                                <span><?php echo $departmentName ?></span>
-                            </td>
-                            <td class="align-middle text-center payrollTypeColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"><?php echo ucwords($payrollType); ?></td>
-                            <td class="align-middle text-center startDateColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
-                                <?php echo date("d F Y", strtotime($startDate)); ?>
-                            </td>
+                                        </div>
+                                    </form>
+                                    <span><?php echo $departmentName ?></span>
+                                </td>
+                                <td
+                                    class="align-middle text-center payrollTypeColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo ucwords($payrollType); ?>
+                                </td>
+                                <td class="align-middle text-center workShiftColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    ondblclick="editWorkShift(this)" <?php if (!$workShift)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
 
-                            <?php
-                            $startDateObj = new DateTime($startDate);
-                            $today = new DateTime(); // Get today's date
+                                    <form method="POST" class="edit-work-shift-form" style="display: none;">
+                                        <div class="d-flex align-items-center">
+                                            <input type="hidden" name="empIdToEditWorkShiftCell" value="<?= $employeeId ?>">
+                                            <select name="workShiftCellToEdit" class="form-select"
+                                                onchange="this.form.submit()">
+                                                <option value="Day" <?= ($workShift == "Day") ? 'selected' : '' ?>>Day</option>
+                                                <option value="Evening" <?= ($workShift == "Evening") ? 'selected' : '' ?>>
+                                                    Evening</option>
+                                                <option value="Night" <?= ($workShift == "Night") ? 'selected' : '' ?>>Night
+                                                </option>
+                                            </select>
+                                            <a class="text-danger mx-2 text-decoration-none" style="cursor:pointer"
+                                                onclick="cancelEditWorkShift(this)">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </form>
 
-                            $interval = $startDateObj->diff($today);
+                                    <span><?= $workShift ? $workShift : "N/A" ?></span>
+                                </td>
 
-                            $duration = "{$interval->y} years, {$interval->m} months, {$interval->d} days";
-                            ?>
+                                <td
+                                    class="align-middle text-center startDateColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo date("d F Y", strtotime($startDate)); ?>
+                                </td>
 
-                            <td class="align-middle text-center durationColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"><?php echo $duration; ?></td>
-                            <td class="align-middle text-center visaColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"><?php echo $visaName ?></td>
-                            <?php
-                                date_default_timezone_set('Australia/Sydney'); // Set Australian timezone
-                                $currentDate = date("Y-m-d");
-                                $isExpired = $visaExpiryDate && strtotime($visaExpiryDate) < strtotime($currentDate);
-                            ?>
+                                <?php
+                                $startDateObj = new DateTime($startDate);
 
-                            <td class="align-middle text-center expiryDateColumn 
-                                <?php 
-                                    if (!$isActive && $isExpired) { 
-                                        echo 'bg-danger text-white'; // Solid red background, white text
-                                    } elseif (!$isActive) { 
-                                        echo 'bg-danger bg-opacity-25'; // Light red background for inactive users
-                                    } elseif ($isExpired) { 
-                                        echo 'bg-danger text-white'; // Solid red background for expired visa
-                                    } 
-                                ?>"    
-                                <?php if ($visaName !== "Permanent Resident" && $visaName !== "Citizen") : ?> 
-                                    ondblclick="editExpiryDate(this)"
-                                <?php endif; ?>
-                                style="<?php echo (!$visaExpiryDate) ? 'font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);' : ''; ?>">
-                                
-                                <form method="POST" class="edit-expiry-date-form" style="display: none">
-                                    <div class="d-flex align-items-center">
-                                        <input type="hidden" name="empIdToEditExpiryDateCell" value="<?php echo $employeeId ?>">
-                                        <input type="date" name="expiryDateCellToEdit" class="form-control" value="<?php echo $visaExpiryDate ?>">
-                                        <button class="btn btn-success text-decoration-none ms-2" style="cursor:pointer" type="submit">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-check"></i>
-                                            </div>
-                                        </button>
-                                        <a class="btn text-danger bg-white mx-2 text-decoration-none" style="cursor:pointer"
-                                            onclick="cancelEditExpiryDate(this)">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </form>
+                                // Check if $lastDate has a value
+                                if (!empty($lastDate)) {
+                                    $lastDateObj = new DateTime($lastDate); // Convert lastDate to DateTime object
+                                    $interval = $startDateObj->diff($lastDateObj); // Calculate difference until $lastDate
+                                } else {
+                                    $today = new DateTime(); // Get today's date
+                                    $interval = $startDateObj->diff($today); // Calculate difference until today's date
+                                }
 
-                                <span> <?php echo $visaExpiryDate ? date("d F Y", strtotime($visaExpiryDate)) : "N/A"; ?></span>
-                            </td>
-                            <td class="align-middle text-center lastDateColumn 
-                                <?php 
-                                    if (!empty($lastDate)) {
-                                        echo 'bg-danger text-white'; 
-                                    } elseif ($isActive == 0) {
-                                        echo 'bg-danger bg-opacity-25'; 
-                                    } 
-                                ?>"
-                                <?php 
-                                    if (empty($lastDate)) { 
-                                        echo 'style="font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);"';
-                                    } 
+                                $duration = "{$interval->y} years, {$interval->m} months, {$interval->d} days";
                                 ?>
-                            >
-                                <?php 
-                                    if (!empty($lastDate)) {
-                                        echo date('d F Y', strtotime($lastDate)); 
+
+                                <td
+                                    class="align-middle text-center durationColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo $duration; ?>
+                                </td>
+
+                                <td class="align-middle text-center permanentDateColumn" <?php
+                                if (empty($permanentDate)) {
+                                    echo 'style="font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);"';
+                                }
+                                ?>>
+                                    <?php
+                                    if (!empty($permanentDate)) {
+                                        echo date('d F Y', strtotime($permanentDate));
                                     } else {
                                         echo '<span class="text-white">N/A</span>';
                                     }
+                                    ?>
+                                </td>
+
+                                <td
+                                    class="align-middle text-center visaColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php echo $visaName ?>
+                                </td>
+                                <?php
+                                date_default_timezone_set('Australia/Sydney'); // Set Australian timezone
+                                $currentDate = date("Y-m-d");
+                                $isExpired = $visaExpiryDate && strtotime($visaExpiryDate) < strtotime($currentDate);
                                 ?>
-                            </td>
-                            <td class="align-middle text-center performanceReviewColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"></td>
-                            <?php if ($role == "admin" || $role == "supervisor") { ?>
-                                <td class="align-middle text-center payroll-cell wageSalaryColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>" ondblclick="editWageSalary(this)">
-                                    <?php if ($payrollType === "wage") { ?>
-                                        <?php
-                                        // Fetch the latest wage for this employee
-                                        $wage_sql = "SELECT amount, date FROM wages 
+
+                                <td class="align-middle text-center expiryDateColumn 
+                                <?php
+                                if (!$isActive && $isExpired) {
+                                    echo 'bg-danger text-white'; // Solid red background, white text
+                                } elseif (!$isActive) {
+                                    echo 'bg-danger bg-opacity-25'; // Light red background for inactive users
+                                } elseif ($isExpired) {
+                                    echo 'bg-danger text-white'; // Solid red background for expired visa
+                                }
+                                ?>" <?php if ($visaName !== "Permanent Resident" && $visaName !== "Citizen"): ?>
+                                        ondblclick="editExpiryDate(this)" <?php endif; ?>
+                                    style="<?php echo (!$visaExpiryDate) ? 'font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);' : ''; ?>">
+
+                                    <form method="POST" class="edit-expiry-date-form" style="display: none">
+                                        <div class="d-flex align-items-center">
+                                            <input type="hidden" name="empIdToEditExpiryDateCell"
+                                                value="<?php echo $employeeId ?>">
+                                            <input type="date" name="expiryDateCellToEdit" class="form-control"
+                                                value="<?php echo $visaExpiryDate ?>">
+                                            <button class="btn btn-success text-decoration-none ms-2" style="cursor:pointer"
+                                                type="submit">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </div>
+                                            </button>
+                                            <a class="btn text-danger bg-white mx-2 text-decoration-none"
+                                                style="cursor:pointer" onclick="cancelEditExpiryDate(this)">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </form>
+
+                                    <span>
+                                        <?php echo $visaExpiryDate ? date("d F Y", strtotime($visaExpiryDate)) : "N/A"; ?></span>
+                                </td>
+                                <td class="align-middle text-center lastDateColumn 
+                                <?php
+                                if (!empty($lastDate)) {
+                                    echo 'bg-danger text-white';
+                                } elseif ($isActive == 0) {
+                                    echo 'bg-danger bg-opacity-25';
+                                }
+                                ?>" <?php
+                                if (empty($lastDate)) {
+                                    echo 'style="font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);"';
+                                }
+                                ?>>
+                                    <?php
+                                    if (!empty($lastDate)) {
+                                        echo date('d F Y', strtotime($lastDate));
+                                    } else {
+                                        echo '<span class="text-white">N/A</span>';
+                                    }
+                                    ?>
+                                </td>
+
+                                <td class="align-middle text-center lockerNumberColumn" <?php
+                                if (empty($lockerNumber)) {
+                                    echo 'style="font-weight: bold; color: white; background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px);"';
+                                }
+                                ?>>
+                                    <?php
+                                    if (!empty($lockerNumber)) {
+                                        echo $lockerNumber;
+                                    } else {
+                                        echo '<span class="text-white">N/A</span>';
+                                    }
+                                    ?>
+                                </td>
+                                <td
+                                    class="align-middle text-center performanceReviewColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                </td>
+                                <?php if ($role == "full control" || $role == "modify 1") { ?>
+                                    <td class="align-middle text-center payroll-cell wageSalaryColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                        ondblclick="editWageSalary(this)">
+                                        <?php if ($payrollType === "wage") { ?>
+                                            <?php
+                                            // Fetch the latest wage for this employee
+                                            $wage_sql = "SELECT amount, date FROM wages 
                                                     WHERE employee_id = ? 
                                                     ORDER BY `date` DESC, wages_id DESC 
                                                     LIMIT 1";
 
-                                        $stmt = $conn->prepare($wage_sql);
-                                        $stmt->bind_param("i", $employeeId);
-                                        $stmt->execute();
-                                        $wage_result = $stmt->get_result();
-                                        $wage_row = $wage_result->fetch_assoc();
+                                            $stmt = $conn->prepare($wage_sql);
+                                            $stmt->bind_param("i", $employeeId);
+                                            $stmt->execute();
+                                            $wage_result = $stmt->get_result();
+                                            $wage_row = $wage_result->fetch_assoc();
 
-                                        echo "<span>" . ($wage_row ? "$" . number_format($wage_row['amount'], 2) . "<span class='fw-bold'>/hr</span>" : "N/A") . "</span>";
-                                        // Show wage or "N/A" if no wage data
-                                        ?>
-                                        <form method="POST" class="add-wage-form" style="display: none">
-                                            <input type="hidden" name="empIdToEditWageCell" value="<?php echo $employeeId ?>">
-                                            <div class="d-flex flex-column align-items-center justify-content-center">
-                                                <table class="table mb-1 pb-0">
-                                                    <tr>
-                                                        <th><small>Current Wage</small></th>
-                                                        <th><small>Effective Date</small></th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><small><?php echo isset($wage_row['amount']) ? "$" . number_format($wage_row['amount'], 2) : ''; ?></small></td>
-                                                        <td><small><?php echo isset($wage_row['date']) ? date("d F Y", strtotime($wage_row['date'])) : ''; ?></small></td>
-                                                    </tr>
-                                                </table>
-                                                <div class="d-flex">
-                                                    <div class="d-flex flex-column align-items-start m-1">
-                                                        <label for="newWage" class="fw-bold"><small>New Wage</small></label>
-                                                        <input type="number" name="wageCellToEdit" step="any" class="form-control">
+                                            echo "<span>" . ($wage_row ? "$" . number_format($wage_row['amount'], 2) . "<span class='fw-bold'>/hr</span>" : "N/A") . "</span>";
+                                            // Show wage or "N/A" if no wage data
+                                            ?>
+                                            <form method="POST" class="add-wage-form" style="display: none">
+                                                <input type="hidden" name="empIdToEditWageCell" value="<?php echo $employeeId ?>">
+                                                <div class="d-flex flex-column align-items-center justify-content-center">
+                                                    <table class="table mb-1 pb-0">
+                                                        <tr>
+                                                            <th><small>Current Wage</small></th>
+                                                            <th><small>Effective Date</small></th>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><small><?php echo isset($wage_row['amount']) && $wage_row['amount'] !== '' ? "$" . number_format($wage_row['amount'], 2) : 'N/A'; ?></small>
+                                                            </td>
+                                                            <td><small><?php echo isset($wage_row['date']) && !empty($wage_row['date']) ? date("d F Y", strtotime($wage_row['date'])) : 'N/A'; ?></small>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                    <div class="d-flex">
+                                                        <div class="d-flex flex-column align-items-start m-1">
+                                                            <label for="newWage" class="fw-bold"><small>New Wage</small></label>
+                                                            <input type="number" name="wageCellToEdit" step="any"
+                                                                class="form-control">
+                                                        </div>
+                                                        <div class="d-flex flex-column align-items-start m-1">
+                                                            <label for="newWageDate" class="fw-bold"><small>Date</small></label>
+                                                            <input type="date" name="wageDateCellToEdit" class="form-control"
+                                                                value="<?php echo date('Y-m-d'); ?>">
+                                                        </div>
                                                     </div>
-                                                    <div class="d-flex flex-column align-items-start m-1">
-                                                        <label for="newWageDate" class="fw-bold"><small>Date</small></label>
-                                                        <input type="date" name="wageDateCellToEdit" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                                                    <div class="d-flex">
+                                                        <button class="btn btn-sm btn-secondary me-1" type="button"
+                                                            onclick="cancelEditWage(this)">Cancel</button>
+                                                        <button class="btn btn-sm btn-success">Add</button>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex">
-                                                    <button class="btn btn-sm btn-secondary me-1" type="button" onclick="cancelEditWage(this)">Cancel</button>
-                                                    <button class="btn btn-sm btn-success">Add</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    <?php } else if ($payrollType === "salary") { ?>
-                                        <?php
-                                        // Fetch the latest salary for this employee
-                                        $salary_sql = "SELECT amount, `date` FROM salaries
+                                            </form>
+                                        <?php } else if ($payrollType === "salary") { ?>
+                                                <?php
+                                                // Fetch the latest salary for this employee
+                                                $salary_sql = "SELECT amount, `date` FROM salaries
                                                     WHERE employee_id = ? 
                                                     ORDER BY `date` DESC, salary_id DESC 
                                                     LIMIT 1";
-    
-                                        $stmt = $conn->prepare($salary_sql);
-                                        $stmt->bind_param("i", $employeeId);
-                                        $stmt->execute();
-                                        $salary_result = $stmt->get_result();
-                                        $salary_row = $salary_result->fetch_assoc();
-                                        echo "<span>" . ($salary_row ? "$" . number_format($salary_row['amount'], 2) . "<span class='fw-bold'>/yr</span>" : "N/A") . "</span>";
-                                        // Show salary or "N/A" if no salary data
-                                        ?>
-                                        <form method="POST" class="add-salary-form" style="display: none">
-                                            <input type="hidden" name="empIdToEditSalaryCell" value="<?php echo $employeeId ?>">
-                                            <div class="d-flex flex-column align-items-center justify-content-center">
-                                                <table class="table mb-1 pb-0">
-                                                    <tr>
-                                                        <th><small>Current Salary</small></th>
-                                                        <th><small>Effective Date</small></th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><small><?php echo isset($salary_row['amount']) ? "$" . number_format($salary_row['amount'], 2) : ''; ?></small></td>
-                                                        <td><small><?php echo isset($salary_row['date']) ? date("d F Y", strtotime($salary_row['date'])) : ''; ?></small></td>
-                                                    </tr>
-                                                </table>
-                                                <div class="d-flex">
-                                                    <div class="d-flex flex-column align-items-start m-1">
-                                                        <label for="newSalary" class="fw-bold"> <small>New Salary</small></label>
-                                                        <input type="number" name="salaryCellToEdit" step="any" class="form-control">
+
+                                                $stmt = $conn->prepare($salary_sql);
+                                                $stmt->bind_param("i", $employeeId);
+                                                $stmt->execute();
+                                                $salary_result = $stmt->get_result();
+                                                $salary_row = $salary_result->fetch_assoc();
+                                                echo "<span>" . ($salary_row ? "$" . number_format($salary_row['amount'], 2) . "<span class='fw-bold'>/yr</span>" : "N/A") . "</span>";
+                                                // Show salary or "N/A" if no salary data
+                                                ?>
+                                                <form method="POST" class="add-salary-form" style="display: none">
+                                                    <input type="hidden" name="empIdToEditSalaryCell" value="<?php echo $employeeId ?>">
+                                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                                        <table class="table mb-1 pb-0">
+                                                            <tr>
+                                                                <th><small>Current Salary</small></th>
+                                                                <th><small>Effective Date</small></th>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><small><?php echo isset($salary_row['amount']) && !empty($salary_row['amount']) ? "$" . number_format($salary_row['amount'], 2) : 'N/A'; ?></small>
+                                                                </td>
+                                                                <td><small><?php echo isset($salary_row['date']) && !empty($salary_row['date']) ? date("d F Y", strtotime($salary_row['date'])) : 'N/A'; ?></small>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                        <div class="d-flex">
+                                                            <div class="d-flex flex-column align-items-start m-1">
+                                                                <label for="newSalary" class="fw-bold"> <small>New
+                                                                        Salary</small></label>
+                                                                <input type="number" name="salaryCellToEdit" step="any"
+                                                                    class="form-control">
+                                                            </div>
+                                                            <div class="d-flex flex-column align-items-start m-1">
+                                                                <label for="newSalaryDate" class="fw-bold"> <small>Date</small></label>
+                                                                <input type="date" name="salaryDateCellToEdit" class="form-control"
+                                                                    value="<?php echo date('Y-m-d') ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex">
+                                                            <button class="btn btn-sm btn-secondary me-1" type="button" class="fw-bold"
+                                                                onclick="cancelEditSalary(this)"><small>Cancel</small></button>
+                                                            <button class="btn btn-sm btn-success">Add</button>
+                                                        </div>
                                                     </div>
-                                                    <div class="d-flex flex-column align-items-start m-1">
-                                                        <label for="newSalaryDate" class="fw-bold"> <small>Date</small></label>
-                                                        <input type="date" name="salaryDateCellToEdit" class="form-control" value="<?php echo date('Y-m-d') ?>">
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex">
-                                                    <button class="btn btn-sm btn-secondary me-1" type="button" class="fw-bold" onclick="cancelEditSalary(this)"><small>Cancel</small></button>
-                                                    <button class="btn btn-sm btn-success">Add</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    <?php } ?>
-                                </td>
-                            <?php } ?>
-                        </tr>
-                    <?php } ?>
+                                                </form>
+                                        <?php } ?>
+                                    </td>
+                                <?php } ?>
+                            </tr>
+                        <?php } ?>
                     </tbody>
                 </table>
             </div>
-        </div>                    
+        </div>
     </div>
 
     <!-- ============================= Add Employees Modal ============================= -->
@@ -1053,232 +1229,309 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
         </div>
     </div>
 
-  <!-- ============================= Filter Employees Modal ============================= -->
-<div class="modal fade" id="filterEmployeeModal" tabindex="1" aria-labelledby="filterEmployeeModal"
-    aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Filter Employee</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="GET">
-                    <input type="hidden" id="viewInput" name="view">
+    <!-- ============================= Filter Employees Modal ============================= -->
+    <div class="modal fade" id="filterEmployeeModal" tabindex="1" aria-labelledby="filterEmployeeModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET">
+                        <input type="hidden" id="viewInput" name="view">
 
-                    <div class="row">
-                        <div class="col-12  <?php echo ($role === "admin") ? "col-lg-3" : "col-lg-4"; ?>">
-                            <h5 class="signature-color fw-bold">Department</h5>
-                            <?php
-                            $department_sql = "SELECT * FROM department";
-                            $department_result = $conn->query($department_sql);
-                            $selected_departments = isset($_GET['department']) ? $_GET['department'] : [];
-                            if ($department_result->num_rows > 0) { ?>
-                                <?php while ($row = $department_result->fetch_assoc()) { ?>
-                                    <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input"
-                                            id="department_<?php echo $row['department_id']; ?>" name="department[]"
-                                            value="<?php echo $row['department_id']; ?>" 
-                                            <?php echo in_array($row['department_id'], $selected_departments) ? 'checked' : ''; ?> />
-                                        <label for="department_<?php echo $row['department_id']; ?>"><?php echo $row['department_name']; ?></label>
-                                    </p>
-                                <?php } ?>
-                            <?php } else { ?>
-                                <p>No departments found.</p>
-                            <?php } ?>
-                        </div>
-                        <div class="col-12  <?php echo ($role === "admin") ? "col-lg-2" : "col-lg-3"; ?> mt-3 mt-md-0">
-                            <h5 class="signature-color fw-bold mt-4 mt-lg-0">Employment Type</h5>
-                            <?php
-                            $employment_types = ['Full-Time', 'Part-Time', 'Casual'];
-                            $selected_employment_types = isset($_GET['employment_type']) ? $_GET['employment_type'] : [];
-                            foreach ($employment_types as $type) {
-                            ?>
-                                <p class="mb-0 pb-0">
-                                    <input type="checkbox" class="form-check-input" id="<?php echo strtolower($type); ?>"
-                                        name="employment_type[]" value="<?php echo $type; ?>"
-                                        <?php echo in_array($type, $selected_employment_types) ? 'checked' : ''; ?>>
-                                    <label for="<?php echo strtolower($type); ?>"><?php echo $type; ?></label>
-                                </p>
-                            <?php } ?>
-
-
-                            <h5 class="signature-color fw-bold mt-4">Section</h5>
-                            <?php 
-                            $sections = ['Factory', 'Office']; 
-                            $selected_section = isset($_GET['section']) ? $_GET['section'] : [];
-                            foreach ($sections as $section) {
-                            ?>
-                                <p class="mb-0 p-0">
-                                    <input type="checkbox" class="form-check-input" id="<?php echo strtolower($section) ?>"
-                                        name="section[]" value="<?php echo $section ?>"
-                                        <?php echo in_array($section, $selected_section) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo strtolower($section); ?>"><?php echo $section; ?></label>
-                                </p>
-                            <?php } ?>
-
-                            <h5 class="signature-color fw-bold mt-4">Active</h5>
-                            <?php 
-                            $status = [1, 0];
-                            $selected_status = isset($_GET['status']) ? $_GET['status'] : [];
-                            foreach ($status as $i) { 
-                            ?>        
-                                <p class="mb-0 pb-0">
-                                    <input type="checkbox" class="form-check-input" id="<?php echo $i ?>"
-                                        name="status[]" value="<?php echo $i ?>"
-                                        <?php echo in_array($i, $selected_status) ? 'checked' : ''; ?>>
-                                    <label for="<?php echo $i; ?>"><?php if ($i === 1) { echo "Active"; } else if ($i === 0)  {echo "Inactive"; } ?></label>
-                                </p>
-                            <?php } ?>
-                        </div>
-                        <div class="col-12 <?php echo ($role === "admin") ? "col-lg-4" : "col-lg-5"; ?>">
-                            <h5 class="signature-color fw-bold mt-4 mt-lg-0">Visa</h5>
-                            <?php
-                            $visa_sql = "SELECT * FROM visa";
-                            $visa_result = $conn->query($visa_sql);
-                            $selected_visas = isset($_GET['visa']) ? $_GET['visa'] : [];
-                            if ($visa_result->num_rows > 0) { ?>
-                                <?php while ($row = $visa_result->fetch_assoc()) { ?>
-                                    <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input"
-                                            id="visa_<?php echo $row['visa_id']; ?>" name="visa[]"
-                                            value="<?php echo $row['visa_id']; ?>"
-                                            <?php echo in_array($row['visa_id'], $selected_visas) ? 'checked' : ''; ?> />
-                                        <label for="visa_<?php echo $row['visa_id']; ?>"><?php echo $row['visa_name']; ?></label>
-                                    </p>
-                                <?php } ?>
-                                <p class="mb-0 pb-0">
-                                    <input type="checkbox" class="form-check-input" id="expired" name="expiredVisa"
-                                        value="Expired" 
-                                        <?php echo isset($_GET['expiredVisa']) ? 'checked' : ''; ?>>
-                                    <label class="text-danger fw-bold" for="expired">Expired</label>
-                                </p>
-                            <?php } else { ?>
-                                <p>No visa found.</p>
-                            <?php } ?>
-                        </div>
-
-                        <?php if ($role === "admin") { ?>
-                            <div
-                                class="col-12 col-md-6 <?php echo ($role === "admin") ? "col-lg-3" : "col-lg-4"; ?> mt-3 mt-lg-0">
-                                <h5 class="signature-color fw-bold mt-4 mt-md-0">Payroll Type</h5>
+                        <div class="row">
+                            <div class="col-12  <?php echo ($role === "full control") ? "col-lg-3" : "col-lg-4"; ?>">
+                                <h5 class="signature-color fw-bold">Department</h5>
                                 <?php
-                                $payroll_types = ['wage', 'salary'];
-                                $selected_payroll_types = isset($_GET['payroll_type']) ? $_GET['payroll_type'] : [];
-                                foreach ($payroll_types as $type) {
-                                ?>
+                                $department_sql = "SELECT * FROM department";
+                                $department_result = $conn->query($department_sql);
+                                $selected_departments = isset($_GET['department']) ? $_GET['department'] : [];
+                                if ($department_result->num_rows > 0) { ?>
+                                    <?php while ($row = $department_result->fetch_assoc()) { ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="department_<?php echo $row['department_id']; ?>" name="department[]"
+                                                value="<?php echo $row['department_id']; ?>" <?php echo in_array($row['department_id'], $selected_departments) ? 'checked' : ''; ?> />
+                                            <label
+                                                for="department_<?php echo $row['department_id']; ?>"><?php echo $row['department_name']; ?></label>
+                                        </p>
+                                    <?php } ?>
+                                <?php } else { ?>
+                                    <p>No departments found.</p>
+                                <?php } ?>
+                            </div>
+                            <div
+                                class="col-12  <?php echo ($role === "full control") ? "col-lg-2" : "col-lg-3"; ?> mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold mt-4 mt-lg-0">Employment Type</h5>
+                                <?php
+                                $employment_types = ['Full-Time', 'Part-Time', 'Casual'];
+                                $selected_employment_types = isset($_GET['employment_type']) ? $_GET['employment_type'] : [];
+                                foreach ($employment_types as $type) {
+                                    ?>
                                     <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input" id="<?php echo $type; ?>"
-                                            name="payroll_type[]" value="<?php echo $type; ?>"
-                                            <?php echo in_array($type, $selected_payroll_types) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo $type; ?>"><?php echo ucfirst($type); ?></label>
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower($type); ?>" name="employment_type[]"
+                                            value="<?php echo $type; ?>" <?php echo in_array($type, $selected_employment_types) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($type); ?>"><?php echo $type; ?></label>
+                                    </p>
+                                <?php } ?>
+
+
+                                <h5 class="signature-color fw-bold mt-4">Section</h5>
+                                <?php
+                                $sections = ['Factory', 'Office'];
+                                $selected_section = isset($_GET['section']) ? $_GET['section'] : [];
+                                foreach ($sections as $section) {
+                                    ?>
+                                    <p class="mb-0 p-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower($section) ?>" name="section[]"
+                                            value="<?php echo $section ?>" <?php echo in_array($section, $selected_section) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($section); ?>"><?php echo $section; ?></label>
+                                    </p>
+                                <?php } ?>
+
+                                <h5 class="signature-color fw-bold mt-4">Active</h5>
+                                <?php
+                                $status = [1, 0];
+                                $selected_status = isset($_GET['status']) ? $_GET['status'] : [];
+                                foreach ($status as $i) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input" id="<?php echo $i ?>"
+                                            name="status[]" value="<?php echo $i ?>" <?php echo in_array($i, $selected_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $i; ?>"><?php if ($i === 1) {
+                                               echo "Active";
+                                           } else if ($i === 0) {
+                                               echo "Inactive";
+                                           } ?></label>
+                                    </p>
+                                <?php } ?>
+                                <h5 class="signature-color fw-bold mt-4">Work Shift</h5>
+                                <?php
+                                $workShifts = ['Day', 'Evening', 'Night'];
+                                $selected_work_shift = isset($_GET['work_shift']) ? $_GET['work_shift'] : [];
+                                foreach ($workShifts as $workShift) {
+                                    ?>
+                                    <p class="mb-0 p-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower($workShift) ?>" name="work_shift[]"
+                                            value="<?php echo $workShift ?>" <?php echo in_array($workShift, $selected_work_shift) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($workShift); ?>"><?php echo $workShift; ?></label>
                                     </p>
                                 <?php } ?>
                             </div>
-                        <?php } ?>
 
-                        <div class="d-flex justify-content-center mt-4">
-                            <button class="btn btn-secondary me-1" type="button" data-bs-dismiss="modal">Cancel</button>
-                            <button class="btn btn-dark" type="submit" name="apply_filters">Apply Filter</button>
+
+
+                            <div class="col-12 <?php echo ($role === "full control") ? "col-lg-4" : "col-lg-5"; ?>">
+                                <h5 class="signature-color fw-bold mt-4 mt-lg-0">Visa</h5>
+                                <?php
+                                $visa_sql = "SELECT * FROM visa";
+                                $visa_result = $conn->query($visa_sql);
+                                $selected_visas = isset($_GET['visa']) ? $_GET['visa'] : [];
+                                if ($visa_result->num_rows > 0) { ?>
+                                    <?php while ($row = $visa_result->fetch_assoc()) { ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="visa_<?php echo $row['visa_id']; ?>" name="visa[]"
+                                                value="<?php echo $row['visa_id']; ?>" <?php echo in_array($row['visa_id'], $selected_visas) ? 'checked' : ''; ?> />
+                                            <label
+                                                for="visa_<?php echo $row['visa_id']; ?>"><?php echo $row['visa_name']; ?></label>
+                                        </p>
+                                    <?php } ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input" id="expired" name="expiredVisa"
+                                            value="Expired" <?php echo isset($_GET['expiredVisa']) ? 'checked' : ''; ?>>
+                                        <label class="text-danger fw-bold" for="expired">Expired</label>
+                                    </p>
+                                <?php } else { ?>
+                                    <p>No visa found.</p>
+                                <?php } ?>
+                            </div>
+
+                            <?php if ($role === "full control") { ?>
+                                <div
+                                    class="col-12 col-md-6 <?php echo ($role === "full control") ? "col-lg-3" : "col-lg-4"; ?> mt-3 mt-lg-0">
+                                    <h5 class="signature-color fw-bold mt-4 mt-md-0">Payroll Type</h5>
+                                    <?php
+                                    $payroll_types = ['wage', 'salary'];
+                                    $selected_payroll_types = isset($_GET['payroll_type']) ? $_GET['payroll_type'] : [];
+                                    foreach ($payroll_types as $type) {
+                                        ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input" id="<?php echo $type; ?>"
+                                                name="payroll_type[]" value="<?php echo $type; ?>" <?php echo in_array($type, $selected_payroll_types) ? 'checked' : ''; ?>>
+                                            <label for="<?php echo $type; ?>"><?php echo ucfirst($type); ?></label>
+                                        </p>
+                                    <?php } ?>
+                                </div>
+                            <?php } ?>
+
+                            <div class="d-flex justify-content-center mt-4">
+                                <button class="btn btn-secondary me-1" type="button"
+                                    data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply Filter</button>
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
- <!-- ================== Filter Column Modal ================== -->
- <div class="modal fade" id="filterTableColumnModal" tabindex="-1" aria-labelledby="filterTableColumnModal" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"> Filter Column</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="employeeIdColumn" data-column="employeeIdColumn">
-                    <label class="form-check-label" for="employeeIdColumn">
-                        Employee Id
-                    </label>
+    <!-- ================== Filter Column Modal ================== -->
+    <div class="modal fade" id="filterTableColumnModal" tabindex="-1" aria-labelledby="filterTableColumnModal"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"> Filter Column</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="fullNameColumn" data-column="fullNameColumn">
-                    <label class="form-check-label" for="fullNameColumn">
-                        Name
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="statusColumn" data-column="statusColumn">
-                    <label class="form-check-label" for="statusColumn">
-                        Status
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="nicknameColumn" data-column="nicknameColumn">
-                    <label class="form-check-label" for="nicknameColumn">
-                        Nickname
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="departmentColumn" data-column="departmentColumn">
-                    <label class="form-check-label" for="departmentColumn">
-                        Department
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="payrollTypeColumn" data-column="payrollTypeColumn">
-                    <label class="form-check-label" for="payrollTypeColumn">
-                        Payroll Type
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="startDateColumn" data-column="startDateColumn">
-                    <label class="form-check-label" for="startDateColumn">
-                        Start Date
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="durationColumn" data-column="durationColumn">
-                    <label class="form-check-label" for="durationColumn">
-                        Duration
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="visaColumn" data-column="visaColumn">
-                    <label class="form-check-label" for="visaColumn">
-                        Visa
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="expiryDateColumn" data-column="expiryDateColumn">
-                    <label class="form-check-label" for="expiryDateColumn">
-                        Visa Expiry Date
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input column-check-input" type="checkbox" id="performanceReviewColumn" data-column="performanceReviewColumn">
-                    <label class="form-check-label" for="performanceReviewColumn">
-                        Performance Review
-                    </label>
-                </div>
-                <?php if ($role == "admin" || $role == "supervisor") { ?>
+                <div class="modal-body">
                     <div class="form-check">
-                        <input class="form-check-input column-check-input" type="checkbox" id="wageSalaryColumn" data-column="wageSalaryColumn">
-                        <label class="form-check-label" for="wageSalaryColumn">
-                            Wage/Salary
+                        <input class="form-check-input column-check-input" type="checkbox" id="employeeIdColumn"
+                            data-column="employeeIdColumn">
+                        <label class="form-check-label" for="employeeIdColumn">
+                            Employee Id
                         </label>
                     </div>
-                <?php } ?>
-                <div class="d-flex justify-content-end" style="cursor:pointer">
-                    <button onclick="resetColumnFilter()" class="btn btn-sm btn-danger me-1"> Reset Filter</button>
-                    <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Done</button>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="fullNameColumn"
+                            data-column="fullNameColumn">
+                        <label class="form-check-label" for="fullNameColumn">
+                            Name
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="nicknameColumn"
+                            data-column="nicknameColumn">
+                        <label class="form-check-label" for="nicknameColumn">
+                            Nickname
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="statusColumn"
+                            data-column="statusColumn">
+                        <label class="form-check-label" for="statusColumn">
+                            Status
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="departmentColumn"
+                            data-column="departmentColumn">
+                        <label class="form-check-label" for="departmentColumn">
+                            Department
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="statusColumn"
+                            data-column="statusColumn">
+                        <label class="form-check-label" for="statusColumn">
+                            Status
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="workShiftColumn"
+                            data-column="workShiftColumn">
+                        <label class="form-check-label" for="workShiftColumn">
+                            Work Shift
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="startDateColumn"
+                            data-column="startDateColumn">
+                        <label class="form-check-label" for="startDateColumn">
+                            Start Date
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="durationColumn"
+                            data-column="durationColumn">
+                        <label class="form-check-label" for="durationColumn">
+                            Duration
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="permanentDateColumn"
+                            data-column="permanentDateColumn">
+                        <label class="form-check-label" for="permanentDateColumn">
+                            Permanent Date
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="visaColumn"
+                            data-column="visaColumn">
+                        <label class="form-check-label" for="visaColumn">
+                            Visa
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="expiryDateColumn"
+                            data-column="expiryDateColumn">
+                        <label class="form-check-label" for="expiryDateColumn">
+                            Visa Expiry Date
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="lastDateColumn"
+                            data-column="lastDateColumn">
+                        <label class="form-check-label" for="lastDateColumn">
+                            Last Date
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="lockerNumberColumn"
+                            data-column="lockerNumberColumn">
+                        <label class="form-check-label" for="lockerNumberColumn">
+                            Locker Number
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="performanceReviewColumn"
+                            data-column="performanceReviewColumn">
+                        <label class="form-check-label" for="performanceReviewColumn">
+                            Performance Review
+                        </label>
+                    </div>
+                    <?php if ($role == "full control" || $role == "modify 1") { ?>
+                        <div class="form-check">
+                            <input class="form-check-input column-check-input" type="checkbox" id="wageSalaryColumn"
+                                data-column="wageSalaryColumn">
+                            <label class="form-check-label" for="wageSalaryColumn">
+                                Wage/Salary
+                            </label>
+                        </div>
+                    <?php } ?>
+                    <div class="d-flex justify-content-end" style="cursor:pointer">
+                        <button onclick="resetColumnFilter()" class="btn btn-sm btn-danger me-1"> Reset Filter</button>
+                        <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal">Done</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
- </div>
+
+    <!-- ================== HR Dashboard Modal ================== -->
+    <div class="modal fade" id="HRDashboardModal" tabindex="-1" aria-labelledby="HRDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="HRDashboardModalLabel">Human Resources Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/hr-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 
@@ -1323,7 +1576,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
         new bootstrap.Tooltip(t);
     })
 </script>
-<script>    
+<script>
     document.addEventListener("DOMContentLoaded", function () {
         const employeeCardList = document.getElementById("employeeCardList");
         const employeeTableList = document.getElementById("employeeTableList");
@@ -1337,7 +1590,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
 
         updateDisplay(viewPreference);
         viewInput.value = viewPreference; // Update the hidden input value
-      
+
 
         document.getElementById("toggleButton").addEventListener("click", function () {
             viewPreference = viewPreference === "card" ? "table" : "card";
@@ -1354,9 +1607,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
         function updateDisplay(view) {
             document.getElementById("viewInput").value = view;
             document.getElementById("viewInput2").value = view;
-            toggleViewBtn.innerHTML = 
-                (viewPreference === "table" 
-                    ? "<small> Card </small> <i class='fa-solid fa-address-card ms-1'></i>" 
+            toggleViewBtn.innerHTML =
+                (viewPreference === "table"
+                    ? "<small> Card </small> <i class='fa-solid fa-address-card ms-1'></i>"
                     : "<small> Table </small> <i class='fa-solid fa-table ms-1'></i>");
 
             if (view === "card") {
@@ -1429,7 +1682,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
 </script>
 
 <script>
-        function resetColumnFilter() {
+    function resetColumnFilter() {
         // Get all checkboxes
         document.querySelectorAll('.column-check-input').forEach(checkbox => {
             // Check each checkbox
@@ -1453,15 +1706,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["statusCellToEdit"])) 
     }
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll(".payroll-cell").forEach(cell => {
-        if (cell.innerText.trim() === "N/A") {
-            cell.style.background = "repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px)";
-            cell.style.color = "white";
-            cell.style.fontWeight = "bold";
-        }
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".payroll-cell").forEach(cell => {
+            if (cell.innerText.trim() === "N/A") {
+                cell.style.background = "repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px)";
+                cell.style.color = "white";
+                cell.style.fontWeight = "bold";
+            }
+        });
     });
-});
 </script>
 
 
@@ -1507,11 +1760,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if (form.style.display === 'none' || form.style.display === '') {
             form.style.display = 'block';
             span.style.display = 'none';
-            
+
             // Remove background when editing
             cell.dataset.originalBackground = cell.style.background; // Store original background
             cell.style.background = 'none';
-            
+
             form.querySelector('input[type="date"]').focus();
         } else {
             form.style.display = 'none';
@@ -1537,7 +1790,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // Restore the original background
         cell.style.background = cell.dataset.originalBackground || '';
     }
-    
+
     function editWageSalary(cell) {
         // Get the form, span elements, and current background style
         const wageForm = cell.querySelector('.add-wage-form');
@@ -1631,7 +1884,7 @@ document.addEventListener("DOMContentLoaded", function() {
             form.style.display = 'none';
             form.style.display = 'block';
         }
-    }    
+    }
 
     function cancelEditStatus(link) {
         // Get the closest td element
@@ -1648,11 +1901,44 @@ document.addEventListener("DOMContentLoaded", function() {
         // Restore the original background
         cell.style.background = cell.dataset.originalBackground || '';
         cell.style.color = cell.dataset.originalColor || '';
-    }    
+    }
+
+    function editWorkShift(cell) {
+        // Get the form and span elements
+        const form = cell.querySelector('.edit-work-shift-form');
+        const span = cell.querySelector('span');
+
+        // Toggle the form visibility
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            span.style.display = 'none';
+            form.querySelector('select').focus();
+        } else {
+            form.style.display = 'none';
+            form.style.display = 'block';
+        }
+    }
+
+    function cancelEditWorkShift(link) {
+        // Get the closest td element
+        const cell = link.closest('td');
+
+        // Get the form and span elements
+        const form = cell.querySelector('.edit-work-shift-form');
+        const span = cell.querySelector('span');
+
+        // Hide the form, show the span
+        form.style.display = 'none';
+        span.style.display = 'block';
+
+        // Restore the original background
+        cell.style.background = cell.dataset.originalBackground || '';
+        cell.style.color = cell.dataset.originalBackground || '';
+    }
 </script>
 
 <script>
-   function printTable() {
+    function printTable() {
         var tableContent = document.getElementById("employeeTable").outerHTML;
         var printWindow = window.open("", "", "width=1200,height=2000");
 
@@ -1700,7 +1986,16 @@ document.addEventListener("DOMContentLoaded", function() {
         printWindow.document.close();
     }
 </script>
-     
+
+<script>
+    // Restore scroll position after page reload
+    window.addEventListener('load', function () {
+        const scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, scrollPosition);
+            sessionStorage.removeItem('scrollPosition'); // Remove after restoring
+        }
+    });
+</script>
+
 </body>
-
-

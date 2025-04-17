@@ -15,6 +15,7 @@ $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
+
 // =============================== D E P A R T M E N T  C H A R T ===============================
 
 $departments_sql = "SELECT department_id, department_name FROM department";
@@ -24,7 +25,6 @@ $departments = [];
 while ($row = $departments_result->fetch_assoc()) {
     $departments[$row['department_id']] = $row['department_name'];
 }
-
 
 $department_counts = [];
 $total_employees_count = 0;
@@ -78,15 +78,15 @@ foreach ($department_counts as $department_name => $count) {
 // =============================== E M P L O Y M E N T  T Y P E  C H A R T ===============================
 
 // Query to get the number of permanent employees
-$permanent_employees_sql = "SELECT COUNT(*) AS permanent_count FROM employees WHERE employment_type='Full-Time'";
+$permanent_employees_sql = "SELECT COUNT(*) AS permanent_count FROM employees WHERE employment_type='Full-Time' AND is_active = 1";
 $permanent_employees_result = $conn->query($permanent_employees_sql);
 
 // Query to get the number of part-time employees
-$part_time_employees_sql = "SELECT COUNT(*) AS part_time_count FROM employees WHERE employment_type='Part-Time'";
+$part_time_employees_sql = "SELECT COUNT(*) AS part_time_count FROM employees WHERE employment_type='Part-Time' AND is_active = 1";
 $part_time_employees_result = $conn->query($part_time_employees_sql);
 
 // Query to get the number of casual employees
-$casual_employees_sql = "SELECT COUNT(*) AS casual_count FROM employees WHERE employment_type='Casual'";
+$casual_employees_sql = "SELECT COUNT(*) AS casual_count FROM employees WHERE employment_type='Casual' AND is_active = 1";
 $casual_employees_result = $conn->query($casual_employees_sql);
 
 // Initialize variables to employment type counts
@@ -124,170 +124,453 @@ $employmentTypeData = array(
     array("label" => "Casual", "symbol" => "Casual", "y" => $casual_percentage, "color" => "#2980b9"),
 );
 
-// =============================== S E C T I O N  C H A R T  ( E L E C T R I C A L )===============================
+// =============================== G E N D E R  C H A R T ===============================
 
-// Query to get the total number of electrical employees
-$total_electrical_employees_sql = "SELECT COUNT(*) AS total_electrical_employees_count FROM employees WHERE department = 'Electrical'";
-$total_electrical_employees_result = $conn->query($total_electrical_employees_sql);
+// Query to get number of female employees
+$female_employee_sql = "SELECT COUNT(*) AS female_count FROM employees WHERE gender = 'female'";
+$female_employee_result = $conn->query($female_employee_sql);
 
-// Query to get the number of panel section employees
-$panel_section_employees_sql = "SELECT COUNT(*) AS panel_section_count FROM employees WHERE department = 'Electrical' AND section='Panel'";
-$panel_section_employees_result = $conn->query($panel_section_employees_sql);
+// Query to get number of male employees
+$male_employee_sql = "SELECT COUNT(*) AS male_count FROM employees WHERE gender = 'male' AND is_active = 1";
+$male_employee_result = $conn->query($male_employee_sql);
 
-// Query to get the number of roof employees
-$roof_section_employees_sql = "SELECT COUNT(*) AS roof_section_count FROM employees WHERE department = 'Electrical' AND section='Roof'";
-$roof_section_employees_result = $conn->query($roof_section_employees_sql);
+// Query to get number of female employees
+$female_employee_sql = "SELECT COUNT(*) AS female_count FROM employees WHERE gender = 'female' AND is_active = 1";
+$female_employee_result = $conn->query($female_employee_sql);
 
-// Initialize variables to electrical department section counts
-$total_electrical_employees_count = 0;
-$panel_section_count = 0;
-$roof_section_count = 0;
 
-// Fetch total number of electrical employees
-if ($total_electrical_employees_result) {
-    $row = $total_electrical_employees_result->fetch_assoc();
-    $total_electrical_employees_count = $row['total_electrical_employees_count'];
+// Initialize variables to gender counts
+$female_count = 0;
+$male_count = 0;
+
+// Fetch number of female employees
+if ($female_employee_result) {
+    $row = $female_employee_result->fetch_assoc();
+    $female_count = $row["female_count"];
 }
 
-// Fetch number of panel employees
-if ($panel_section_employees_result) {
-    $row = $panel_section_employees_result->fetch_assoc();
-    $panel_section_count = $row["panel_section_count"];
+// Fetch number of male employees
+if ($male_employee_result) {
+    $row = $male_employee_result->fetch_assoc();
+    $male_count = $row["male_count"];
 }
 
-// Fetch number of roof employees
-if ($roof_section_employees_result) {
-    $row = $roof_section_employees_result->fetch_assoc();
-    $roof_section_count = $row["roof_section_count"];
-}
+// Calculate percentages for each gender
+$female_percentages = ($female_count / $total_employees_count) * 100;
+$male_percentages = ($male_count / $total_employees_count) * 100;
 
-// Calculate percentages for each section
-// $panel_percentage = ($panel_section_count / $total_electrical_employees_count) * 100;
-// $roof_percentage = ($roof_section_count / $total_electrical_employees_count) * 100;
-
-// echo $total_electrical_employees_count;
-
-// Create Electrical Section Data array with percentages for each section
-$electricalSectionData = array(
-    // array("label" => "Panel", "symbol" => "Panel", "y" => $panel_percentage, "color" => "#5bc0de"),
-    // array("label" => "Roof", "symbol" => "Roof", "y" => $roof_percentage, "color" => "#2980b9"),
+// Create genderData array with percentages for each gender
+$genderData = array(
+    array("label" => "Female", "symbol" => "Female", "y" => $female_percentages, "color" => "#5bc0de"),
+    array("label" => "Male", "symbol" => "Male", "y" => $male_percentages, "color" => "#3498db"),
 );
 
-// =============================== S E C T I O N  C H A R T  ( S H E E T  M E T A L ) ===============================
+// =============================== A C C O U N T S  ( E M P L O Y M E N T  T Y P E ) ===============================
 
-// Query to get the total of sheet metal employees
-$total_sheet_metal_employees_sql = "SELECT COUNT(*) total_sheet_metal_employees_count FROM employees WHERE department = 'Sheet Metal'";
-$total_sheet_metal_employees_result = $conn->query($total_sheet_metal_employees_sql);
-
-// Query to get the number of programmer section employees
-$programmer_section_employees_sql = "SELECT COUNT(*) AS programmer_section_count FROM employees WHERE department = 'Sheet Metal' AND section='Programmer'";
-$programmer_section_employees_result = $conn->query($programmer_section_employees_sql);
-
-// Query to get the total of painter section employees
-$painter_section_employees_sql = "SELECT COUNT(*) AS painter_section_count FROM employees WHERE department = 'Sheet Metal' AND section='Painter'";
-$painter_section_employees_result = $conn->query($painter_section_employees_sql);
-
-// Initialise variables to sheet metal department section counts
-$total_sheet_metal_employees_count = 0;
-$programmer_section_count = 0;
-$painter_section_count = 0;
-
-// Fetch total number of sheet metal employees
-if ($total_sheet_metal_employees_result) {
-    $row = $total_sheet_metal_employees_result->fetch_assoc();
-    $total_sheet_metal_employees_count = $row["total_sheet_metal_employees_count"];
-}
-
-// Fetch number of programmer employees
-if ($programmer_section_employees_result) {
-    $row = $programmer_section_employees_result->fetch_assoc();
-    $programmer_section_count = $row["programmer_section_count"];
-}
-
-// Fetch number of painter employees
-if ($painter_section_employees_result) {
-    $row = $painter_section_employees_result->fetch_assoc();
-    $painter_section_count = $row["painter_section_count"];
-}
-
-// Calculate percentages for each section
-// $programmer_percentage = ($programmer_section_count / $total_sheet_metal_employees_count) * 100;
-// $painter_percentage = ($painter_section_count / $total_sheet_metal_employees_count) * 100;
-
-// Create Sheet Metal Section Data array with percentages for each section
-$sheetMetalSectionData = array(
-    // array("label" => "Programmer", "symbol" => "Programmer", "y" => $programmer_percentage, "color" => "#5bc0de"),
-    // array("label" => "Painter", "symbol" => "Painter", "y" => $painter_percentage, "color" => "#2980b9"),
-);
-
-// =============================== S E C T I O N  C H A R T  ( O F F I C E ) ===============================
-
-// Query to get the total of office employees
-$total_office_employees_sql = "SELECT COUNT(*) total_office_employees_count FROM employees WHERE department = 'Office'";
-$total_office_employees_result = $conn->query($total_office_employees_sql);
-
-// Query to get the number of engineer section employees
-$engineer_section_employees_sql = "SELECT COUNT(*) AS engineer_section_count FROM employees WHERE department = 'Office' AND section='Engineer'";
-$engineer_section_employees_result = $conn->query($engineer_section_employees_sql);
-
-// Query to get the number of accountant section employees
-$accountant_section_employees_sql = "SELECT COUNT(*) AS accountant_section_count FROM employees WHERE department = 'Office' AND section='Accountant'";
-$accountant_section_employees_result = $conn->query($accountant_section_employees_sql);
-
-// Initialise variables to office department section
-$total_office_employees_count = 0;
-$engineer_section_count = 0;
-$accountant_section_count = 0;
-
-// Fetch total number of office employees
-if ($total_office_employees_result) {
-    $row = $total_office_employees_result->fetch_assoc();
-    $total_office_employees_count = $row["total_office_employees_count"];
-}
-
-// Fetch number of engineer employees
-if ($engineer_section_employees_result) {
-    $row = $engineer_section_employees_result->fetch_assoc();
-    $engineer_section_count = $row["engineer_section_count"];
-}
-
-// Fetch number of accountant employees
-if ($accountant_section_employees_result) {
-    $row = $accountant_section_employees_result->fetch_assoc();
-    $accountant_section_count = $row["accountant_section_count"];
-}
-
-// Calculate percentages for each section
-// $engineer_percentage = ($engineer_section_count / $total_office_employees_count) * 100;
-// $accountant_percentage = ($accountant_section_count / $total_office_employees_count) * 100;
-
-// Create Office section data array with percentages for each section
-$officeSectionData = array(
-    // array("label" => "Engineer", "symbol" => "Engineer", "y" => $engineer_percentage, "color" => "#5bc0de"),
-    // array("label" => "Accountant", "symbol" => "Accountant", "y" => $accountant_percentage, "color" => "#2980b9"),
-);
-
-
-// SQL Query to get the folders
-$folders_sql = "
-    SELECT DISTINCT f.*
-    FROM folders f
-    JOIN groups_folders gf ON f.folder_id = gf.folder_id
-    JOIN users_groups ug ON gf.group_id = ug.group_id
-    JOIN users u ON ug.user_id = u.user_id
-    JOIN employees e ON e.employee_id = u.employee_id
-    WHERE e.employee_id = ?
+// Query to get the total number of accounts employees by employement type
+$total_accounts_employee_sql = "
+    SELECT
+        COUNT(*) AS total_accounts_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_accounts_full_time_employees_count, 
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_accounts_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_accounts_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Accounts' AND is_active = 1;
 ";
-$stmt = $conn->prepare($folders_sql);
-$stmt->bind_param("i", $employee_id);
-$stmt->execute();
-$folders_result = $stmt->get_result();
 
-// Store the folders in an array
-$folders = [];
-while ($row = $folders_result->fetch_assoc()) {
-    $folders[] = $row;
+$total_accounts_employee_result = $conn->query($total_accounts_employee_sql);
+
+// Initialise variables to accounts by employment type
+$total_accounts_employees_count = 0;
+$total_accounts_full_time_employees_count = 0;
+$total_accounts_part_time_employees_count = 0;
+$total_accounts_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_accounts_employee_result) {
+    $row = $total_accounts_employee_result->fetch_assoc();
+    $total_accounts_employees_count = $row['total_accounts_employees_count'];
+    $total_accounts_full_time_employees_count = $row['total_accounts_full_time_employees_count'];
+    $total_accounts_part_time_employees_count = $row['total_accounts_part_time_employees_count'];
+    $total_accounts_casual_employees_count = $row['total_accounts_casual_employees_count'];
 }
+
+// =============================== E N G I N E E R I N G  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Engineering employees by employment type
+$total_engineering_employee_sql = "
+    SELECT
+        COUNT(*) AS total_engineering_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_engineering_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_engineering_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_engineering_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Engineering' AND is_active = 1;
+";
+
+$total_engineering_employee_result = $conn->query($total_engineering_employee_sql);
+
+// Initialise variables to Engineering
+$total_engineering_employees_count = 0;
+$total_engineering_full_time_employees_count = 0;
+$total_engineering_part_time_employees_count = 0;
+$total_engineering_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_engineering_employee_result) {
+    $row = $total_engineering_employee_result->fetch_assoc();
+    $total_engineering_employees_count = $row['total_engineering_employees_count'];
+    $total_engineering_full_time_employees_count = $row['total_engineering_full_time_employees_count'];
+    $total_engineering_part_time_employees_count = $row['total_engineering_part_time_employees_count'];
+    $total_engineering_casual_employees_count = $row['total_engineering_casual_employees_count'];
+}
+
+// =============================== E S T I M A T I N G  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Estimating employees by employment type
+$total_estimating_employee_sql = "
+    SELECT
+        COUNT(*) AS total_estimating_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_estimating_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_estimating_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_estimating_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Estimating' AND is_active = 1;
+";
+
+$total_estimating_employee_result = $conn->query($total_estimating_employee_sql);
+
+// Initialise variables to Estimating
+$total_estimating_employees_count = 0;
+$total_estimating_full_time_employees_count = 0;
+$total_estimating_part_time_employees_count = 0;
+$total_estimating_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_estimating_employee_result) {
+    $row = $total_estimating_employee_result->fetch_assoc();
+    $total_estimating_employees_count = $row['total_estimating_employees_count'];
+    $total_estimating_full_time_employees_count = $row['total_estimating_full_time_employees_count'];
+    $total_estimating_part_time_employees_count = $row['total_estimating_part_time_employees_count'];
+    $total_estimating_casual_employees_count = $row['total_estimating_casual_employees_count'];
+}
+
+// =============================== E L E C T R I C A L  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of electrical employees by employement type
+$total_electrical_employee_sql = "
+    SELECT
+        COUNT(*) AS total_electrical_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_electrical_full_time_employees_count, 
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_electrical_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_electrical_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Electrical' AND is_active = 1;
+";
+
+$total_electrical_employee_result = $conn->query($total_electrical_employee_sql);
+
+// Initialise variables to electrical by employment type
+$total_electrical_employees_count = 0;
+$total_electrical_full_time_employees_count = 0;
+$total_electrical_part_time_employees_count = 0;
+$total_electrical_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_electrical_employee_result) {
+    $row = $total_electrical_employee_result->fetch_assoc();
+    $total_electrical_employees_count = $row['total_electrical_employees_count'];
+    $total_electrical_full_time_employees_count = $row['total_electrical_full_time_employees_count'];
+    $total_electrical_part_time_employees_count = $row['total_electrical_part_time_employees_count'];
+    $total_electrical_casual_employees_count = $row['total_electrical_casual_employees_count'];
+}
+
+// =============================== S H E E T  M E T A L  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of sheet metal employees by employment type
+$total_sheet_metal_employee_sql = "
+    SELECT
+        COUNT(*) AS total_sheet_metal_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_sheet_metal_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-TIme' THEN 1 END) AS total_sheet_metal_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_sheet_metal_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Sheet Metal' AND is_active = 1;
+";
+
+$total_sheet_metal_employee_result = $conn->query($total_sheet_metal_employee_sql);
+
+// Initialise variables to sheet metal 
+$total_sheet_metal_employees_count = 0;
+$total_sheet_metal_full_time_employees_count = 0;
+$total_sheet_metal_part_time_employees_count = 0;
+$total_sheet_metal_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_sheet_metal_employee_result) {
+    $row = $total_sheet_metal_employee_result->fetch_assoc();
+    $total_sheet_metal_employees_count = $row['total_sheet_metal_employees_count'];
+    $total_sheet_metal_full_time_employees_count = $row['total_sheet_metal_full_time_employees_count'];
+    $total_sheet_metal_part_time_employees_count = $row['total_sheet_metal_part_time_employees_count'];
+    $total_sheet_metal_casual_employees_count = $row['total_sheet_metal_casual_employees_count'];
+}
+
+// =============================== S I T E  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Site employees by employment type
+$total_site_employee_sql = "
+    SELECT
+        COUNT(*) AS total_site_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_site_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_site_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_site_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Site' AND is_active = 1;
+";
+
+$total_site_employee_result = $conn->query($total_site_employee_sql);
+
+// Initialise variables to Site
+$total_site_employees_count = 0;
+$total_site_full_time_employees_count = 0;
+$total_site_part_time_employees_count = 0;
+$total_site_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_site_employee_result) {
+    $row = $total_site_employee_result->fetch_assoc();
+    $total_site_employees_count = $row['total_site_employees_count'];
+    $total_site_full_time_employees_count = $row['total_site_full_time_employees_count'];
+    $total_site_part_time_employees_count = $row['total_site_part_time_employees_count'];
+    $total_site_casual_employees_count = $row['total_site_casual_employees_count'];
+}
+
+// =============================== R & D ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Research & Development employees by employment type
+$total_rnd_employee_sql = "
+    SELECT
+        COUNT(*) AS total_rnd_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_rnd_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_rnd_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_rnd_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Research & Development' AND is_active = 1;
+";
+
+$total_rnd_employee_result = $conn->query($total_rnd_employee_sql);
+
+// Initialise variables to Research & Development
+$total_rnd_employees_count = 0;
+$total_rnd_full_time_employees_count = 0;
+$total_rnd_part_time_employees_count = 0;
+$total_rnd_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_rnd_employee_result) {
+    $row = $total_rnd_employee_result->fetch_assoc();
+    $total_rnd_employees_count = $row['total_rnd_employees_count'];
+    $total_rnd_full_time_employees_count = $row['total_rnd_full_time_employees_count'];
+    $total_rnd_part_time_employees_count = $row['total_rnd_part_time_employees_count'];
+    $total_rnd_casual_employees_count = $row['total_rnd_casual_employees_count'];
+}
+
+
+// =============================== O P E R A T I O N S  S U P P O R T ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of operations support employees by employment type
+$total_operations_support_employee_sql = "
+    SELECT
+        COUNT(*) AS total_operations_support_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_operations_support_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_operations_support_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_operations_support_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Operations Support' AND is_active = 1;
+";
+
+$total_operations_support_employee_result = $conn->query($total_operations_support_employee_sql);
+
+// Initialise variables to operations support
+$total_operations_support_employees_count = 0;
+$total_operations_support_full_time_employees_count = 0;
+$total_operations_support_part_time_employees_count = 0;
+$total_operations_support_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_sheet_metal_employee_result) {
+    $row = $total_operations_support_employee_result->fetch_assoc();
+    $total_operations_support_employees_count = $row['total_operations_support_employees_count'];
+    $total_operations_support_full_time_employees_count = $row['total_operations_support_full_time_employees_count'];
+    $total_operations_support_part_time_employees_count = $row['total_operations_support_part_time_employees_count'];
+    $total_operations_support_casual_employees_count = $row['total_operations_support_casual_employees_count'];
+}
+
+// =============================== M A N A G E M E N T ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Management employees by employment type
+$total_management_employee_sql = "
+    SELECT
+        COUNT(*) AS total_management_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_management_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_management_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_management_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Management' AND is_active = 1;
+";
+
+$total_management_employee_result = $conn->query($total_management_employee_sql);
+
+// Initialise variables to Management
+$total_management_employees_count = 0;
+$total_management_full_time_employees_count = 0;
+$total_management_part_time_employees_count = 0;
+$total_management_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_sheet_metal_employee_result) {
+    $row = $total_management_employee_result->fetch_assoc();
+    $total_management_employees_count = $row['total_management_employees_count'];
+    $total_management_full_time_employees_count = $row['total_management_full_time_employees_count'];
+    $total_management_part_time_employees_count = $row['total_management_part_time_employees_count'];
+    $total_management_casual_employees_count = $row['total_management_casual_employees_count'];
+}
+
+// =============================== C O M M I S S I O N I N G  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of Commissioning employees by employment type
+$total_commissioning_employee_sql = "
+    SELECT
+        COUNT(*) AS total_commissioning_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_commissioning_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_commissioning_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_commissioning_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Commissioning' AND is_active = 1;
+";
+
+$total_commissioning_employee_result = $conn->query($total_commissioning_employee_sql);
+
+// Initialise variables to Commissioning
+$total_commissioning_employees_count = 0;
+$total_commissioning_full_time_employees_count = 0;
+$total_commissioning_part_time_employees_count = 0;
+$total_commissioning_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_commissioning_employee_result) {
+    $row = $total_commissioning_employee_result->fetch_assoc();
+    $total_commissioning_employees_count = $row['total_commissioning_employees_count'];
+    $total_commissioning_full_time_employees_count = $row['total_commissioning_full_time_employees_count'];
+    $total_commissioning_part_time_employees_count = $row['total_commissioning_part_time_employees_count'];
+    $total_commissioning_casual_employees_count = $row['total_commissioning_casual_employees_count'];
+}
+
+// =============================== T O T A L  E M P L O Y E E  ( E A C H  M O N T H ) ===============================
+// Query to count total employees for each month
+$employee_each_month_sql = "
+SELECT
+  DATE_FORMAT(months.month, '%Y-%m') AS month,
+  COUNT(e.employee_id) AS total_employees_each_month
+FROM
+  (
+    SELECT
+        DATE_FORMAT(DATE_SUB(LAST_DAY(CURDATE()), INTERVAL seq MONTH), '%Y-%m-%d') AS month
+    FROM
+      (
+        SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
+        UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+        UNION SELECT 10 UNION SELECT 11
+      ) AS seqs
+  ) AS months
+LEFT JOIN employees e
+  ON e.start_date <= LAST_DAY(months.month)
+     AND (e.last_date > LAST_DAY(months.month) OR e.last_date IS NULL)
+GROUP BY months.month
+ORDER BY months.month;
+";
+
+
+// Query to count new employees (joined) each month
+$new_employees_sql = "
+SELECT
+  DATE_FORMAT(start_date, '%Y-%m') AS month,
+  GROUP_CONCAT(first_name ORDER BY start_date) AS employee_names,
+  COUNT(employee_id) AS new_employees
+FROM employees
+WHERE start_date IS NOT NULL
+  AND start_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) 
+GROUP BY month
+ORDER BY month;
+";
+
+
+// Query to count employees who left (left) each month
+$left_employees_sql = "
+SELECT
+  DATE_FORMAT(last_date, '%Y-%m') AS month,
+  GROUP_CONCAT(first_name ORDER BY last_date) AS employee_names,
+  COUNT(employee_id) AS left_employees
+FROM employees
+WHERE last_date IS NOT NULL
+  AND last_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) 
+  AND is_active = 0
+GROUP BY month
+ORDER BY month;
+";
+
+
+// Run the queries
+$employee_each_month_result = $conn->query($employee_each_month_sql);
+$new_employees_result = $conn->query($new_employees_sql);
+$left_employees_result = $conn->query($left_employees_sql);
+
+// Prepare the data arrays to merge
+$total_employees_data = [];
+while ($row = $employee_each_month_result->fetch_assoc()) {
+    $total_employees_data[$row['month']] = $row['total_employees_each_month'];
+}
+
+$new_employees_data = [];
+while ($row = $new_employees_result->fetch_assoc()) {
+    $new_employees_data[$row['month']] = [
+        'employee_names' => $row['employee_names'],
+        'new_employees' => $row['new_employees']
+    ];
+}
+
+$left_employees_data = [];
+while ($row = $left_employees_result->fetch_assoc()) {
+    $left_employees_data[$row['month']] = [
+        'employee_names' => $row['employee_names'],
+        'left_employees' => $row['left_employees']
+    ];
+}
+
+// Prepare chart data arrays
+$months = [];
+$totalEmployees = [];
+$newEmployees = [];
+$leftEmployees = [];
+
+for ($i = 11; $i >= 0; $i--) {
+    $month = date('Y-m', strtotime("-$i months"));
+    $months[] = $month;
+    $totalEmployees[] = isset($total_employees_data[$month]) ? (int) $total_employees_data[$month] : 0;
+    $newEmployees[] = isset($new_employees_data[$month]) ? (int) $new_employees_data[$month]['new_employees'] : 0;
+    $leftEmployees[] = isset($left_employees_data[$month]) ? (int) $left_employees_data[$month]['left_employees'] : 0;
+}
+
 
 // Prepare the SQL query to avoid SQL injection
 $user_details_query = "
@@ -396,24 +679,281 @@ $folders_result->free();
 <body class="background-color">
     <div class="container-fluid mt-3 mb-5">
         <div class="mx-md-0 mx-2">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <nav aria-label="breadcrumb ">
+            <!-- <div class="d-flex justify-content-between align-items-center mb-3">
+                <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
                         <li class="breadcrumb-item active" style="color:#043f9d" aria-current="page"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php">All
-                            Employees</a>
+                                Employees</a>
                         </li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d">HR Dashboard</li>
 
                     </ol>
                 </nav>
-                <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php"
+                <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php"
                     class="btn btn-success"> <i class="fa-solid fa-users"></i> All
-                    Employees </a> -->
+                    Employees </a>
+            </div> -->
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-center"></th>
+                        <th scope="col" class="text-center">ACC</th>
+                        <th scope="col" class="text-center">EN</th>
+                        <th scope="col" class="text-center">ES</th>
+                        <th scope="col" class="text-center">EL</th>
+                        <th scope="col" class="text-center">SM</th>
+                        <th scope="col" class="text-center">Site</th>
+                        <th scope="col" class="text-center">R&D</th>
+                        <th scope="col" class="text-center">OS</th>
+                        <th scope="col" class="text-center">MN</th>
+                        <th scope="col" class="text-center">Comm</th>
+                        <th scope="col" class="text-center">Sub-Total</th>
+                        <th scope="col" class="text-center">Total Employees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row" class="text-center">Full-Time</th>
+                        <td class="text-center"><?php echo $total_accounts_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_engineering_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_estimating_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_electrical_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_sheet_metal_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_site_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_rnd_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_operations_support_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_management_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_commissioning_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $permanent_count ?></td>
+                        <td class="text-center align-middle text-white" rowspan="4" style="background-color: #5bc1df">
+                            <h1><?php echo $total_employees_count ?>
+                        </td>
+                        </h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-center">Part-Time</th>
+                        <td class="text-center"><?php echo $total_accounts_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_engineering_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_estimating_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_electrical_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_sheet_metal_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_site_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_rnd_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_operations_support_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_management_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_commissioning_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $part_time_count ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-center">Casual</th>
+                        <td class="text-center"><?php echo $total_accounts_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_engineering_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_estimating_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_electrical_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_sheet_metal_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_site_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_rnd_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_operations_support_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_management_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_commissioning_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $casual_count ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-center">Full-Time (%)</th>
+                        <td class="text-center">
+                            <?php
+                            if ($total_accounts_employees_count > 0) {
+                                echo round(($total_accounts_full_time_employees_count / $total_accounts_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_engineering_employees_count > 0) {
+                                echo round(($total_engineering_full_time_employees_count / $total_engineering_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_estimating_employees_count > 0) {
+                                echo round(($total_estimating_full_time_employees_count / $total_estimating_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_electrical_employees_count > 0) {
+                                echo round(($total_electrical_full_time_employees_count / $total_electrical_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_sheet_metal_employees_count > 0) {
+                                echo round(($total_sheet_metal_full_time_employees_count / $total_sheet_metal_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_site_employees_count > 0) {
+                                echo round(($total_site_full_time_employees_count / $total_site_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_rnd_employees_count > 0) {
+                                echo round(($total_rnd_full_time_employees_count / $total_rnd_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_operations_support_employees_count > 0) {
+                                echo round(($total_operations_support_full_time_employees_count / $total_operations_support_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_management_employees_count > 0) {
+                                echo round(($total_management_full_time_employees_count / $total_management_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_commissioning_employees_count > 0) {
+                                echo round(($total_commissioning_full_time_employees_count / $total_commissioning_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_active_count > 0) {
+                                echo round(($permanent_count / $total_active_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-center align-items-center mb-3 background-color shadow-lg py-4 rounded-3 d-none"
+                id="filterEmployeeDashboard">
+                <div class="row col-8">
+                    <div class="col-6">
+                        <label for="startMonth" class="fw-bold">Start Month: </label>
+                        <input type="month" id="startMonth" name="startMonth" class="form-control">
+                    </div>
+                    <div class="col-6">
+                        <label for="endMonth" class="fw-bold">End Month: </label>
+                        <input type="month" id="endMonth" name="endMonth" class="form-control">
+                    </div>
+                    <div class="d-flex justify-content-center mt-3">
+                        <button class="btn btn-danger fw-bold me-1">Reset</button>
+                        <button class="btn btn-secondary fw-bold me-1" id="hideFilterEmployeeDashboard">Cancel</button>
+                        <button id="filterButton" class="btn btn-dark fw-bold">Filter</button>
+                    </div>
+                </div>
             </div>
+
+            <div>
+                <div
+                    class="d-flex flex-column flex-md-row align-items-center justify-content-between p-3 signature-bg-color text-white rounded-top-3">
+                    <div class="d-flex flex-column flex-md-row align-items-center my-2 my-md-0">
+                        <span class="fw-bold">Timeframe: </span>
+                        <h6 class="ms-1 fw-bold mb-0 pb-0" id="startMonthText"></h6>
+                        <span class="mx-2">-</span>
+                        <h6 class="ms-1 fw-bold mb-0 pb-0" id="endMonthText"></h6>
+                    </div>
+                    <div class="d-flex flex-column flex-md-row align-items-center my-2 my-md-0">
+                        <button class="btn btn-dark btn-sm fw-bold ms-2" id="showEmployeeChangesTable">Show Table <i
+                                class="fa-solid fa-table"></i></button>
+                        <button class="btn btn-light btn-sm fw-bold ms-2" id="showFilterEmployeeDashboard">Edit<i
+                                class="fa-regular fa-pen-to-square ms-1"></i></button>
+                        <button class="btn btn-success btn-sm fw-bold ms-2" id="refreshButton">Refresh<i
+                                class="fa-solid fa-arrows-rotate ms-1"></i></button>
+                    </div>
+                </div>
+
+                <canvas class="p-3 shadow-lg rounded-bottom-3 mb-3" id="employeeChart" width="1000"
+                    height="300"></canvas>
+            </div>
+
+            <table class="table table-bordered table-striped text-center table-hover d-none" id="employeeChangesTable">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Month</th>
+                        <th>Total Employees</th>
+                        <th>New Employees</th>
+                        <th>Employees Left</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    for ($i = 11; $i >= 0; $i--) {
+                        $month = date('Y-m', strtotime("-$i months"));
+                        $month_display = date('F Y', strtotime("-$i months"));
+
+                        $total_employees = isset($total_employees_data[$month]) ? $total_employees_data[$month] : 0;
+                        $new_employees = isset($new_employees_data[$month]) ? $new_employees_data[$month]['new_employees'] : 0;
+                        $left_employees = isset($left_employees_data[$month]) ? $left_employees_data[$month]['left_employees'] : 0;
+
+                        $changes = $new_employees - $left_employees;
+
+                        // Font Awesome icons for changes
+                        if ($changes > 0) {
+                            $changes_display = "<span class='text-success'><i class='fa-solid fa-caret-up'></i> $changes</span>";
+                        } elseif ($changes < 0) {
+                            $changes_display = "<span class='text-danger'><i class='fa-solid fa-caret-down'></i> " . abs($changes) . "</span>";
+                        } else {
+                            $changes_display = "<span class='text-muted'><i class='fa-solid fa-minus'></i> 0</span>";
+                        }
+
+                        echo "<tr>";
+                        echo "<td>$month_display</td>";
+                        echo "<td>$total_employees</td>";
+                        echo "<td>$new_employees</td>";
+                        echo "<td>$left_employees</td>";
+                        echo "<td>$changes_display</td>";
+                        echo "</tr>";
+                    }
+                    ?>
+                </tbody>
+            </table>
+
             <div class="row">
                 <div class="col-lg-4">
                     <div class="bg-white p-2 rounded-3">
@@ -439,7 +979,6 @@ $folders_result->free();
                                             </td>
                                         </tr>
                                     </tbody>
-
                                 </table>
                             </div>
                         </div>
@@ -458,7 +997,6 @@ $folders_result->free();
                                 <table class="table">
                                     <tbody class="pe-none">
                                         <tr>
-                                            <td>Full-Time</td>
                                             <td><?php echo $permanent_count ?></td>
                                         </tr>
                                         <tr>
@@ -483,8 +1021,41 @@ $folders_result->free();
                         <div id="chartContainer2" style="height: 370px;"></div>
                     </div>
                 </div>
+                <div class="col-lg-4">
+                    <div class="bg-white p-2 mt-3 mt-lg-0 rounded-3">
+                        <h4 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
+                            data-bs-target="#genderCollapse" aria-expanded="false" aria-controls="genderCollapse"
+                            style="cursor: pointer;">
+                            Gender
+                        </h4>
+                        <div class="collapse" id="genderCollapse">
+                            <div class="card card-body border-0 pb-0 pt-2">
+                                <table class="table">
+                                    <tbody class="pe-none">
+                                        <tr>
+                                            <td>Male</td>
+                                            <td><?php echo $male_count ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Female</td>
+                                            <td><?php echo $female_count ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold" style="color:#043f9d">Total Employees
+                                            </td>
+                                            <td class="fw-bold" style="color:#043f9d">
+                                                <?php echo $total_employees_count ?>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="chartContainer6" style="height: 370px;"></div>
+                    </div>
+                </div>
             </div>
-            <hr class="mt-5" />
+
             <!-- <h3 class="fw-bold">Section</h3>
             <div class="row">
                 <div class="col-lg-4">
@@ -510,7 +1081,7 @@ $folders_result->free();
                                             <td class="fw-bold" style="color:#043f9d">Total Employees
                                             </td>
                                             <td class="fw-bold" style="color:#043f9d">
-                                                <?php echo $total_electrical_employees_count ?>
+                                                <?php echo $total_electrical_full_time_employees_count ?>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -593,94 +1164,66 @@ $folders_result->free();
     </div>
 
     <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        window.onload = function () {
-            var chart = new CanvasJS.Chart("chartContainer", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    // text: "Total Employees: <?php echo $total_employees_count ?>",
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "doughnut",
-                    indexLabel: "{symbol} - {y}",
-                    yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>,
-                    cornerRadius: 10,
-                }]
+        document.addEventListener("DOMContentLoaded", function () {
+            var HRDashboardModal = document.getElementById("HRDashboardModal");
+
+            HRDashboardModal.addEventListener("shown.bs.modal", function () {
+                var chart = new CanvasJS.Chart("chartContainer", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    title: {
+                        fontSize: 18,
+                    },
+                    data: [{
+                        type: "doughnut",
+                        indexLabel: "{symbol} - {y}",
+                        yValueFormatString: "#,##0.0\"%\"",
+                        showInLegend: false,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>,
+                        cornerRadius: 10,
+                    }]
+                });
+
+                var chart2 = new CanvasJS.Chart("chartContainer2", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    title: {
+                        fontSize: 18,
+                    },
+                    data: [{
+                        type: "pie",
+                        indexLabel: "{symbol} - {y}",
+                        yValueFormatString: "#,##0.0\"%\"",
+                        showInLegend: false,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($employmentTypeData, JSON_NUMERIC_CHECK); ?>,
+                    }]
+                });
+
+                var chart6 = new CanvasJS.Chart("chartContainer6", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    data: [{
+                        type: "pie",
+                        indexLabel: "{symbol} - {y}",
+                        yValueFormatString: "#,##0.0\"%\"",
+                        showInLegend: true,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($genderData, JSON_NUMERIC_CHECK); ?>
+                    }]
+                });
+
+                chart.render();
+                chart2.render();
+                chart6.render();
             });
-
-            var chart2 = new CanvasJS.Chart("chartContainer2", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    // text: "Total Employees: <?php echo $total_employees_count ?>",
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "pie",
-                    indexLabel: "{symbol} - {y}",
-                    yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($employmentTypeData, JSON_NUMERIC_CHECK); ?>,
-                }]
-            });
-
-            var chart3 = new CanvasJS.Chart("chartContainer3", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    // text: "Total Employees: <?php echo $total_employees_count ?>",
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "pie",
-                    indexLabel: "{symbol} - {y}",
-                    yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: true,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($electricalSectionData, JSON_NUMERIC_CHECK); ?>,
-                }]
-            });
-
-            var chart4 = new CanvasJS.Chart("chartContainer4", {
-                theme: "light2",
-                animationEnabled: true,
-                data: [{
-                    type: "pie",
-                    indexLabel: "{symbol} - {y}",
-                    yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: true,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($sheetMetalSectionData, JSON_NUMERIC_CHECK); ?>
-                }]
-            })
-
-            var chart5 = new CanvasJS.Chart("chartContainer5", {
-                theme: "light2",
-                animationEnabled: true,
-                data: [{
-                    type: "pie",
-                    indexLabel: "{symbol} = {y}",
-                    yValueFormatString: "#,##0.0\"%\"",
-                    showInLegend: true,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($officeSectionData, JSON_NUMERIC_CHECK); ?>
-                }]
-            })
-
-            chart.render();
-            chart2.render();
-            // chart3.render();
-            // chart4.render();
-            // chart5.render();
-        }
+        });
     </script>
+
     <script>
         const menuToggle = document.getElementById("side-menu");
         const closeMenu = document.getElementById("close-menu");
@@ -731,6 +1274,247 @@ $folders_result->free();
         })
 
     </script>
+    <script>
+        const ctx = document.getElementById('employeeChart').getContext('2d');
+        const employeeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: <?= json_encode($months) ?>,
+                datasets: [
+                    {
+                        label: 'Total Employees',
+                        data: <?= json_encode($totalEmployees) ?>,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'New Employees',
+                        data: <?= json_encode($newEmployees) ?>,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Employees Left',
+                        data: <?= json_encode($leftEmployees) ?>,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Employees'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filterEmployeeDashboard = document.getElementById("filterEmployeeDashboard");
+            const filterButton = document.getElementById("filterButton");
+            const showFilterEmployeeDashboard = document.getElementById("showFilterEmployeeDashboard");
+            const hideFilterEmployeeDashboard = document.getElementById("hideFilterEmployeeDashboard");
+            const refreshButton = document.getElementById("refreshButton");
+            const resetFilter = document.getElementById("resetFilter");
+            const showEmployeeChangesTable = document.getElementById("showEmployeeChangesTable");
+            const employeeChangesTable = document.getElementById("employeeChangesTable");
+
+            // Get default timeframe on page load
+            const { startMonth, endMonth } = getDefaultTimeframe();
+            updateHeader(startMonth, endMonth); // Update header right after the page loads
+
+            function getDefaultTimeframe() {
+                const now = new Date();
+                const endMonth = now.toISOString().slice(0, 7);
+                const startDate = new Date(now.getFullYear(), now.getMonth() - 10, 1);
+                const startMonth = startDate.toISOString().slice(0, 7);
+                return { startMonth, endMonth };
+            }
+
+            function updateHeader(startMonth, endMonth) {
+                // Convert start and end months from 'YYYY-MM' to 'Month YYYY' format
+                const formatMonth = (month) => {
+                    const date = new Date(month + '-01'); // Add a dummy day to the month string
+                    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                };
+
+                // Format the start and end months
+                const startFormatted = formatMonth(startMonth);
+                const endFormatted = formatMonth(endMonth);
+
+                // Update the header with formatted months
+                document.getElementById('startMonthText').innerText = startFormatted;
+                document.getElementById('endMonthText').innerText = endFormatted;
+            }
+
+            showFilterEmployeeDashboard.addEventListener("click", function () {
+                document.getElementById('startMonth').value = startMonth;
+                document.getElementById('endMonth').value = endMonth;
+                filterEmployeeDashboard.classList.remove("d-none");
+                showFilterEmployeeDashboard.classList.add("d-none");
+            });
+
+            hideFilterEmployeeDashboard.addEventListener("click", function () {
+                filterEmployeeDashboard.classList.add("d-none");
+                showFilterEmployeeDashboard.classList.remove("d-none");
+            });
+
+            refreshButton.addEventListener("click", function () {
+                const startMonth = document.getElementById('startMonth').value;
+                const endMonth = document.getElementById('endMonth').value;
+                updateHeader(startMonth, endMonth);
+                filterData(startMonth, endMonth);
+                filterEmployeeDashboard.classList.add("d-none");
+                showFilterEmployeeDashboard.classList.remove("d-none");
+            });
+
+            filterButton.addEventListener("click", function () {
+                const startMonth = document.getElementById('startMonth').value;
+                const endMonth = document.getElementById('endMonth').value;
+                updateHeader(startMonth, endMonth);
+                filterData(startMonth, endMonth);
+                filterEmployeeDashboard.classList.add("d-none");
+                showFilterEmployeeDashboard.classList.remove("d-none");
+            });
+
+            showEmployeeChangesTable.addEventListener("click", function () {
+                employeeChangesTable.classList.toggle("d-none");
+                if (employeeChangesTable.classList.contains("d-none")) {
+                    showEmployeeChangesTable.innerHTML = 'Show Table <i class="fa-solid fa-table"></i>';  // Change text when table is hidden
+                } else {
+                    showEmployeeChangesTable.innerHTML = 'Hide Table <i class="fa-solid fa-table"></i>';  // Change text when table is visible
+                }
+            })
+        });
+
+
+        function filterData(startMonth, endMonth) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "../AJAXphp/get_employee_dashboard_data.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        console.log('AJAX Response:', response);  // Log parsed response
+                        updateChart(response);
+                        updateTable(response);
+                    } catch (e) {
+                        console.error('JSON parsing error:', e);
+                        console.error('Raw response text:', xhr.responseText); // This is what you want to check!
+                    }
+                } else {
+                    console.error('AJAX failed with status:', xhr.status);
+                }
+            };
+
+            xhr.onerror = function () {
+                console.error("AJAX error occurred.");
+            };
+            xhr.send("startMonth=" + encodeURIComponent(startMonth) + "&endMonth=" + encodeURIComponent(endMonth));
+        }
+
+
+        function updateChart(data) {
+            // Log the data structure to verify
+            console.log('Updating chart with data:', data);
+
+            // Make sure the data contains these properties and they are arrays
+            if (data && Array.isArray(data.months) && Array.isArray(data.totalEmployees) &&
+                Array.isArray(data.newEmployees) && Array.isArray(data.leftEmployees)) {
+
+                // Update the chart with new data
+                employeeChart.data.labels = data.months;
+                employeeChart.data.datasets[0].data = data.totalEmployees;
+                employeeChart.data.datasets[1].data = data.newEmployees;
+                employeeChart.data.datasets[2].data = data.leftEmployees;
+
+                // Update the chart
+                employeeChart.update();
+
+                // Update the table content
+                updateTable(data);
+            } else {
+                console.error('Invalid data structure:', data);
+            }
+        }
+
+        function updateTable(data) {
+            // Select the specific table body using its ID
+            const tbody = document.querySelector("#employeeChangesTable tbody");
+
+            // Clear the current table content
+            tbody.innerHTML = '';
+
+            // Loop through the data and build the table rows
+            data.months.forEach((month, index) => {
+                // Extract data for each row
+                const totalEmployees = data.totalEmployees[index] || 0;
+                const newEmployees = data.newEmployees[index] || 0;
+                const leftEmployees = data.leftEmployees[index] || 0;
+                const changes = newEmployees - leftEmployees;
+
+                // Determine the change icon
+                let changesDisplay = '';
+                if (changes > 0) {
+                    changesDisplay = `<span class='text-success'><i class='fa-solid fa-caret-up'></i> ${changes}</span>`;
+                } else if (changes < 0) {
+                    changesDisplay = `<span class='text-danger'><i class='fa-solid fa-caret-down'></i> ${Math.abs(changes)}</span>`;
+                } else {
+                    changesDisplay = `<span class='text-muted'><i class='fa-solid fa-minus'></i> 0</span>`;
+                }
+
+                // Create a table row for each month
+                const monthDisplay = new Date(month + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+            <td>${monthDisplay}</td>
+            <td>${totalEmployees}</td>
+            <td>${newEmployees}</td>
+            <td>${leftEmployees}</td>
+            <td>${changesDisplay}</td>
+        `;
+
+                // Append the row to the specific table body
+                tbody.appendChild(row);
+            });
+        }
+
+    </script>
+
+
 </body>
 
 </html>

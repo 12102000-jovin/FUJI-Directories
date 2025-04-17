@@ -49,16 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ltifr']) && $_POST['l
     if ($hoursWorked > 0 && !empty($startDate) && !empty($endDate)) {
 
         // Prepare and execute SQL query to count incidents between start and end dates
-        $sql = "SELECT COUNT(*) AS ttm_incident_count FROM whs WHERE incident_date BETWEEN ? AND ?";
+        $sql = "SELECT COUNT(*) AS lost_time_ttm_incident_count FROM whs WHERE incident_date BETWEEN ? AND ? AND lost_time_case = 1";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ss", $startDate, $endDate);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
-        $ttm_incident_count = $row['ttm_incident_count'];
+        $lost_time_ttm_incident_count = $row['lost_time_ttm_incident_count'];
 
         // Calculate LTIFR
-        $ltifr = ($ttm_incident_count / $hoursWorked) * 1000000 ;
+        $ltifr = ($lost_time_ttm_incident_count / $hoursWorked) * 1000000 ;
 
         // Close the database connection
         $stmt->close();
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ltifr']) && $_POST['l
         echo json_encode([
             'success' => true,
             'ltifr' => number_format($ltifr, 2),
-            'incident_count' => $ttm_incident_count
+            'incident_count' => $lost_time_ttm_incident_count
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Invalid input data.']);

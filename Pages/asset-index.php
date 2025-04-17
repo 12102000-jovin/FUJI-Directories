@@ -27,18 +27,10 @@ require_once("../group_role_check.php");
 </head>
 
 <body>
-    <div class="row">
-        <div class="col-auto pe-0 d-none d-md-block sidebar">
-            <?php require("../Menu/SideNavMenu/SideMenu.php") ?>
-        </div>
-        <div class="col p-0">
-            <div class="sticky-top-menu">
-                <?php require("../Menu/SideNavMenu/TopMenu.php") ?>
-            </div>
-            <div class="container-fluid mt-4">
-                <?php require("../PageContent/asset-index-content.php"); ?>
-            </div>
-        </div>
+    <?php require_once("../Menu/NavBar.php") ?>
+    <div class="container-fluid mt-4">
+        <?php require("../PageContent/asset-index-content.php"); ?>
     </div>
+
     <?php require_once("../logout.php") ?>
 </body>

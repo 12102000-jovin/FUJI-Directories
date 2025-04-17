@@ -51,7 +51,7 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['team_leader_allowan
         exit();
     }
 
-    $team_leader_allowance_rate_stmt->bind_param("ii", $teamLeaderAllowance, $employeeId);
+    $team_leader_allowance_rate_stmt->bind_param("di", $teamLeaderAllowance, $employeeId);
 
     // Execute the statement and check for success
     if ($team_leader_allowance_rate_stmt->execute()) {
@@ -102,7 +102,7 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['trainer_allowance']
         exit();
     }
 
-    $trainer_allowance_rate_stmt->bind_param("ii", $trainerAllowance, $employeeId);
+    $trainer_allowance_rate_stmt->bind_param("di", $trainerAllowance, $employeeId);
 
     // Execute the statement and check for success
     if ($trainer_allowance_rate_stmt->execute()) {
@@ -153,7 +153,7 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['supervisor_allowanc
         exit();
     }
 
-    $supervisor_allowance_rate_stmt->bind_param("ii", $supervisorAllowance, $employeeId);
+    $supervisor_allowance_rate_stmt->bind_param("di", $supervisorAllowance, $employeeId);
 
     // Execute the statement and check for success
     if ($supervisor_allowance_rate_stmt->execute()) {
@@ -204,7 +204,7 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['painter_allowance']
         exit();
     }
 
-    $painter_allowance_rate_stmt->bind_param("ii", $painterAllowance, $employeeId);
+    $painter_allowance_rate_stmt->bind_param("di", $painterAllowance, $employeeId);
 
     // Execute the statement and check for success
     if ($painter_allowance_rate_stmt->execute()) {
@@ -241,7 +241,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['machine_maintenance_a
     $machine_maintenance_update_stmt->close();
 }
 
-
 if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['machine_maintenance_allowance'])) {
     $employeeId = $_POST['employeeId'];
     $machineMaintenanceAllowance = $_POST['machine_maintenance_allowance'];
@@ -256,7 +255,7 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['machine_maintenance
         exit();
     }
 
-    $machine_maintenance_allowance_rate_stmt->bind_param("ii", $machineMaintenanceAllowance, $employeeId);
+    $machine_maintenance_allowance_rate_stmt->bind_param("di", $machineMaintenanceAllowance, $employeeId);
 
     // Execute the statement and check for success
     if ($machine_maintenance_allowance_rate_stmt->execute()) {

@@ -215,46 +215,6 @@ if ($total_qa_document_count > 0) {
         $index++;
     }
 }
-
-// =============================== CAPA Table Chart ===============================
-
-// Initialize total count
-$total_capa_count = 0;
-
-// CAPA Status - Open
-$open_capa_sql = "SELECT COUNT(*) AS open_status FROM capa WHERE `status` = 'Open'";
-$open_capa_result = $conn->query($open_capa_sql);
-if ($open_capa_result->num_rows > 0) {
-    $row = $open_capa_result->fetch_assoc();
-    $open_capa_count = $row['open_status'];
-    $total_capa_count += $open_capa_count;
-} else {
-    $open_capa_count = 0;
-}
-
-// CAPA Status - Closed 
-$closed_capa_sql = "SELECT COUNT(*) AS closed_status FROM capa WHERE `status` = 'Closed'";
-$closed_capa_result = $conn->query($closed_capa_sql);
-if ($closed_capa_result->num_rows > 0) {
-    $row = $closed_capa_result->fetch_assoc();
-    $closed_capa_count = $row['closed_status'];
-    $total_capa_count += $closed_capa_count;
-} else {
-    $closed_capa_count = 0;
-}
-
-$open_capa_percentage = ($open_capa_count / $total_capa_count) * 100;
-$closed_capa_percentage = ($closed_capa_count / $total_capa_count) * 100;
-
-// Prepare data for CanvasJS
-$capaDataPoints = [
-    ['label' => 'Open', 'y' => $open_capa_percentage, 'color' => "#dc3547"],
-    ['label' => 'Closed', 'y' => $closed_capa_percentage, 'color' => "#27a745"]
-];
-
-// Convert PHP array to JSON format for JavaScript
-$capaDataPointsJSON = json_encode($capaDataPoints);
-
 ?>
 
 <!DOCTYPE html>
@@ -327,17 +287,19 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
 <body class="background-color">
     <div class="container-fluid mt-3 mb-5">
         <div class="mx-md-0 mx-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- <div class="d-flex justify-content-between align-items-center mb-4">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
+                        <li class="breadcrumb-item"><a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/QA-table.php">QA Table</a></li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Quality
                             Assurances</li>
                     </ol>
                 </nav>
-            </div>
+            </div> -->
         </div>
         <div class="row">
             <div class="col-lg-4">
@@ -348,10 +310,10 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                             style="cursor: pointer;">
                             Quality Assurances
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-table.php"
-                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-table.php"
+                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
-                    <div class="collapse" id="qaCollapse">
+                    <div class="collapse show" id="qaCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
                             <table class="table">
                                 <tbody class="pe-none">
@@ -424,87 +386,35 @@ $capaDataPointsJSON = json_encode($capaDataPoints);
                     <div class="" id="chartContainer" style="height: 370px;"></div>
                 </div>
             </div>
-            <div class="col-lg-4 mt-3 mt-lg-0">
-                <div class="bg-white p-2 rounded-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
-                            data-bs-target="#capaCollapse" aria-expanded="false" aria-controls="capaCollapse"
-                            style="cursor: pointer;">
-                            CAPA
-                        </h5>
-
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/capa-table.php"
-                            class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a>
-                    </div>
-                    <div class="collapse" id="capaCollapse">
-                        <div class="card card-body border-0 pb-0 pt-2">
-                            <table class="table">
-                                <tbody class="pe-none">
-                                    <tr>
-                                        <td>Open CAPA</td>
-                                        <td><?php echo isset($open_capa_count) ? $open_capa_count : '0'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Closed CAPA</td>
-                                        <td><?php echo isset($closed_capa_count) ? $closed_capa_count : '0'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold" style="color:#043f9d">Total CAPA Documents
-                                        </td>
-                                        <td class="fw-bold" style="color:#043f9d">
-                                            <?php echo $total_capa_count ?>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="" id="chartContainer2" style="height: 370px;"></div>
-                </div>
-            </div>
         </div>
     </div>
 
     <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <script>
-        window.onload = function () {
-            var chart = new CanvasJS.Chart("chartContainer", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "doughnut",
-                    indexLabel: "{label} - {y}%",
-                    yValueFormatString: "#,##0.0",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($qaDataPoints, JSON_NUMERIC_CHECK); ?>,
-                    cornerRadius: 10,
-                }]
-            });
+        document.addEventListener("DOMContentLoaded", function () {
+            var qaDashboardModal = document.getElementById("qaDashboardModal");
 
-            var chart2 = new CanvasJS.Chart("chartContainer2", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "pie",
-                    indexLabel: "{label} - {y}%",
-                    yValueFormatString: "#,##0.0",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($capaDataPoints, JSON_NUMERIC_CHECK); ?>,
-                    cornerRadius: 10,
-                }]
+            qaDashboardModal.addEventListener("shown.bs.modal", function () {
+                var chart = new CanvasJS.Chart("chartContainer", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    title: {
+                        fontSize: 18,
+                    },
+                    data: [{
+                        type: "doughnut",
+                        indexLabel: "{label} - {y}%",
+                        yValueFormatString: "#,##0.0",
+                        showInLegend: false,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($qaDataPoints, JSON_NUMERIC_CHECK); ?>,
+                        cornerRadius: 10,
+                    }]
+                });
+
+                chart.render();
             })
-
-            chart.render();
-            chart2.render();
-        }
+        });
     </script>
 
 </body>

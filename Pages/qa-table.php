@@ -34,10 +34,10 @@ $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']
 $statusFilter = isset($_GET['statusFilter']) ? $conn->real_escape_string($_GET['statusFilter']) : '';
 
 // Get revision status filter
-$revisionStatusFilter = isset($_GET['revisionStatusFilter']) ? $conn->real_escape_string($_GET['revisionStatusFilter']) : '';
+// $revisionStatusFilter = isset($_GET['revisionStatusFilter']) ? $conn->real_escape_string($_GET['revisionStatusFilter']) : '';
 
 // Get department filter
-$departmentFilter = isset($_GET['department']) ? $conn->real_escape_string($_GET['department']) : '';
+// $departmentFilter = isset($_GET['department']) ? $conn->real_escape_string($_GET['department']) : '';
 
 // Build base SQL query with role-based filtering
 $whereClause = "(qa_document LIKE '%$searchTerm%' OR
@@ -45,14 +45,63 @@ $whereClause = "(qa_document LIKE '%$searchTerm%' OR
     document_description LIKE '%$searchTerm%' OR
     department LIKE '%$searchTerm%')";
 
-if ($role !== "admin") {
+// Arrays to hold selected filter values
+$selected_departments = [];
+$selected_revision_status = [];
+$selected_types = [];
+
+$filterApplied = false;
+
+if (isset($_GET['apply_filters'])) {
+    if (isset($_GET['department']) && is_array($_GET['department'])) {
+        // Use the selected departments from the form
+        $selected_departments = $_GET['department'];
+        $departments_placeholders = "'" . implode("','", $selected_departments) . "'";
+        $whereClause .= " AND department IN ($departments_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['revisionStatus']) && is_array($_GET['revisionStatus'])) {
+        // Use the selected revision status from the form
+        $selected_revision_status = $_GET['revisionStatus'];
+        $revision_status_placeholders = "'" . implode("','", $selected_revision_status) . "'";
+        $whereClause .= " AND revision_status IN ($revision_status_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['type']) && is_array($_GET['type'])) {
+        // Use the selected revision status from the form
+        $selected_type = $_GET['type'];
+        $type_placeholders = "'" . implode("','", $selected_type) . "'";
+        $whereClause .= " AND `type` IN ($type_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['status']) && is_array($_GET['status'])) {
+        // Use the selected revision status from the form
+        $selected_status = $_GET['status'];
+        $status_placeholders = "'" . implode("','", $selected_status) . "'";
+        $whereClause .= " AND `status` IN ($status_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['iso9001']) && is_array($_GET['iso9001'])) {
+        // Use the selected revision iso9001 from the form
+        $selected_iso9001 = $_GET['iso9001'];
+        $iso9001_placeholders = "'" . implode("','", $selected_iso9001) . "'";
+        $whereClause .= " AND `iso_9001` IN ($iso9001_placeholders)";
+        $filterApplied = true;
+    }
+}
+
+if ($role !== "full control") {
     $whereClause .= " AND status = 'Approved'";
 }
 
 // Add filters for status and revision status
-$whereClause .= " AND (status = '$statusFilter' OR '$statusFilter' = '')";
-$whereClause .= " AND (revision_status = '$revisionStatusFilter' OR '$revisionStatusFilter' = '')";
-$whereClause .= " AND (department = '$departmentFilter' OR '$departmentFilter' = '')";
+// $whereClause .= " AND (status = '$statusFilter' OR '$statusFilter' = '')";
+// $whereClause .= " AND (revision_status = '$revisionStatusFilter' OR '$revisionStatusFilter' = '')";
+// $whereClause .= " AND (department = '$departmentFilter' OR '$departmentFilter' = '')";
 
 // SQL Query to retrieve QA details with LIMIT for pagination
 $qa_sql = "SELECT * FROM quality_assurance WHERE $whereClause
@@ -60,11 +109,25 @@ $qa_sql = "SELECT * FROM quality_assurance WHERE $whereClause
     LIMIT $offset, $records_per_page";
 $qa_result = $conn->query($qa_sql);
 
+// Fetch results
+$qaDocuments = [];
+if ($qa_result->num_rows > 0) {
+    while ($row = $qa_result->fetch_assoc()) {
+        $qaDocuments[] = $row;
+    }
+} else {
+    $qaDocuments = [];
+}
+
 // Get total number of records
 $total_records_sql = "SELECT COUNT(*) AS total FROM quality_assurance WHERE $whereClause";
 $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
+
+// Get all URL parameters from $_GET
+$urlParams = $_GET;
+
 
 // ========================= D E L E T E  D O C U M E N T =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToDelete"])) {
@@ -259,20 +322,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <nav aria-label="breadcrumb">
+        <div class="d-flex justify-content-end align-items-center">
+            <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-index.php">Quality
-                            Assurances</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">QA Table</li>
                 </ol>
-            </nav>
+            </nav> -->
             <div class="d-flex justify-content-end mb-3">
                 <div class="d-flex align-items-start me-2 mt-0 pt-0">
                     <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#filterColumnModal">
@@ -304,7 +364,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 onclick="clearURLParameters()">Clear</a></button>
 
                         <!-- Filter Dropdown -->
-                        <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
+                        <!-- <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
                             id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                             <?php echo $departmentFilter ? $departmentFilter : "All Departments" ?>
                         </button>
@@ -348,14 +408,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     </li>
                                 </ul>
                             </form>
-                        </div>
+                        </div> -->
                     </form>
+                    <!-- Filter Modal Trigger Button -->
+                    <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal"
+                        data-bs-target="#filterDocumentModal">
+                        <p class="text-nowrap fw-bold mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
+                    </button>
                 </div>
 
                 <!-- Add Document Button (Admin only) -->
-                <?php if ($role === "admin") { ?>
+                <?php if ($role === "full control") { ?>
                     <div
                         class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                        <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
+                            data-bs-target="#qaDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add Document</button>
                     </div>
@@ -363,12 +430,127 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
             </div>
         </div>
 
+        <?php foreach ($urlParams as $key => $value): ?>
+            <?php if (!empty($value)): // Only show the span if the value is not empty ?>
+                <?php
+                // Check if the value is the search filter
+                if ($key === 'search') {
+                    // Handle the search filter
+                    ?>
+                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                        <strong><span class="text-warning">Search:</span> <?php echo htmlspecialchars($value); ?></strong>
+                        <a href="?<?php
+                        // Remove 'Search' from the URL
+                        $filteredParams = $_GET;
+                        unset($filteredParams['search']);
+                        echo http_build_query($filteredParams);
+                        ?>" class="text-white ms-1">
+                            <i class="fa-solid fa-times"></i>
+                        </a>
+                    </span>
+                <?php } else if ($key === 'status' && is_array($value)) {
+                    foreach ($value as $status) {
+                        ?>
+                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                <strong><span class="text-warning">Status:</span> <?php echo htmlspecialchars($status); ?></strong>
+                                <a href="?<?php
+                                // Remove this specific status filter from the URL
+                                $filteredParams = $_GET;
+                                $filteredParams['status'] = array_diff($filteredParams['status'], [$status]);
+                                echo http_build_query($filteredParams);
+                                ?>" class="text-white ms-1">
+                                    <i class="fa-solid fa-times"></i>
+                                </a>
+                            </span>
+                        <?php
+                    }
+                } else if ($key === 'department' && is_array($value)) {
+                    foreach ($value as $department) {
+                        ?>
+                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                    <strong><span class="text-warning">Department:</span> <?php echo htmlspecialchars($department); ?></strong>
+                                    <a href="?<?php
+                                    // Remove this specific department filter from the URL
+                                    $filteredParams = $_GET;
+                                    $filteredParams['department'] = array_diff($filteredParams['department'], [$department]);
+                                    echo http_build_query($filteredParams);
+                                    ?>" class="text-white ms-1">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </span>
+                        <?php
+                    }
+                } else if ($key === 'revisionStatus' && is_array($value)) {
+                    foreach ($value as $revisionStatus) {
+                        ?>
+                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                        <strong><span class="text-warning">Revision Status:</span>
+                                <?php echo htmlspecialchars($revisionStatus); ?></strong>
+                                        <a href="?<?php
+                                        // Remove this specific revisionStatus filter from the URL
+                                        $filteredParams = $_GET;
+                                        $filteredParams['revisionStatus'] = array_diff($filteredParams['revisionStatus'], [$revisionStatus]);
+                                        echo http_build_query($filteredParams);
+                                        ?>" class="text-white ms-1">
+                                            <i class="fa-solid fa-times"></i>
+                                        </a>
+                                    </span>
+                        <?php
+                    }
+                } else if ($key === 'type' && is_array($value)) {
+                    foreach ($value as $type) {
+                        ?>
+                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                            <strong><span class="text-warning">Type:</span> <?php echo htmlspecialchars($type); ?></strong>
+                                            <a href="?<?php
+                                            // Remove this specific type filter from the URL
+                                            $filteredParams = $_GET;
+                                            $filteredParams['type'] = array_diff($filteredParams['type'], [$type]);
+                                            echo http_build_query($filteredParams);
+                                            ?>" class="text-white ms-1">
+                                                <i class="fa-solid fa-times"></i>
+                                            </a>
+                                        </span>
+                        <?php
+                    }
+                } else if ($key === 'iso9001' && is_array($value)) {
+                    foreach ($value as $iso9001) {
+                        ?>
+                                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                <strong><span class="text-warning">ISO9001:</span> <?php echo ($iso9001 == '1') ? 'Yes' : 'No'; ?></strong>
+                                                <a href="?<?php
+                                                // Remove this specific iso9001 filter from the URL
+                                                $filteredParams = $_GET;
+                                                $filteredParams['iso9001'] = array_diff($filteredParams['iso9001'], [$iso9001]);
+                                                echo http_build_query($filteredParams);
+                                                ?>" class="text-white ms-1">
+                                                    <i class="fa-solid fa-times"></i>
+                                                </a>
+                                            </span>
+                        <?php
+                    }
+                }
+                ?>
+            <?php endif; ?>
+        <?php endforeach; ?>
+
+        <!-- Display message if filters are applied, and show total count or no results message -->
+        <?php if ($filterApplied): ?>
+            <div class="alert <?php echo ($total_records == 0) ? 'alert-danger' : 'alert-info'; ?>">
+                <?php if ($total_records > 0): ?>
+                    <strong>Total Results:</strong>
+                    <span class="fw-bold text-decoration-underline me-2"> <?php echo $total_records ?></span>
+                <?php else: ?>
+                    <strong>No results found for the selected filters.</strong>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
             <table class="table table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <th></th>
                         <?php } ?>
                         <th class="py-4 align-middle text-center qaDocument" style="min-width:200px">
@@ -389,7 +571,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 Document Description <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <th class="py-4 align-middle text-center revNo" style="min-width:100px">
                                 <a onclick="updateSort('rev_no','<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor: pointer;">
@@ -397,7 +579,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 </a>
                             </th>
                             <th class="py-4 align-middle text-center revisionStatus">
-                                <div class="dropdown">
+                                <!-- <div class="dropdown">
                                     <a class="text-decoration-none text-white" href="#" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">
                                         Revision Status<i class="fa-solid fa-sort fa-md ms-2"></i>
@@ -417,11 +599,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                             <i class="fa-solid fa-filter me-2 signature-color"></i>Sort By Revision Status
                                         </a>
                                     </div>
-                                </div>
-                                <!-- <a onclick="updateSort('revision_status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                </div> -->
+                                <a onclick="updateSort('revision_status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor:pointer">
                                     Revision Status <i class="fa-solid fa-sort fa-md ms-1"></i>
-                                </a> -->
+                                </a>
                             </th>
                             <!-- <th class="py-4 align-middle text-center wipDocLink" style="min-width:200px">
                                 <a onclick="updateSort('wip_doc_link', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
@@ -444,7 +626,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                             </a>
                         </th>
 
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <th class="py-4 align-middle text-center owner">
                                 <a onclick="updateSort('Owner', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor:pointer">
@@ -452,7 +634,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 </a>
                             </th>
                             <th class="py-4 text-center align-middle status">
-                                <div class="dropdown">
+                                <!-- <div class="dropdown">
                                     <a class="text-decoration-none text-white" href="#" role="button"
                                         data-bs-toggle="dropdown" aria-expanded="false">
                                         Status<i class="fa-solid fa-sort fa-md ms-2"></i>
@@ -471,7 +653,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                             <i class="fa-solid fa-filter me-2 signature-color"></i>Sort By Status
                                         </a>
                                     </div>
-                                </div>
+                                </div> -->
+                                <a onclick="updateSort('status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                    class="text-decoration-none text-white" style="cursor:pointer">
+                                    Status <i class="fa-solid fa-sort fa-md ms-1"></i>
+                                </a>
                             </th>
                             <th class="py-4 align-middle text-center approvedBy" style="min-width:200px">
                                 <a onclick="updateSort('approved_by', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
@@ -495,13 +681,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($qa_result->num_rows > 0) { ?>
-                        <?php while ($row = $qa_result->fetch_assoc()) { ?>
-                            <?php if ($role !== "admin" && $row['status'] !== "Approved") {
-                                continue; // Skip this iteration if not admin and status is not "Approved"
+                    <?php if (!empty($qaDocuments)) { ?>
+                        <?php foreach ($qaDocuments as $row) { ?>
+                            <?php if ($role !== "full control" && $row['status'] !== "Approved") {
+                                continue; // Skip this iteration if not full control and status is not "Approved"
                             } ?>
                             <tr class="document-row">
-                                <?php if ($role === "admin") { ?>
+                                <?php if ($role === "full control") { ?>
                                     <td class="align-middle">
                                         <div class="d-flex">
                                             <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
@@ -545,7 +731,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 <td class="py-2 align-middle documentDescription">
                                     <?= $row["document_description"] ?>
                                 </td>
-                                <?php if ($role === "admin") { ?>
+                                <?php if ($role === "full control") { ?>
                                     <td class="py-2 align-middle text-center revNo" ondblclick="editRevNo(this)">
                                         <form method="POST" class="edit-revision-number-form" style="display:none">
                                             <div class="d-flex align-items-center">
@@ -613,7 +799,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 <td class="py-2 align-middle text-center type">
                                     <?= $row["type"] ?>
                                 </td>
-                                <?php if ($role === "admin") { ?>
+                                <?php if ($role === "full control") { ?>
                                     <td class="py-2 align-middle text-center owner" style="min-width:100px">
                                         <?= $row["owner"] ?>
                                     </td>
@@ -857,36 +1043,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 <div class="modal-body">
                     <div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="qaDocumentCheckBox"
-                                data-column="qaDocument">
+                            <input class="form-check-input column-check-input" type="checkbox" value=""
+                                id="qaDocumentCheckBox" data-column="qaDocument">
                             <label class="form-check-label" for="qaDocumentCheckBox">
                                 QA Document
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="documentNameCheckBox"
-                                data-column="documentName">
+                            <input class="form-check-input column-check-input" type="checkbox" value=""
+                                id="documentNameCheckBox" data-column="documentName">
                             <label class="form-check-label" for="documentNameCheckBox">
                                 Document Name
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="documentDescriptionCheckBox"
-                                data-column="documentDescription">
+                            <input class="form-check-input column-check-input" type="checkbox" value=""
+                                id="documentDescriptionCheckBox" data-column="documentDescription">
                             <label class="form-check-label" for="documentDescriptionCheckBox">
                                 Document Description
                             </label>
                         </div>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="revNoCheckBox"
-                                    data-column="revNo">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="revNoCheckBox" data-column="revNo">
                                 <label class="form-check-label" for="revNoCheckBox">
                                     Rev No.
                                 </label>
                             </div>
                             <!-- <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="wipDocumentCheckBox"
+                                <input class="form-check-input column-check-input" type="checkbox" value="" id="wipDocumentCheckBox"
                                     data-column="wipDocLink">
                                 <label class="form-check-label" for="wipDocumentCheckBox">
                                     WIP Doc Link
@@ -895,58 +1081,58 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                         <?php } ?>
 
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="departmentCheckBox"
-                                data-column="department">
+                            <input class="form-check-input column-check-input" type="checkbox" value=""
+                                id="departmentCheckBox" data-column="department">
                             <label class="form-check-label" for="departmentCheckBox">
                                 Department
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="typeCheckBox"
-                                data-column="type">
+                            <input class="form-check-input column-check-input" type="checkbox" value=""
+                                id="typeCheckBox" data-column="type">
                             <label class="form-check-label" for="typeCheckBox">
                                 Type
                             </label>
                         </div>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="ownerCheckBox"
-                                    data-column="owner">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="ownerCheckBox" data-column="owner">
                                 <label class="form-check-label" for="ownerCheckBox">
                                     Owner
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="statusCheckBox"
-                                    data-column="status">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="statusCheckBox" data-column="status">
                                 <label class="form-check-label" for="statusCheckBox">
                                     Status
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="approvedByCheckBox"
-                                    data-column="approvedBy">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="approvedByCheckBox" data-column="approvedBy">
                                 <label class="form-check-label" for="approvedByCheckBox">
                                     Approved By
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="lastUpdatedCheckBox"
-                                    data-column="lastUpdated">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="lastUpdatedCheckBox" data-column="lastUpdated">
                                 <label class="form-check-label" for="lastUpdatedCheckBox">
                                     Last Updated
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="revisionStatusCheckBox"
-                                    data-column="revisionStatus">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="revisionStatusCheckBox" data-column="revisionStatus">
                                 <label class="form-check-label" for="revisionStatusCheckBox">
                                     Revision Status
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="iso9001CheckBox"
-                                    data-column="iso9001">
+                                <input class="form-check-input column-check-input" type="checkbox" value=""
+                                    id="iso9001CheckBox" data-column="iso9001">
                                 <label class="form-check-label" for="iso9001CheckBox">
                                     ISO 9001
                                 </label>
@@ -1039,10 +1225,159 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
         </div>
     </div>
 
+    <!-- ================== Filter All Document Modal ==================  -->
+    <div class="modal fade" id="filterDocumentModal" tabindex="1" aria-labelledby="filterDocumentModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter QA Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET">
+                        <div class="row">
+                            <div class="col-12 col-lg-3">
+                                <h5 class="signature-color fw-bold">Department</h5>
+                                <?php
+                                // Hardcoded list of departments
+                                $departments = ['Quality Assurance', 'Management', 'Accounts', 'Estimating', 'Projects', 'Engineering', 'Electrical', 'Sheet Metal', 'Operations Support', 'Human Resources', 'Research & Development', 'Work, Health and Safety', 'Quality Control', 'Special Projects', 'Company Compliance']; // Customize the department list here
+                                
+                                // Sort the departments alphabetically
+                                sort($departments);
+
+                                // Get the selected departments from the GET request
+                                $selected_departments = isset($_GET['department']) ? $_GET['department'] : [];
+
+                                // Loop through the hardcoded departments
+                                foreach ($departments as $department) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="department_<?php echo strtolower($department); ?>" name="department[]"
+                                            value="<?php echo $department; ?>" <?php echo in_array($department, $selected_departments) ? 'checked' : ''; ?> />
+                                        <label
+                                            for="department_<?php echo strtolower($department); ?>"><?php echo $department; ?></label>
+                                    </p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Revision Status</h5>
+                                <?php
+                                $revisionStatusFilters = ['Normal', 'Revision Required', 'Urgent Revision Required'];
+                                $selected_revision_status = isset(($_GET['revisionStatus'])) ? (array) $_GET['revisionStatus'] : [];
+                                foreach ($revisionStatusFilters as $revisionStatusFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>"
+                                            name="revisionStatus[]" value="<?php echo $revisionStatusFilter ?>" <?php echo in_array($revisionStatusFilter, $selected_revision_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>">
+                                            <?php echo $revisionStatusFilter ?>
+                                        </label>
+                                    </p>
+                                    <?php
+                                }
+                                ?>
+
+                                <h5 class="signature-color fw-bold mt-3">ISO9001</h5>
+                                <?php
+                                $iso9001Filters = ['1', '0'];
+                                $selected_iso9001 = isset($_GET['iso9001']) ? (array) $_GET['iso9001'] : [];
+                                foreach ($iso9001Filters as $iso9001Filter) {
+                                    // Set the label to "Yes" or "No" based on the value
+                                    $label = ($iso9001Filter == '1') ? 'Yes' : 'No';
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>"
+                                            name="iso9001[]" value="<?php echo $iso9001Filter ?>" <?php echo in_array($iso9001Filter, $selected_iso9001) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>">
+                                            <?php echo $label; ?>
+                                        </label>
+                                    </p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Type</h5>
+                                <?php
+                                $typeFilters = ['Additional Duties', 'CAPA', 'Employee Record', 'External Documents', 'Form', 'Internal Documents', 'Job Description', 'Manuals', 'Manufacturing Process', 'Policy', 'Process/Procedure', 'Quiz', 'Risk Assessment', 'Work Instruction'];
+
+                                $selected_types = isset(($_GET['type'])) ? (array) $_GET['type'] : [];
+                                foreach ($typeFilters as $typeFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $typeFilter)); ?>" name="type[]"
+                                            value="<?php echo $typeFilter ?>" <?php echo in_array($typeFilter, $selected_types) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $typeFilter)); ?>">
+                                            <?php echo $typeFilter ?>
+                                        </label>
+                                    </p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Status</h5>
+                                <?php
+                                $statusFilters = ['Approved', 'Need to review', 'In progress', 'To be created', 'Pending approval', 'Not approved yet', 'Revision/Creation requested', 'N/A'];
+
+                                $selected_status = isset(($_GET['status'])) ? (array) $_GET['status'] : [];
+                                foreach ($statusFilters as $statusFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>"
+                                            name="status[]" value="<?php echo $statusFilter ?>" <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>">
+                                            <?php echo $statusFilter ?>
+                                        </label>
+                                    </p>
+                                    <?php
+                                }
+                                ?>
+                            </div>
+
+                            <div class="d-flex justify-content-center mt-4">
+                                <button class="btn btn-secondary me-1" type="button"
+                                    data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== QA Dashboard Modal ================== -->
+    <div class="modal fade" id="qaDashboardModal" tab-index="-1" aria-labelledby="qaDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qaDashboardModalLabel">QA Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/qa-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php require_once("../logout.php") ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var myModalEl = document.getElementById('deleteConfirmationModal');
@@ -1206,7 +1541,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
         const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
         // Save checkbox state to localStorage with a timestamp
-        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+        document.querySelectorAll('.column-check-input').forEach(checkbox => {
             checkbox.addEventListener('change', function () {
                 const columnClass = this.getAttribute('data-column');
                 const columns = document.querySelectorAll(`.${columnClass}`);
@@ -1225,7 +1560,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
 
         // Initialize checkboxes based on current column visibility
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            document.querySelectorAll('.column-check-input').forEach(checkbox => {
                 const columnClass = checkbox.getAttribute('data-column');
                 const columns = document.querySelectorAll(`.${columnClass}`);
 
@@ -1446,6 +1781,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 // Prevent default form submission (if needed) and manually trigger the form submit
                 event.preventDefault();
                 document.getElementById('searchForm').submit();
+            }
+        });
+    </script>
+    <script>
+        // Restore scroll position after page reload
+        window.addEventListener('load', function () {
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                window.scrollTo(0, scrollPosition);
+                sessionStorage.removeItem('scrollPosition'); // Remove after restoring
             }
         });
     </script>

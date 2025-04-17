@@ -103,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     <table class="table table-bordered table-hover mb-0 pb-0">
         <thead class="print-table-head">
             <tr>
-                <?php if ($role == "admin") { ?>
+                <?php if ($role == "full control") { ?>
                     <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
                 <?php } ?>
                 <th class="py-3 align-middle text-center print-mode" style="min-width: 120px">Item No.</th>

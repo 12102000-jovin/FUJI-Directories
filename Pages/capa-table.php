@@ -10,7 +10,7 @@ require_once("../db_connect.php");
 require_once("../status_check.php");
 require_once "../email_sender.php";
 
-$folder_name = "Quality Assurances";
+$folder_name = "CAPA";
 require_once("../group_role_check.php");
 
 $config = include('../config.php');
@@ -135,7 +135,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
 
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <div class="d-flex justify-content-between align-items-center">
@@ -144,9 +144,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/qa-index.php">Quality
-                            Assurances</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">CAPA Table</li>
                 </ol>
             </nav>
@@ -202,8 +199,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                         </div>
                     </form>
                 </div>
-                <?php if ($role === "admin") { ?>
+                <?php if ($role === "full control") { ?>
                     <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                        <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal" data-bs-target="#capaDashboardModal"> <i
+                                class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add CAPA Document</button>
                     </div>
@@ -214,7 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <th></th>
                         <?php } ?>
                         <th class="py-4 align-middle text-center capaDocumentIdColumn" style="min-width:120px">
@@ -319,7 +318,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                     <?php if ($capa_result->num_rows > 0) { ?>
                         <?php while ($row = $capa_result->fetch_assoc()) { ?>
                             <tr>
-                                <?php if ($role === "admin") { ?>
+                                <?php if ($role === "full control") { ?>
                                     <td class="py-2 align-middle text-center ">
                                         <div class="d-flex">
                                             <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
@@ -773,6 +772,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToDelete"])) {
                 </div>
             </div>
         </div>
+
+        <!-- ================== CAPA Dashboard Modal ================== -->
+        <div class="modal fade" id="capaDashboardModal" tab-index="-1" aria-labelledby="capaDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="capaDashboardModalLabel">CAPA Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/capa-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
 
     <?php require_once("../logout.php") ?>

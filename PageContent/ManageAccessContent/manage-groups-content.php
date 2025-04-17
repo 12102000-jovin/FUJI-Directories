@@ -192,14 +192,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
 
 <body class="background-color">
     <div class="container-fluid">
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                 </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Groups</li>
             </ol>
-        </nav>
+        </nav> -->
         <div class="row">
             <div class="col-lg-10 order-2 order-lg-1">
                 <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
@@ -471,7 +471,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                     <p class="mb-1 signature-color fw-bold">Selected Users</p>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="role" name="role" value="admin">
-                                        <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm" for="role"> Admin </label>
+                                        <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm"
+                                            for="role"> Admin </label>
                                     </div>
 
                                 </div>
@@ -555,8 +556,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
     <!-- Add Group Modal-->
     <div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog" aria-labelledby="addGroupModalLabel"
         aria-hidden="true">
-        <form method="POST">
-            <div class="modal-dialog">
+
+        <div class="modal-dialog modal-lg">
+            <form method="POST">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addGroupModalLabel">Add New Group</h5>
@@ -620,8 +622,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                         <button type="submit" class="btn btn-primary">Add Group</button>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
+
     </div>
 
     <!-- Show Folder Access Modal -->

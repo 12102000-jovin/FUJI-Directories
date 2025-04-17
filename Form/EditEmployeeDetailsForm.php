@@ -158,6 +158,9 @@
                 }
             }
 
+            $workShift = $_POST["workShift"];
+            $lockerNumber = !empty($_POST["lockerNumber"]) ? $_POST["lockerNumber"] : null;
+            $permanentDate = !empty($_POST['permanentDate']) ? $_POST['permanentDate'] : null;
             $payrollType = $_POST['payrollType'];
             $bankBuildingSociety = $_POST['bankBuildingSociety'];
             $bsb = $_POST['bsb'];
@@ -169,9 +172,9 @@
             $higherEducationLoanProgramme = $_POST['higherEducationLoanProgramme'];
             $financialSupplementDebt = $_POST['financialSupplementDebt'];
 
-            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ? WHERE employee_id = ?";
+            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, work_shift = ?, permanent_date = ?, locker_number = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ? WHERE employee_id = ?";
             $edit_employee_detail_result = $conn->prepare($edit_employee_detail_sql);
-            $edit_employee_detail_result->bind_param("sssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
+            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $workShift, $permanentDate, $lockerNumber, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
 
             if ($edit_employee_detail_result->execute()) {
                 echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . urlencode(trim($employeeIdToEdit)) . '");</script>';
@@ -472,7 +475,7 @@
                                             Please provide an Employee Id.
                                         </div>
                                     </div>
-                                    <div class="form-group col-md-4">
+                                    <div class="form-group col-md-3">
                                         <label for="startDate" class="fw-bold mt-3 mt-md-0">Date
                                             Hired</label>
                                         <input type="date" max="9999-12-31" class="form-control" id="startDate" 
@@ -483,7 +486,7 @@
                                             Please provide a hire date.
                                         </div>
                                     </div>
-                                    <div class="form-group col-md-5">
+                                    <div class="form-group col-md-3">
                                         <label for="employmentStatus"
                                             class="fw-bold mt-3 mt-md-0">Employment Type</label>
                                         <select class="form-select" aria-label="Employment Status"
@@ -507,7 +510,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-4 mt-3">
+                                    <div class="form-group col-md-3">
                                         <label for="department" class="fw-bold">Department</label>
                                         <select class="form-select" aria-label="deparment"
                                             name="department" id="department" required>
@@ -534,7 +537,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-4 mt-3 d-none" id="otherDepartmentInput">
+                                    <div class="form-group col-md-3 mt-3 d-none" id="otherDepartmentInput">
                                         <label for="otherDepartment" class="fw-bold"><small>Other Department</small></label>
                                         <input class="form-control" type="text" name="otherDepartment" id="otherDepartment">
                                         <div class="invalid-feedback">
@@ -542,7 +545,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-4 mt-3" id="sectionField">
+                                    <div class="form-group col-md-3 mt-3" id="sectionField">
                                         <label for="section" class="fw-bold">Section</label>
                                         <select class="form-select" aria-label="Section" name="section"
                                             id="section" required>
@@ -556,7 +559,20 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-4 mt-3">
+                                    <div class="form-group col-md-3 mt-3" id="workShiftField">
+                                        <label for="workShift" class="fw-bold">Work Shift</label>
+                                        <select class="form-select" aria-label="workShift" name="workShift"
+                                            id="workShift" required>
+                                            <option value="Day" <?php if (isset($workShift) &&  $workShift == "Day") 
+                                                echo "selected"; ?>>Day</option>
+                                            <option value="Evening" <?php if (isset($workShift) &&  $workShift == "Evening") 
+                                                echo "selected"; ?>>Evening</option>
+                                            <option value="Night" <?php if (isset($workShift) &&  $workShift == "Night") 
+                                                echo "selected"; ?>>Night</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group col-md-3 mt-3">
                                         <label for="position" class="fw-bold">Position</label>
 
                                         <select class="form-select" aria-label="Position"
@@ -666,12 +682,26 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group col-md-4 mt-3 d-none" id="otherPositionInput">
+                                    <div class="form-group col-md-3 mt-3 d-none" id="otherPositionInput">
                                         <label for="otherPosition" class="fw-bold"><small>Other Position</small></label>
                                         <input class="form-control" type="text" name="otherPosition" id="otherPosition">
                                         <div class="invalid-feedback">
                                             Please select the other position.
                                         </div>
+                                    </div>
+
+                                    <div class="form-group col-md-3 mt-3">
+                                        <label for="permanentDate" class="fw-bold mt-3 mt-md-0">Permanent Date</label>
+                                        <input type="date" max="9999-12-31" class="form-control" id="permanentDate" 
+                                            name="permanentDate"
+                                            value="<?php echo (isset($permanentDate) && $permanentDate !== "" ? $permanentDate : "") ?>">
+                                    </div>
+
+                                    <div class="form-group col-md-3 mt-3">
+                                        <label for="lockerNumber" class="fw-bold mt-3 mt-md-0">Locker Number</label>
+                                        <input type="text" max="9999-12-31" class="form-control" id="lockerNumber" 
+                                            name="lockerNumber"
+                                            value="<?php echo (isset($lockerNumber) && $lockerNumber !== "" ? $lockerNumber : "") ?>">
                                     </div>
 
                                     <div class="form-group col-md-4 mt-3">

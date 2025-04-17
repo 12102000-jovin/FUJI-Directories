@@ -170,20 +170,23 @@ WHERE
                     td.innerHTML = `<input type="text" class="form-control" value="${parseFloat(numericValue).toLocaleString()}" id="edit_${id}_${row.dataset.id}" required 
             oninput="this.value = this.value.replace(/[^0-9,.]/g, '')">`; // Allow only numbers and commas
                 } else if (id === "date") {
-                    // Convert the value to Date object
-                    let dateValue = new Date(value);
-
-                    // Adjust for timezone (Sydney is UTC+11 during daylight savings, adjust accordingly)
-                    let offset = dateValue.getTimezoneOffset() * 60000; // Get the offset in milliseconds
-                    let adjustedDate = new Date(dateValue.getTime() - offset); // Adjust the date to local time
-
-                    // Convert the adjusted date to ISO format (YYYY-MM-DD)
-                    let isoDate = adjustedDate.toISOString().split('T')[0];
-
-                    // Set the value in the input field
-                    td.innerHTML = `<input type="date" class="form-control" value="${isoDate}" id="edit_${id}_${row.dataset.id}">`;
+                    if (value === "N/A") {
+                        // If N/A, provide empty date input
+                        td.innerHTML = `<input type="date" class="form-control" value="" id="edit_${id}_${row.dataset.id}">`;
+                    } else {
+                        // Try to parse the date
+                        let dateValue = new Date(value);
+                        if (!isNaN(dateValue)) {
+                            let offset = dateValue.getTimezoneOffset() * 60000;
+                            let adjustedDate = new Date(dateValue.getTime() - offset);
+                            let isoDate = adjustedDate.toISOString().split('T')[0];
+                            td.innerHTML = `<input type="date" class="form-control" value="${isoDate}" id="edit_${id}_${row.dataset.id}">`;
+                        } else {
+                            // If somehow invalid, fallback to empty
+                            td.innerHTML = `<input type="date" class="form-control" value="" id="edit_${id}_${row.dataset.id}">`;
+                        }
+                    }
                 }
-
 
                 else if (id === "quantity") {
                     // Use 'text' to allow numeric formatting
@@ -406,7 +409,7 @@ WHERE
         let checkboxes = document.querySelectorAll(".form-check-input");
         let actionButtons = document.querySelectorAll(".btn.editBtn, .btn.deleteProjectDetailsBtn");
 
-        if (userRole !== "admin") {
+        if (userRole !== "full control") {
             // Disable checkboxes
             checkboxes.forEach(function (checkbox) {
                 checkbox.disabled = true;
@@ -422,4 +425,3 @@ WHERE
     // Run the function on page load or after AJAX response
     disableCheckboxIfNotAdmin();
 </script>
-

@@ -47,14 +47,14 @@ if ($_SERVER["REQUEST_METHOD"] && isset($_POST["allowanceIdToEdit"])) {
 
 <body style="background-color: #eef3f9">
     <div class="container-fluid">
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                 </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Allowances</li>
             </ol>
-        </nav>
+        </nav> -->
         <?php if ($fixed_allowance_result->num_rows > 0): ?>
             <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
                 <table class="table table-hover mb-0 pb-0">

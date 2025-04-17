@@ -105,15 +105,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['locationNameToEdit'])
 
 <body class="background-color">
     <div class="container-fluid">
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                 </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Location</li>
             </ol>
-        </nav>
-        <div class="d-flex justify-content-start">
+        </nav> -->
+        <div class="d-flex justify-content-end">
             <button class="btn btn-dark mb-2" data-bs-toggle="modal" data-bs-target="#addLocationModal"> <i
                     class="fa-solid fa-plus me-1"></i>Add Location</button>
         </div>

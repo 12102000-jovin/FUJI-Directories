@@ -192,13 +192,17 @@ $folders_result->free();
                 if (htmlspecialchars($row['folder_name']) == "Human Resources") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
                 } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
-                    $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                    $folder_page = "http://$serverAddress/$projectName/Pages/qa-table.php";
                 } else if (htmlspecialchars($row['folder_name']) == "Project") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
                 } else if (htmlspecialchars($row['folder_name']) == "Asset") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/asset-index.php";
                 } else if (htmlspecialchars($row['folder_name']) == "Work Health and Safety") {
                     $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "CAPA") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Test and Tag") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
                 } else {
                     $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                 }

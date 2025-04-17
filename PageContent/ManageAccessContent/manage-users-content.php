@@ -169,14 +169,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
 
 <body class="background-color">
     <div class="container-fluid">
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                 </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Users</li>
             </ol>
-        </nav>
+        </nav> -->
         <?php if (!empty($error_message)): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <?php echo $error_message; ?>
@@ -262,9 +262,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                         <td class="py-4 align-middle userId"><?= $row['employee_id'] ?></td>
                                         <td class="py-4 align-middle">
                                             <?php if ($row['role'] === 'general'): ?>
-                                                <span class="badge rounded-pill  bg-success"><?= $row['role'] ?></span>
+                                                <span class="badge rounded-pill  bg-success text-capitalize"><?= $row['role'] ?></span>
                                             <?php elseif ($row['role'] === 'admin'): ?>
-                                                <span class="badge rounded-pill bg-danger"><?= $row['role'] ?></span>
+                                                <span class="badge rounded-pill bg-danger text-capitalize"><?= $row['role'] ?></span>
                                             <?php endif; ?>
                                         </td>
 
@@ -443,23 +443,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 foreach ($unique_groups as $group_id => $group_data) {
                                     // Determine badge class based on role
                                     $badgeClass = match ($group_data['role']) {
-                                        'admin' => 'text-bg-danger',
-                                        'general' => 'text-bg-success',
-                                        'restricted' => 'text-bg-dark',
-                                        'supervisor' => 'text-bg-primary',
-                                        default => 'text-bg-secondary',
+                                        'full control' => 'text-bg-danger text-capitalize',
+                                        'read' => 'text-bg-success text-capitalize',
+                                        'modify 1' => 'bg-warning text-capitalize',
+                                        'modify 2' => 'text-bg-primary text-capitalize',
+                                        default => 'text-bg-secondary text-capitalize',
                                     };
 
-                                    // Check if the group is "Human Resource" and add "Supervisor" option
-                                    $extraOption = ($group_data['name'] === 'Human Resources Group')
-                                        ? "<option value='supervisor'" . ($group_data['role'] === 'supervisor' ? " selected" : "") . ">Supervisor</option>"
-                                        : "";
-
                                     $editSelect = "<select class='form-select edit-mode d-none' aria-label='editRole' name='editRole' id='editRole' style='min-width: 120px;' required>
-            <option value='general'" . ($group_data['role'] === 'general' ? " selected" : "") . ">General</option>
-            <option value='admin'" . ($group_data['role'] === 'admin' ? " selected" : "") . ">Admin</option>
-            <option value='restricted'" . ($group_data['role'] === 'restricted' ? " selected" : "") . ">Restricted</option>
-            $extraOption
+            <option value='read'" . ($group_data['role'] === 'read' ? " selected" : "") . ">Read</option>
+            <option value='full control'" . ($group_data['role'] === 'full control' ? " selected" : "") . ">Full Control</option>
+            <option value='modify 1'" . ($group_data['role'] === 'modify 1' ? " selected" : "") . ">Modify 1</option>
+            <option value='modify 2'" . ($group_data['role'] === 'modify 2' ? " selected" : "") . ">Modify 2</option>
         </select>";
 
                                     echo "<tr>
@@ -866,17 +861,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             // Determine badge class based on new role
                             var badgeClass = '';
                             switch (newRole) {
-                                case 'admin':
-                                    badgeClass = 'text-bg-danger';
+                                case 'full control':
+                                    badgeClass = 'text-bg-danger text-capitalize';
                                     break;
-                                case 'supervisor':
-                                    badgeClass = 'text-bg-primary';
+                                case 'modify 1':
+                                    badgeClass = 'text-bg-primary text-capitalize';
                                     break;
-                                case 'general':
-                                    badgeClass = 'text-bg-success';
+                                case 'modify 2':
+                                    badgeClass = 'bg-warning text-capitalize';
                                     break;
-                                case 'restricted':
-                                    badgeClass = 'text-bg-dark';
+                                case 'read':
+                                    badgeClass = 'text-bg-success text-capitalize';
                                     break;
                             }
 

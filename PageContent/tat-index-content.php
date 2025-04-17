@@ -15,31 +15,30 @@ $config = include("../config.php");
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-// =============================== A S S E T S  C H A R T ===============================
+// =============================== C A B L E  C H A R T ===============================
+$locations_sql = "SELECT location_id, location_name FROM `location`";
+$location_result = $conn->query($locations_sql);
 
-$departments_sql = "SELECT department_id, department_name FROM department";
-$departments_result = $conn->query($departments_sql);
-
-$departments = [];
-while ($row = $departments_result->fetch_assoc()) {
-    $departments[$row['department_id']] = $row['department_name'];
+$locations = [];
+while ($row = $location_result->fetch_assoc()) {
+    $locations[$row['location_id']] = $row['location_name'];
 }
 
-$department_counts = [];
-$total_assets_count = 0;
+$location_counts = [];
+$total_cables_count = 0;
 
-foreach ($departments as $department_id => $department_name) {
-    $count_sql = "SELECT COUNT(*) AS department_count FROM assets WHERE department_id='$department_id'";
+foreach ($locations as $location_id => $location_name) {
+    $count_sql = "SELECT COUNT(*) AS location_count FROM cables WHERE location_id='$location_id'";
     $count_result = $conn->query($count_sql);
 
     if ($count_result) {
         $row = $count_result->fetch_assoc();
-        $department_counts[$department_name] = $row['department_count'];
-        $total_assets_count += $row['department_count'];
+        $location_counts[$location_name] = $row['location_count'];
+        $total_cables_count += $row['location_count'];
     }
 }
 
-$dataPoints = [];
+$dataPoints2 = [];
 $colors = [
     "#5bc0de", // Light Blue
     "#3498db", // Medium Blue
@@ -62,15 +61,16 @@ $colors = [
 // Add more colors if needed
 $i = 0;
 
-foreach ($department_counts as $department_name => $count) {
-    $dataPoints[] = array(
-        "label" => $department_name,
-        "symbol" => $department_name,
+foreach ($location_counts as $location_name => $count) {
+    $dataPoints2[] = array(
+        "label" => $location_name,
+        "symbol" => $location_name,
         "y" => $count, // Use the count directly instead of calculating percentage
         "color" => $colors[$i % count($colors)]
     );
     $i++;
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -149,47 +149,45 @@ foreach ($department_counts as $department_name => $count) {
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
                         <li class="breadcrumb-item"><a
-                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php">Asset
-                                Table</a></li>
-                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Assets
-                            Dashboard</li>
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/cable-table.php">Test and Tag Table</a></li>
+                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Test and Tag Dashboard</li>
                     </ol>
                 </nav>
             </div> -->
         </div>
         <div class="row">
-            <div class="col-lg-4">
+            <div class="col-lg-4 mt-3 mt-lg-0">
                 <div class="bg-white p-2 rounded-4">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="p-2 pb-0 fw-bold mb-0 signature-color dropdown-toggle" data-bs-toggle="collapse"
-                            data-bs-target="#assetCollapse" aria-expanded="false" aria-controls="whsCollapse"
+                            data-bs-target="#cableCollapse" aria-expanded="false" aria-controls="whsCollapse"
                             style="cursor: pointer">
-                            Assets
+                            Cables
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php"
-                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/cable-table.php"
+                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
-                    <div class="collapse show" id="assetCollapse">
+                    <div class="collapse show" id="cableCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
                             <table class="table">
                                 <tbody class="pe-none">
-                                    <?php foreach ($department_counts as $department => $count): ?>
+                                    <?php foreach ($location_counts as $location => $count): ?>
                                         <tr>
-                                            <td><?php echo $department ?></td>
+                                            <td><?php echo $location ?></td>
                                             <td><?php echo $count ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                     <tr>
-                                        <td class="fw-bold" style="color:#043f9d">Total Assets</td>
+                                        <td class="fw-bold" style="color:#043f9d">Total cables</td>
                                         <td class="fw-bold" style="color:#043f9d">
-                                            <?php echo $total_assets_count ?>
+                                            <?php echo $total_cables_count ?>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div class="" id="chartContainer" style="height: 370px;"></div>
+                    <div class="" id="chartContainer2" style="height: 370px;"></div>
                 </div>
             </div>
         </div>
@@ -197,31 +195,30 @@ foreach ($department_counts as $department_name => $count) {
 </body>
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var cableDashboardModal = document.getElementById("cableDashboardModal");
 
-    document.addEventListener("DOMContentLoaded", function () {
-        var assetDashboardModal = document.getElementById("assetDashboardModal");
+        cableDashboardModal.addEventListener("shown.bs.modal", function () {
+                var chart2 = new CanvasJS.Chart("chartContainer2", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    title: {
+                        // text: "Total Cables: <?php echo $total_cables_count ?>",
+                        fontSize: 18,
+                    },
+                    data: [{
+                        type: "column",
+                        indexLabel: "{y}",
+                        yValueFormatString: "#,##",
+                        showInLegend: false,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($dataPoints2, JSON_NUMERIC_CHECK); ?>,
+                        cornerRadius: 10,
+                    }]
+                });
 
-        assetDashboardModal.addEventListener("shown.bs.modal", function () {
-            var chart = new CanvasJS.Chart("chartContainer", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    // text: "Total Assets: <?php echo $total_assets_count ?>",
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "doughnut",
-                    indexLabel: "{symbol} - {y}",
-                    yValueFormatString: "#,##",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>,
-                    cornerRadius: 10,
-                }]
+                chart2.render();
             });
-
-            chart.render();
-        });
     });
 </script>
 

@@ -140,6 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 required>
                 <option disabled selected hidden></option>
                 <option value="Accounts">Accounts</option>
+                <option value="Company Compliance">Company Compliance</option>
                 <option value="Electrical">Electrical</option>
                 <option value="Engineering">Engineering</option>
                 <option value="Estimating">Estimating</option>
@@ -294,7 +295,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
         const qaDocumentToEdit = document.getElementById("qaDocumentToEdit");
         const qaIdToEdit = document.getElementById("qaIdToEdit");
 
-        
         documentDescriptionToEdit.value = "";
 
         function checkISO9001RadioSelection() {

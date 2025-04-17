@@ -74,6 +74,8 @@ $folders_result = $conn->query($folders_sql);
                         $initials = 'WHS';
                     } elseif ($folderName === 'project') {
                         $initials = 'PJ';
+                    } elseif ($folderName === 'capa') {
+                        $initials = 'CAPA';
                     } else {
                         // Split the folder name into words and get initials
                         $words = explode(' ', $row['folder_name']);
@@ -84,13 +86,19 @@ $folders_result = $conn->query($folders_sql);
 
                     // Set custom href
                     if ($folderName === 'asset') {
-                        $href = "http://$serverAddress/$projectName/Pages/asset-index.php";
+                        $href = "http://$serverAddress/$projectName/Pages/asset-table.php";
+                    } else if ($folderName === 'quality assurances') {
+                        $href = "http://$serverAddress/$projectName/Pages/qa-table.php";
                     } else if ($folderName === 'human resources') {
                         $href = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
                     } else if ($folderName === 'project') {
                         $href = "http://$serverAddress/$projectName/Pages/project-table.php";
                     } else if ($folderName === 'work health and safety') {
                         $href = "http://$serverAddress/$projectName/Pages/whs-table.php";
+                    } else if ($folderName === 'capa') {
+                        $href = "http://$serverAddress/$projectName/Pages/capa-table.php";
+                    } else if ($folderName === 'test and tag') {
+                        $href = "http://$serverAddress/$projectName/Pages/cable-table.php";
                     } else {
                         $href = "http://$serverAddress/$projectName/Pages/" . strtolower($initials) . "-index.php";
                     }
@@ -105,7 +113,15 @@ $folders_result = $conn->query($folders_sql);
                                         style="z-index: 2;">
                                         <?php echo $initials ?>
                                     </h5>
-                                    <p class="card-text fw-bold mt-2"><?php echo $row['folder_name'] ?></p>
+                                    <p class="card-text fw-bold mt-2">
+                                        <?php 
+                                            if ($row['folder_name'] === "CAPA") {
+                                                echo "Corrective and Preventive Action";
+                                            } else {
+                                                echo $row['folder_name'];
+                                            } 
+                                        ?>
+                                    </p>
                                 </div>
                             </div>
                         </a>

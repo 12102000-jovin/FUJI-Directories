@@ -80,14 +80,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username']) && isset(
 <body style="background-color: #eef3f9;">
     <div class="container-fluid">
 
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                 </li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Credential</li>
             </ol>
-        </nav>
+        </nav> -->
         <?php if ($user_credential_result->num_rows > 0): ?>
             <div class="row mt-5 pt-5 px-5 px-md-0">
                 <?php while ($row = $user_credential_result->fetch_assoc()): ?>

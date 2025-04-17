@@ -130,12 +130,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupFolderIdToRemove
 
 <body class="background-color">
     <div class="container-fluid">
-        <nav aria-label="breadcrumb">
+        <!-- <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a></li>
+                <li class="breadcrumb-item fw-bold"><a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a></li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Folders</li>
             </ol>
-        </nav>
+        </nav> -->
         <div class="row">
             <div class="col-lg-10 order-2 order-lg-1">
                 <div class="table-responsive rounded-3 shadow-lg bg-light m-0">

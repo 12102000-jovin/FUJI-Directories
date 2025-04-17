@@ -31,14 +31,24 @@ $whereClause = "(asset_no LIKE '%$searchTerm%')";
 $assets_sql = "SELECT 
                     assets.*, 
                     location.location_name,
-                    department.department_name
+                    department.department_name,
+                    latest_cal.latest_calibration
                 FROM assets
                 LEFT JOIN location 
-                ON assets.location_id = location.location_id
+                    ON assets.location_id = location.location_id
                 LEFT JOIN department
-                ON assets.department_id = department.department_id 
-                WHERE $whereClause ORDER BY $sort $order 
+                    ON assets.department_id = department.department_id
+                LEFT JOIN (
+                    SELECT asset_id, MAX(due_date) AS latest_calibration
+                    FROM asset_details
+                    WHERE categories = 'Calibration'
+                    GROUP BY asset_id
+                ) AS latest_cal
+                    ON assets.asset_id = latest_cal.asset_id
+                WHERE $whereClause 
+                ORDER BY $sort $order 
                 LIMIT $offset, $records_per_page";
+
 
 $assets_result = $conn->query($assets_sql);
 
@@ -106,21 +116,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <div class="d-flex justify-content-between align-items-center">
-            <nav aria-label="breadcrumb">
+            <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-index.php">Asset
-                            Dashboard</a></li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Asset Table
                     </li>
                 </ol>
-            </nav>
+            </nav> -->
             <!-- <div class="d-flex justify-content-end mb-3">
                 <div class="d-flex align-items-start me-2 mt-0 pt-0">
                     <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#filterColumnModal">
@@ -158,6 +165,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                     </form>
                 </div>
                 <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                    <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
+                        data-bs-target="#assetDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                     <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addAssetModal"> <i
                             class="fa-solid fa-plus"></i> Add Asset</button>
                 </div>
@@ -192,10 +201,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                 onclick="updateSort('location_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor: pointer"> Asset Location <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
-                        <th class="py-4 align-middle text-center"><as
-                                onclick="updateSort('accounts_asset', '<?= $order == 'asc' ? 'desc' : 'asc'?>')"
+                        <th class="py-4 align-middle text-center">
+                            <as onclick="updateSort('accounts_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor: pointer">Accounts <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></as></th>
+                                    class="fa-solid fa-sort fa-md ms-1"></i></as>
+                        </th>
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('whs_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="curdor: pointer">WHS <i
@@ -203,6 +213,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('purchase_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Purchase Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('latest_calibration', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Next Calibration Due <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                     </tr>
                 </thead>
@@ -214,7 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                     <button class="btn text-danger" data-bs-toggle="modal"
                                         data-bs-target="#deleteConfirmationModal" data-asset-id="<?= $row["asset_id"] ?>"
                                         data-asset-no="<?= $row["asset_no"] ?>">
-                                        <i class="fa-regular fa-trash-can text-danger"></i></i>
+                                        <i class="fa-regular fa-trash-can text-danger"></i>
                                     </button>
                                     <button class="btn" data-bs-toggle="modal" data-bs-target="#editAssetModal"
                                         data-asset-id="<?= $row["asset_id"] ?>" data-asset-no="<?= $row["asset_no"] ?>"
@@ -234,7 +248,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                 <td class="py-3 align-middle text-center"><?= $row['department_name'] ?></td>
                                 <td class="py-3 align-middle text-center"><?= $row['asset_no'] ?></td>
                                 <td class="py-3 align-middle text-center"><?= $row['asset_name'] ?></td>
-                                <td class="py-3 align-middle text-center"><?= $row['status'] ?></td>
+                                <td class="py-3 align-middle text-center 
+                                    <?php
+                                    if ($row['status'] === "Current") {
+                                        echo "bg-success text-white";
+                                    } else if ($row['status'] === "Obsolete") {
+                                        echo "bg-danger bg-opacity-75 text-white";
+                                    } else if ($row['status'] === "Disposed") {
+                                        echo "bg-danger text-white";
+                                    }
+                                    ?>
+                                "><?= $row['status'] ?></td>
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['serial_number']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['serial_number']) ? htmlspecialchars($row['serial_number']) : 'N/A' ?>
@@ -246,6 +270,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                     style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['purchase_date']) && $row['purchase_date'] ? date('j F Y', strtotime($row['purchase_date'])) : 'N/A' ?>
                                 </td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['latest_calibration']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= isset($row['latest_calibration']) && $row['latest_calibration']
+                                        ? date('j F Y', strtotime($row['latest_calibration']))
+                                        : 'N/A' ?>
+                                </td>
+
                             </tr>
                         <?php } ?>
                     <?php } else { ?>
@@ -412,9 +443,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
         </div>
     </div>
 
+    <!-- ================== Asset Dashboard Modal ================== -->
+    <div class="modal fade" id="assetDashboardModal" tab-index="-1" aria-labelledby="assetDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assetDashboardModalLabel">Asset Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/asset-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php require_once("../logout.php") ?>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -527,6 +574,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
             const url = new URL(window.location.href);
             url.searchParams.set('sort', sort);
             url.searchParams.set('order', order);
+            window.location.href = url.toString();
+        }
+    </script>
+    <script>
+        function updatePage(page) {
+            // Check if page number is valid
+            if (page < 1) return;
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', page);
             window.location.href = url.toString();
         }
     </script>

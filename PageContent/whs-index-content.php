@@ -68,6 +68,12 @@ $count_incident_ttm_result = $conn->query($count_incident_ttm_sql);
 $row = mysqli_fetch_assoc($count_incident_ttm_result);
 $ttm_incident_count = $row['ttm_incident_count'];
 
+// SQL to count how many incident happened //ttm is trailing twelve months
+$count_lost_time_incident_ttm_sql = "SELECT COUNT(*) AS lost_time_ttm_incident_count FROM whs WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND lost_time_case = 1";
+$count_lost_time_incident_ttm_result = $conn->query($count_lost_time_incident_ttm_sql);
+$row = mysqli_fetch_assoc($count_lost_time_incident_ttm_result);
+$lost_time_ttm_incident_count = $row['lost_time_ttm_incident_count'];
+
 // SQL query to get the latest recorded WHS date
 $latest_whs_sql = "SELECT MAX(incident_date) AS latest_incident_date FROM whs WHERE recordable_incident = 1";
 $latest_whs_result = $conn->query($latest_whs_sql);
@@ -148,7 +154,7 @@ if ($latest_whs_result->num_rows > 0) {
 <body class="background-color">
     <div class="container-fluid mt-3 mb-5">
         <div class="mx-md-0 mx-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- <div class="d-flex justify-content-between align-items-center mb-4">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
@@ -159,7 +165,7 @@ if ($latest_whs_result->num_rows > 0) {
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">WHS Dashboard</li>
                     </ol>
                 </nav>
-            </div>
+            </div> -->
         </div>
         <div class="row">
             <div class="col-lg-4">
@@ -170,10 +176,10 @@ if ($latest_whs_result->num_rows > 0) {
                             style="cursor: pointer">
                             WHS
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-table.php"
-                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-table.php"
+                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
-                    <div class="collapse" id="whsCollapse">
+                    <div class="collapse show" id="whsCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
                             <table class="table">
                                 <tbody class="pe-none">
@@ -230,7 +236,7 @@ if ($latest_whs_result->num_rows > 0) {
                                         </td>
                                         <td>
                                             <h4 class="fw-bold pb-0 mb-0 bg-white signature-color rounded-3 p-1">
-                                                <?php echo number_format(($ttm_incident_count / $estimated_working_hours) * 1000000, 2) ?>
+                                                <?php echo number_format(($lost_time_ttm_incident_count / $estimated_working_hours) * 1000000, 2) ?>
                                             </h4>
                                         </td>
                                     </tr>
@@ -246,25 +252,29 @@ if ($latest_whs_result->num_rows > 0) {
 
     <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <script>
-        window.onload = function () {
-            var chart = new CanvasJS.Chart("chartContainer3", {
-                theme: "light2",
-                animationEnabled: true,
-                title: {
-                    fontSize: 18,
-                },
-                data: [{
-                    type: "pie",
-                    indexLabel: "{label} - {y}%",
-                    yValueFormatString: "#,##0.0",
-                    showInLegend: false,
-                    legendText: "{label} : {y}",
-                    dataPoints: <?php echo json_encode($whsDataPoints, JSON_NUMERIC_CHECK); ?>,
-                    cornerRadius: 10,
-                }]
-            })
-            chart.render();
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var whsDashboardModal = document.getElementById("whsDashboardModal");
+
+            whsDashboardModal.addEventListener("shown.bs.modal", function () {
+                var chart = new CanvasJS.Chart("chartContainer3", {
+                    theme: "light2",
+                    animationEnabled: true,
+                    title: {
+                        fontSize: 18,
+                    },
+                    data: [{
+                        type: "pie",
+                        indexLabel: "{label} - {y}%",
+                        yValueFormatString: "#,##0.0",
+                        showInLegend: false,
+                        legendText: "{label} : {y}",
+                        dataPoints: <?php echo json_encode($whsDataPoints, JSON_NUMERIC_CHECK); ?>,
+                        cornerRadius: 10,
+                    }]
+                })
+                chart.render();
+            });
+        });
     </script>
 
 </body>

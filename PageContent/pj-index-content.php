@@ -275,23 +275,23 @@ if ($total_pj_document_type_count > 0) {
 <body class="background-color">
     <div class="container-fluid mt-3 mb-5">
         <div class="mx-md-0 mx-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- <div class="d-flex justify-content-between align-items-center mb-4">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
                         <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php">Project
-                            Table</a></li>
+                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php">Project
+                                Table</a></li>
                         <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Project
                             Dashboard
                         </li>
                     </ol>
                 </nav>
-                <!-- <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#projectReportModal">Report <i
-                        class="fa-solid fa-square-poll-vertical"></i></button> -->
-            </div>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#projectReportModal">Report <i
+                        class="fa-solid fa-square-poll-vertical"></i></button>
+            </div> -->
         </div>
         <div class="row">
             <div class="col-lg-4">
@@ -305,7 +305,7 @@ if ($total_pj_document_type_count > 0) {
                         <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
                             class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
-                    <div class="collapse" id="projectStatusCollapse">
+                    <div class="collapse show" id="projectStatusCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
                             <table class="table">
                                 <tbody class="pe-none">
@@ -355,7 +355,7 @@ if ($total_pj_document_type_count > 0) {
                         <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php"
                             class="btn btn-dark btn-sm">Table<i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
-                    <div class="collapse" id="projectTypeCollapse">
+                    <div class="collapse show" id="projectTypeCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
                             <table class="table">
                                 <tbody class="pe-none">
@@ -402,49 +402,53 @@ if ($total_pj_document_type_count > 0) {
             <caption></caption>
         </div>
     </div>
-  
+
 </body>
 
 </html>
 
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 <script>
-    window.onload = function () {
-        var chart = new CanvasJS.Chart("chartContainer", {
-            theme: "light2",
-            animationEnabled: true,
-            title: {
-                fontSize: 18,
-            },
-            data: [{
-                type: "doughnut",
-                indexLabel: "{label} - {y}%",
-                yValueFormatString: "#,##0.0",
-                showInLegend: false,
-                legendText: "{label} : {y}",
-                dataPoints: <?php echo json_encode($pjStatusDataPoints, JSON_NUMERIC_CHECK); ?>,
-                cornerRadius: 10,
-            }]
+    document.addEventListener("DOMContentLoaded", function () {
+        var projectDashboardModal = document.getElementById("projectDashboardModal");
+
+        projectDashboardModal.addEventListener("shown.bs.modal", function () {
+            var chart = new CanvasJS.Chart("chartContainer", {
+                theme: "light2",
+                animationEnabled: true,
+                title: {
+                    fontSize: 18,
+                },
+                data: [{
+                    type: "doughnut",
+                    indexLabel: "{label} - {y}%",
+                    yValueFormatString: "#,##0.0",
+                    showInLegend: false,
+                    legendText: "{label} : {y}",
+                    dataPoints: <?php echo json_encode($pjStatusDataPoints, JSON_NUMERIC_CHECK); ?>,
+                    cornerRadius: 10,
+                }]
+            });
+
+            var chart2 = new CanvasJS.Chart("chartContainer2", {
+                theme: "light2",
+                animationEnabled: true,
+                title: {
+                    fontSize: 18,
+                },
+                data: [{
+                    type: "pie",
+                    indexLabel: "{label} - {y}%",
+                    yValueFormatString: "#,##0.0",
+                    showInLegend: false,
+                    legendText: "{label} : {y}",
+                    dataPoints: <?php echo json_encode($pjTypeDataPoints, JSON_NUMERIC_CHECK); ?>,
+                    cornerRadius: 10,
+                }]
+            })
+
+            chart.render();
+            chart2.render();
         });
-
-        var chart2 = new CanvasJS.Chart("chartContainer2", {
-            theme: "light2",
-            animationEnabled: true,
-            title: {
-                fontSize: 18,
-            },
-            data: [{
-                type: "pie",
-                indexLabel: "{label} - {y}%",
-                yValueFormatString: "#,##0.0",
-                showInLegend: false,
-                legendText: "{label} : {y}",
-                dataPoints: <?php echo json_encode($pjTypeDataPoints, JSON_NUMERIC_CHECK); ?>,
-                cornerRadius: 10,
-            }]
-        })
-
-        chart.render();
-        chart2.render();
-    }
+    });
 </script>

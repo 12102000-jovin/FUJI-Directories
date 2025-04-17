@@ -151,37 +151,33 @@ $user_details_result->free();
             </ul>
         </div>
         <div class="collapse navbar-collapse d-md-none" id="navbarSupportedContent">
-            <ul class="list-unstyled mt-3 text-center" id="list-menu">
-                <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php"
-                    class="text-decoration-none">
-                    <li class="mx-2 py-2 p-1 rounded fw-bold text-dark" id="home-icon">
-                        <i class="fa-solid fa-house"></i> <span class="folder-name ms-1"> Home </span>
+            <?php foreach ($folders as $row): ?>
+                <?php
+                $initials = implode('', array_map(fn($word) => strtoupper($word[0]), explode(' ', $row['folder_name'])));
+                if (htmlspecialchars($row['folder_name']) == "Human Resources") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/qa-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Project") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Work Health and Safety") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Asset") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/asset-index.php";
+                } else if (htmlspecialchars($row['folder_name']) == "CAPA") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
+                } else if (htmlspecialchars($row['folder_name']) == "Test and Tag") {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
+                } else {
+                    $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
+                }
+                ?>
+                <a href="<?php echo $folder_page ?>" class="text-decoration-none text-dark">
+                    <li class="mx-2 py-2 p-1 rounded fw-bold d-flex justify-content-center align-items-center">
+                        <span class="folder-name"><?= htmlspecialchars($row['folder_name']) ?></span>
                     </li>
                 </a>
-                <?php foreach ($folders as $row): ?>
-                    <?php
-                    $initials = implode('', array_map(fn($word) => strtoupper($word[0]), explode(' ', $row['folder_name'])));
-                    if (htmlspecialchars($row['folder_name']) == "Human Resources") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
-                    } else if (htmlspecialchars($row['folder_name']) == "Quality Assurances") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
-                    } else if (htmlspecialchars($row['folder_name']) == "Project") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
-                    } else if (htmlspecialchars($row['folder_name']) == "Work Health and Safety") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
-                    } else if (htmlspecialchars($row['folder_name']) == "Asset") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/asset-index.php";
-                    } else {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
-                    }
-                    ?>
-                    <a href="<?php echo $folder_page ?>" class="text-decoration-none text-dark">
-                        <li class="mx-2 py-2 p-1 rounded fw-bold d-flex justify-content-center align-items-center">
-                            <span class="folder-name"><?= htmlspecialchars($row['folder_name']) ?></span>
-                        </li>
-                    </a>
-                <?php endforeach; ?>
-            </ul>
+            <?php endforeach; ?>
         </div>
     </div>
 </div>

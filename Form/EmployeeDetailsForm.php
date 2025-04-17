@@ -249,11 +249,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     }
 
     if (empty($_POST["payrollType"])) {
-        $errors['payrollType'] = "payrollType is required";
+        $errors['payrollType'] = "payroll type is required";
     } else {
         $payrollType = $_POST["payrollType"];
     }
 
+    if (empty($_POST["workShift"])) {
+        $errors['work_shift'] = "work shift is required";
+    } else {
+        $workShift = $_POST["workShift"];
+    }
+
+    $lockerNumber = isset($_POST["lockerNumber"]) ? $_POST["lockerNumber"] : null;
     $payRate = isset($_POST["payRate"]) ? $_POST["payRate"] : null;
     $annualSalary = isset($_POST["annualSalary"]) ? $_POST["annualSalary"] : null;
 
@@ -362,10 +369,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     } else if (empty($errors)) {
         // If there are no errors, proceed with database insertion
         // Prepare and execute SQL statement to insert data into 'employees' table
-        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssssssisssssssssiissi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance);
+        $stmt->bind_param("ssssssssssssssssssissssssssssiissis", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -384,16 +391,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $insert_wages_sql = "INSERT INTO wages(employee_id, amount, date) VALUES (?, ?, ?)";
         $insert_wages_result = $conn->prepare($insert_wages_sql);
         $insert_wages_result->bind_param("sds", $employeeId, $payRate, $currentDate);
-    
+
         if ($insert_wages_result->execute()) {
             echo "New wages record inserted successfully.";
-    
+
             // Create a folder for the employee
             $employeeFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId;
             if (!file_exists($employeeFolder)) {
                 mkdir($employeeFolder, 0777, true);
             }
-    
+
             // Define subfolders and their respective sub-subfolders
             $folderStructure = [
                 "00 – Employee Documents" => [
@@ -422,7 +429,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 "06 - Work Compensation" => [],
                 "07 - Exit Information" => []
             ];
-    
+
             // Create subfolders and sub-subfolders
             foreach ($folderStructure as $subfolder => $subSubfolders) {
                 $subfolder = str_replace("–", "-", $subfolder); // Convert en dash to hyphen
@@ -430,7 +437,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 if (!file_exists($subfolderPath)) {
                     mkdir($subfolderPath, 0777, true);
                 }
-            
+
                 foreach ($subSubfolders as $subSubfolder) {
                     $subSubfolder = str_replace("–", "-", $subSubfolder); // Convert en dash to hyphen
                     $subSubfolderPath = $subfolderPath . "\\" . $subSubfolder;
@@ -439,7 +446,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                     }
                 }
             }
-    
+
             // Redirect after successful insertion
             echo '<script>window.location.replace("http://' . $serverAddress . '/' . $projectName . '/Pages/employee-list-index.php");</script>';
         } else {
@@ -450,16 +457,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $insert_salaries_sql = "INSERT INTO salaries(employee_id, amount, date) VALUES (?, ?, ?)";
         $insert_salaries_result = $conn->prepare($insert_salaries_sql);
         $insert_salaries_result->bind_param("sds", $employeeId, $annualSalary, $currentDate);
-    
+
         if ($insert_salaries_result->execute()) {
             echo "New salaries record inserted successfully.";
-    
+
             // Create a folder for the employee
             $employeeFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\" . $employeeId;
             if (!file_exists($employeeFolder)) {
                 mkdir($employeeFolder, 0777, true);
             }
-    
+
             // Define subfolders and their respective sub-subfolders
             $folderStructure = [
                 "00 - Employee Documents" => [
@@ -488,7 +495,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 "06 - Work Compensation" => [],
                 "07 - Exit Information" => []
             ];
-    
+
             // Create subfolders and sub-subfolders
             foreach ($folderStructure as $subfolder => $subSubfolders) {
                 $subfolder = str_replace("–", "-", $subfolder); // Convert en dash to hyphen
@@ -496,7 +503,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                 if (!file_exists($subfolderPath)) {
                     mkdir($subfolderPath, 0777, true);
                 }
-            
+
                 foreach ($subSubfolders as $subSubfolder) {
                     $subSubfolder = str_replace("–", "-", $subSubfolder); // Convert en dash to hyphen
                     $subSubfolderPath = $subfolderPath . "\\" . $subSubfolder;
@@ -504,15 +511,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                         mkdir($subSubfolderPath, 0777, true);
                     }
                 }
-            }            
-    
+            }
+
             // Redirect after successful insertion
             echo '<script>window.location.replace("http://' . $serverAddress . '/' . $projectName . '/Pages/employee-list-index.php");</script>';
         } else {
             echo "Error: " . $insert_salaries_result->error;
         }
     }
-    
+
 
     // Close prepared statements and database connection
     $stmt->close();
@@ -827,6 +834,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                                 Please select a section.
                             </div>
                         </div>
+                        <div class="form-group col-md-4 mt-3" id="workShiftField">
+                            <label for="workShift" class="fw-bold"><small>Work Shift</small></label>
+                            <select class="form-select" aria-label="Work Shift" name="workShift" id="workShift" required>
+                                <option disabled selected hidden></option>
+                                <option value="Day">Day</option>
+                                <option value="Evening">Evening</option>
+                                <option value="Night">Night</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a work shift.
+                            </div>
+                        </div>
 
                         <div class="form-group col-md-4 mt-3">
                             <label for="position" class="fw-bold"><small>Position</small></label>
@@ -856,6 +875,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <div class="invalid-feedback">
                                 Please provide other position.
                             </div>
+                        </div>
+
+                        <div class="form-group col-md-4 mt-3">
+                            <label for="lockerNumber" class="fw-bold"><small>Locker No.</small></label>
+                            <input class="form-control" type="text" name="lockerNumber">
                         </div>
 
                         <div class="form-group col-md-6 mt-3">

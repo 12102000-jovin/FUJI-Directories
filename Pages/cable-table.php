@@ -9,7 +9,7 @@ require_once '../vendor/autoload.php';
 require_once('../db_connect.php');
 require_once('../status_check.php');
 
-$folder_name = "Asset";
+$folder_name = "Test and Tag";
 require_once("../group_role_check.php");
 
 $config = include('../config.php');
@@ -119,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
 <html lang="en">
 
 <head>
-    <title>Cable Table</title>
+    <title>Test and Tag Table</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -151,29 +151,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <div class="d-flex justify-content-between align-items-center">
-            <nav aria-label="breadcrumb">
+            <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-index.php">Asset
-                            Dashboard</a></li>
-                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Cable Table
+                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Test and Tag Table
                     </li>
                 </ol>
-            </nav>
+            </nav> -->
         </div>
 
         <div class="row mb-3">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
-                <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
-                    <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
+                <div class="col-8 col-lg-5">
+                    <form method="GET" id="searchForm">
                         <div class="d-flex align-items-center">
-                            <div class="input-group me-2 flex-grow-1">
+                            <div class="input-group me-2">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
@@ -207,12 +204,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                         </div>
                     </form>
                 </div>
-                <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                <div
+                    class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                    <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
+                        data-bs-target="#cableDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                     <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                             class="fa-solid fa-plus"></i> Add Cable</button>
                 </div>
             </div>
         </div>
+
 
         <div class="table-responsive rounded-3 shadow-lg bg-light mb-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
@@ -315,7 +316,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     if ($currentDate > $dueDate) {
                                         // Due date has already passed
                                         echo 'bg-danger text-white';
-                                    }  elseif (($interval->y == 0 && $interval->m == 0) && $interval->invert == 0) {
+                                    } elseif (($interval->y == 0 && $interval->m == 0) && $interval->invert == 0) {
                                         // Less than a month left (same year and same month)
                                         echo 'bg-danger bg-opacity-25';
                                     }
@@ -587,11 +588,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
         </div>
     </div>
 
+    <!-- ================== Cable Dashboard Modal ================== -->
+    <div class="modal fade" id="cableDashboardModal" tabindex="-1" aria-labelledby="cableDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cableDashboardModalLabel">Test & Tag Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/tat-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php require_once("../logout.php") ?>
     <script src="../html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
         // Print the cable tag

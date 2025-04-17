@@ -68,6 +68,12 @@ $count_incident_ttm_result = $conn->query($count_incident_ttm_sql);
 $row = mysqli_fetch_assoc($count_incident_ttm_result);
 $ttm_incident_count = $row['ttm_incident_count'];
 
+// SQL to count how many incident happened //ttm is trailing twelve months
+$count_lost_time_incident_ttm_sql = "SELECT COUNT(*) AS lost_time_ttm_incident_count FROM whs WHERE incident_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) AND lost_time_case = 1";
+$count_lost_time_incident_ttm_result = $conn->query($count_lost_time_incident_ttm_sql);
+$row = mysqli_fetch_assoc($count_lost_time_incident_ttm_result);
+$lost_time_ttm_incident_count = $row['lost_time_ttm_incident_count'];
+
 // SQL query to get the latest recorded WHS date
 $latest_whs_sql = "SELECT MAX(incident_date) AS latest_incident_date FROM whs WHERE recordable_incident = 1";
 $latest_whs_result = $conn->query($latest_whs_sql);
@@ -98,9 +104,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
     }
     $delete_document_result->close();
 }
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -151,18 +154,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
 
     <div class="container-fluid px-md-5 mb-5 mt-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <nav aria-label="breadcrumb">
+        <div class="d-flex justify-content-end align-items-center">
+            <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                     </li>
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">WHS Table</li>
                 </ol>
-            </nav>
+            </nav> -->
             <div class="d-flex justify-content-end mb-3">
                 <div class="d-flex align-items-start me-2 mt-0 pt-0">
                     <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#filterColumnModal">
@@ -215,11 +218,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                         </div>
                     </form>
                 </div>
-                <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
-                        <a class="btn btn-primary me-2"
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/whs-index.php"> <i
-                                class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <?php if ($role === "full control") { ?>
+                    <div
+                        class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
+                        <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
+                            data-bs-target="#whsDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
                                 class="fa-solid fa-plus"></i> Add WHS</button>
                     </div>
@@ -265,7 +268,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                         <p class="text-white fw-bold mb-1">LTIFR</p>
                         <div class="d-flex align-items-center">
                             <h2 class="text-white fw-bold mb-0 me-2">
-                                <?php echo number_format(($ttm_incident_count / $estimated_working_hours) * 1000000, 2); ?>
+                                <?php echo number_format(($lost_time_ttm_incident_count / $estimated_working_hours) * 1000000, 2); ?>
                             </h2>
                             <div class="d-flex align-items-center">
                                 <a style="text-decoration: none" role="button" data-bs-toggle="modal"
@@ -274,7 +277,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                     data-bs-placement="top" title="See LTIFR Breakdown"
                                     data-estimated-working-hours="<?php echo $estimated_working_hours ?>"
                                     data-total-active-employee="<?php echo $active_employee_count ?>"
-                                    data-ttm-incident-count="<?php echo $ttm_incident_count ?>">
+                                    data-ttm-incident-count="<?php echo $lost_time_ttm_incident_count ?>">
                                     <i class="fa-solid fa-circle-question"></i>
                                 </a>
                                 <a style="text-decoration: none" role="button" data-bs-toggle="modal"
@@ -311,7 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <?php if ($role === "admin") { ?>
+                        <?php if ($role === "full control") { ?>
                             <th></th>
                         <?php } ?>
                         <th class="py-4 align-middle text-center whsDocumentIdColumn" style="min-width:120px">
@@ -419,7 +422,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                     <?php if ($whs_result->num_rows > 0) { ?>
                         <?php while ($row = $whs_result->fetch_assoc()) { ?>
                             <tr>
-                                <?php if ($role === "admin") { ?>
+                                <?php if ($role === "full control") { ?>
                                     <td class="align-middle">
                                         <div class="d-flex">
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
@@ -807,7 +810,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                 <div class="modal-body">
                     <p class="fw-bold pb-0 mb-0">Formula for LTIFR:</p>
                     <p class="signature-bg-color rounded-3 fw-bold text-white text-center py-2"><span class="mx-2">LTIFR
-                            = (Number of Incidents / Total Number of Hours Worked) x 1,000,000</span></p>
+                            = (Number of Lost Time Incidents / Total Number of Hours Worked) x 1,000,000</span></p>
                     <hr>
                     <p class="fw-bold pb-0 mb-0">Calculation of Total Hours Worked:</p>
                     <p class="signature-bg-color rounded-3 fw-bold text-white text-center py-2"><span class="mx-2">Total
@@ -824,7 +827,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
 
                     <p class="fw-bold pb-0 mb-0">Current Value:</p>
                     <ul>
-                        <li>Number of Incidents: <span id="modalTtmIncidentCount"
+                        <li>Number of Lost Time Incidents: <span id="modalTtmIncidentCount"
                                 class="fw-bold signature-color"></span></li>
 
                         <li>Total Hours Worked: <span id="modalEstimatedWorkingHours"
@@ -846,7 +849,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
 
                         </p>
                         <h4 class="fw-bold pb-0 mb-0 bg-white signature-color rounded-3 p-2">
-                            <?php echo number_format(($ttm_incident_count / $estimated_working_hours) * 1000000, 2) ?>
+                            <?php echo number_format(($lost_time_ttm_incident_count / $estimated_working_hours) * 1000000, 2) ?>
                         </h4>
                     </div>
                     <div class="d-flex justify-content-center">
@@ -976,6 +979,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
         </div>
     </div>
 
+    <!-- ================== WHS Dashboard Modal ================== -->
+    <div class="modal fade" id="whsDashboardModal" tabindex="-1" aria-labelledby="whsDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="whsDashboardModalLabel">WHS Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/whs-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================== Filter Document Modal ================== -->
     <div class="modal fade" id="filterColumnModal" tab-index="-1" aria-labelledby="filterColumnModal"
         aria-hidden="true">
@@ -1092,7 +1111,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
     <?php require_once("../logout.php") ?>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
         // Enabling the tooltip

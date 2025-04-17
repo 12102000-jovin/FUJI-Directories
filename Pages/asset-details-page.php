@@ -9,8 +9,8 @@ require_once '../vendor/autoload.php';
 require_once('../db_connect.php');
 require_once('../status_check.php');
 
-// $folder_name = "Project";
-// require_once("../group_role_check.php");
+$folder_name = "Asset";
+require_once("../group_role_check.php");
 
 date_default_timezone_set('Australia/Sydney');
 $currentDate = date('Y-m-d'); // Current date in Sydney
@@ -298,14 +298,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <div class="d-flex justify-content-between align-items-center">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
-                    </li>
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php">Asset
                             Table</a></li>
@@ -964,11 +961,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                 });
             });
         });
-
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

@@ -94,6 +94,8 @@ $folders_result->free();
                     $initials = 'WHS';
                 } elseif (strtolower($folder_name) === 'project') {
                     $initials = 'PJ';
+                } elseif (strtolower($folder_name) === 'capa') {
+                    $initials = 'CAPA';
                 } else {
                     foreach ($words as $word) {
                         $initials .= strtoupper($word[0]); // Get first letter of each word
@@ -106,7 +108,7 @@ $folders_result->free();
                         $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
                         break;
                     case 'quality assurances':
-                        $folder_page = "http://$serverAddress/$projectName/Pages/qa-index.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/qa-table.php";
                         break;
                     case 'project':
                         $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
@@ -116,6 +118,12 @@ $folders_result->free();
                         break;
                     case 'asset':
                         $folder_page = "http://$serverAddress/$projectName/Pages/asset-index.php";
+                        break;
+                    case 'capa':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
+                        break;
+                    case 'test and tag':
+                        $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
                         break;
                     default:
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";

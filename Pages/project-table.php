@@ -21,35 +21,74 @@ $projectName = $config['project_name'];
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
 
-// Get status filter
-$statusFilter = isset($_GET['current']) ? $conn->real_escape_string($_GET['current']) : '';
-
 // Sorting Variables
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'project_id';
-$order = isset($_GET['order']) ? $_GET['order'] : 'asc';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'project_no';
+$order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
 
 // Pagination
-$records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 30; // Number of records per page
-$page = isset($_GET["page"]) ? intval($_GET["page"]) : 1; // Current Page
-$offset = ($page - 1) * $records_per_page; // Offset for SQL query  
+$records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 30;
+$page = isset($_GET["page"]) ? intval($_GET["page"]) : 1;
+$offset = ($page - 1) * $records_per_page;
 
-// Get search term 
+// Get search term
 $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
 
-// Search condition
+// Base WHERE condition
 $whereClause = "(project_no LIKE '%$searchTerm%' OR quote_no LIKE '%$searchTerm%' OR project_name LIKE '%$searchTerm%')";
 
-$whereClause .= " AND (current = '$statusFilter' OR '$statusFilter' = '')";
+// Arrays to hold selected filter values
+$selected_status = [];
+$selected_project_type = [];
 
-$project_sql = "SELECT * FROM projects WHERE $whereClause ORDER BY $sort $order 
-LIMIT $offset, $records_per_page";
+$filterApplied = false;
+
+if (isset($_GET['apply_filters'])) {
+    if(isset($_GET['status']) && is_array($_GET['status'])) {
+        $selected_status = $_GET['status'];
+        $status_placeholders = "'" . implode("','", $selected_status) . "'";
+        $whereClause .= " AND `current` IN ($status_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['projectType']) && is_array($_GET['projectType'])) {
+        $selected_project_type = $_GET['projectType'];
+        $project_type_placeholders = "'" . implode("','", $selected_project_type) . "'";
+        $whereClause .= " AND project_type IN ($project_type_placeholders)";
+        $filterApplied = true;
+    }
+
+    if (isset($_GET['paymentTerms']) && is_array($_GET['paymentTerms'])) {
+        $selected_payment_terms = $_GET['paymentTerms'];
+        $payment_terms_placeholders = "'" . implode("','", $selected_payment_terms) . "'";
+        $whereClause .= " AND payment_terms IN ($payment_terms_placeholders)";
+        $filterApplied = true;
+    }
+}
+
+$project_sql = "SELECT * FROM projects WHERE $whereClause ORDER BY $sort $order LIMIT $offset, $records_per_page";
+
+// Execute query
 $project_result = $conn->query($project_sql);
+
+// Fetch results
+$projects = [];
+if ($project_result->num_rows > 0) {
+    while ($row = $project_result->fetch_assoc()) {
+        $projects[] = $row;
+    }
+} else {
+    $projects = [];
+}
+
 
 // Get total number of records
 $total_records_sql = "SELECT COUNT(*) AS total FROM projects WHERE $whereClause";
 $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
+
+// Get all URL parameters from $_GET
+$urlParams = $_GET;
 
 // Fetch the project engineer's ID(s) for the project
 $project_engineer_ids = $row["project_engineer"];
@@ -77,7 +116,6 @@ if (!empty($project_engineer_ids)) {
 } else {
     $engineer_names_list = "N/A"; // If no engineer is assigned
 }
-
 
 // ========================= D E L E T E  D O C U M E N T =========================
 
@@ -158,10 +196,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 </head>
 
 <body class="background-color">
-    <?php require("../Menu/DropdownNavMenu.php") ?>
+    <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <nav aria-label="breadcrumb">
+        <div class="d-flex justify-content-end align-items-center">
+            <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
                             href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
@@ -169,7 +207,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Project Table
                     </li>
                 </ol>
-            </nav>
+            </nav> -->
             <div class="d-flex justify-content-end mb-3">
                 <div class="d-flex align-items-start me-2 mt-0 pt-0">
                     <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#filterColumnModal">
@@ -185,62 +223,140 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 </div>
             </div>
         </div>
-
         <div class="row mb-3">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center w-100">
+                <!-- Left Section: Search Form and Filter Button -->
                 <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
                     <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center w-100">
+                            <!-- Search Input Group -->
                             <div class="input-group me-2 flex-grow-1">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="search" class="form-control" id="searchDocuments" name="search"
                                     placeholder="Search Documents" value="<?php echo htmlspecialchars($searchTerm) ?>">
                             </div>
-                            <button class="btn" type="submit"
-                                style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">
+                            <!-- Search Button -->
+                            <button class="btn" type="submit" style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">
                                 Search
                             </button>
+                            <!-- Clear Button -->
                             <button class="btn btn-danger ms-2">
                                 <a class="dropdown-item" href="#" onclick="clearURLParameters()">Clear</a>
                             </button>
-
-                            <!-- Dropdown Menu for Status -->
-                            <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
-                                id="statusDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                <?php echo $statusFilter ? $statusFilter : "All Status" ?>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="statusDropdownMenuButton">
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="All Status">All Status</a></li>
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="Archived">Archived</a></li>
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="By Others">By Others</a></li>
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="In Progress">In Progress</a></li>
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="Completed">Completed</a></li>
-                                <li><a class="dropdown-item dropdown-status-item" href="#"
-                                        data-status-filter="Cancelled">Cancelled</a></li>
-                            </ul>
-
-                            <input type="hidden" id="selectedStatusFilter" name="current">
                         </div>
                     </form>
+                    <!-- Filter Modal Trigger Button -->
+                    <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal" data-bs-target="#filterProjectModal">
+                        <p class="text-nowrap fw-bold mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
+                    </button>
                 </div>
-                <?php if ($role === "admin") { ?>
-                    <div class="d-flex justify-content-center justify-content-sm-end align-items-center col-12 col-sm-4 col-lg-7">
-                        <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#projectReportModal">
-                            <i class="fa-solid fa-square-poll-vertical"></i> Report</button>
-                        <a class="btn btn-primary me-2"
-                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/pj-index.php"> <i
-                                class="fa-solid fa-chart-pie"></i> Dashboard</a>
-                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal"> <i
-                                class="fa-solid fa-plus"></i> Add Project</button>
+
+                <!-- Right Section: Admin Action Buttons -->
+                <div class="col-12 col-sm-4 col-lg-7 d-flex justify-content-center justify-content-sm-end align-items-center">
+                    <div class="d-flex align-items-center">
+                        <?php if ($role === "full control") { ?>
+                            <!-- Admin Buttons -->
+                            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#projectReportModal">
+                                <i class="fa-solid fa-square-poll-vertical"></i> Report
+                            </button>
+                            <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal" data-bs-target="#projectDashboardModal">
+                                <i class="fa-solid fa-chart-pie"></i> Dashboard
+                            </a>
+                            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                                <i class="fa-solid fa-plus"></i> Add Project
+                            </button>
+                        <?php } ?>
                     </div>
-                <?php } ?>
+                </div>
             </div>
         </div>
+
+        <?php foreach ($urlParams as $key => $value): ?>
+            <?php if (!empty($value)): // Only show the span if the value is not empty ?>
+                <?php 
+                    // Check if the value is the department filter
+                    if ($key === 'search'){ 
+                        // Handle the search filter
+                        ?>
+                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                            <strong><span class="text-warning">Search:
+                                </span><?php echo htmlspecialchars($value); ?></strong>
+                            <a href="?<?php
+                            // Remove 'Search' from the URL
+                            $filteredParams = $_GET;
+                            unset($filteredParams['search']);
+                            echo http_build_query($filteredParams);
+                            ?>" class="text-white ms-1">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        </span>
+                        <?php
+                    } else if ($key === 'status' && is_array($value)) {
+                        foreach ($value as $status) {
+                            ?>
+                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                    <strong><span class="text-warning">Status:
+                                    </span><?php echo htmlspecialchars($status); ?></strong>
+                                    <a href="?<?php
+                                    // Remove this specific status filter from the URL
+                                    $filteredParams = $_GET;
+                                    $filteredParams['status'] = array_diff($filteredParams['status'], [$status]);
+                                    echo http_build_query($filteredParams);
+                                    ?>" class="text-white ms-1">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </span>
+                            <?php
+                        }
+                    } else if ($key === 'projectType' && is_array($value)) {
+                        foreach ($value as $projectType) {
+                            ?>
+                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                    <strong><span class="text-warning">Type:
+                                    </span><?php echo htmlspecialchars($projectType); ?></strong>
+                                    <a href="?<?php
+                                    // Remove this specific projectType filter from the URL
+                                    $filteredParams = $_GET;
+                                    $filteredParams['projectType'] = array_diff($filteredParams['projectType'], [$projectType]);
+                                    echo http_build_query($filteredParams);
+                                    ?>" class="text-white ms-1">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </span>
+                            <?php
+                        }
+                    } else if ($key === 'paymentTerms' && is_array($value)) {
+                        foreach ($value as $paymentTerms) {
+                            ?>
+                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                    <strong><span class="text-warning">Terms:
+                                    </span><?php echo htmlspecialchars($paymentTerms); ?></strong>
+                                    <a href="?<?php
+                                    // Remove this specific paymentTerms filter from the URL
+                                    $filteredParams = $_GET;
+                                    $filteredParams['paymentTerms'] = array_diff($filteredParams['paymentTerms'], [$paymentTerms]);
+                                    echo http_build_query($filteredParams);
+                                    ?>" class="text-white ms-1">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </span>
+                            <?php
+                        }
+                    } ?>
+            <?php endif ?>
+        <?php endforeach; ?>
+
+        <!-- Display message if filters are applied, and show total count or no results message -->
+        <?php if ($filterApplied): ?>
+            <div class="alert <?php echo ($total_records == 0) ? 'alert-danger' : 'alert-info'; ?>">
+                <?php if ($total_records > 0): ?>
+                    <strong>Total Results:</strong> 
+                    <span class="fw-bold text-decoration-underline me-2"> <?php echo $total_records ?></span>
+                <?php else: ?>
+                    <strong>No results found for the selected filters.</strong>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <div class="table-responsive rounded-3 shadow-lg bg-light mb-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
@@ -294,14 +410,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         </th>
                         <th class="py-4 align-middle text-center customerAddressColumn" style="min-width: 200px;">
                             <a onclick="updateSort('customer_address', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer">Customer Address <i
+                                class="text-decoration-none text-white" style="cursor:pointer">Site Address <i
                                     class="fa-solid fa-sort fa-ms ms-1"></i></a>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($project_result->num_rows > 0) { ?>
-                        <?php while ($row = $project_result->fetch_assoc()) {
+                <?php if (!empty($projects)) { ?>
+                    <?php foreach ($projects as $row) { 
                             // Fetch the project engineer's ID(s) for the project
                             $project_engineer_ids = $row["project_engineer"];
                             $engineer_names = [];
@@ -333,7 +449,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 
                                 <td class="align-middle">
                                     <div class="d-flex">
-                                        <?php if ($role === "admin") { ?>
+                                        <?php if ($role === "full control") { ?>
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
                                                 data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
                                                 data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
@@ -392,7 +508,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                         : "N/A"
                                         ?>
                                 </td>
-                                <td class="py-3 align-middle text-center paymentTermsColumn">
+                                <td class="py-3 align-middle text-center paymentTermsColumn <?= $row['payment_terms'] === 'COD' ? 'bg-warning fw-bold text-white' : '' ?>">
                                     <?= $row["payment_terms"] ?>
                                 </td>
                                 <td class="py-3 align-middle text-center projectEngineerColumn" <?= isset($engineer_names_list) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
@@ -577,51 +693,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 </div>
                 <div class="modal-body">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="projectNoColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="projectNoColumn"
                             data-column="projectNoColumn">
                         <label class="form-check-label" for="projectNoColumn">
                             Project No
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="quoteNoColumn" data-column="quoteNoColumn">
+                        <input class="form-check-input column-check-input" type="checkbox" id="quoteNoColumn" data-column="quoteNoColumn">
                         <label class="form-check-label" for="quoteNoColumn">Quote No</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="currentColumn" data-column="currentColumn">
+                        <input class="form-check-input column-check-input" type="checkbox" id="currentColumn" data-column="currentColumn">
                         <label class="form-check-label" for="currentColumn">Status</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="projectNameColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="projectNameColumn"
                             data-column="projectNameColumn">
                         <label class="form-check-label" for="projectNameColumn">Project Name</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="projectTypeColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="projectTypeColumn"
                             data-column="projectTypeColumn">
                         <label class="form-check-label" for="projectTypeColumn">Project Type</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="customerColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="customerColumn"
                             data-column="customerColumn">
                         <label class="form-check-label" for="customerColumn">Customer</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="valueColumn" data-column="valueColumn">
+                        <input class="form-check-input column-check-input" type="checkbox" id="valueColumn" data-column="valueColumn">
                         <label class="form-check-label" for="valueColumn">Value</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="paymentTermsColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="paymentTermsColumn"
                             data-column="paymentTermsColumn">
                         <label class="form-check-label" for="paymentTermsColumn">Payment Terms</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="projectEngineerColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="projectEngineerColumn"
                             data-column="projectEngineerColumn">
                         <label class="form-check-label" for="projectEngineerColumn">Project Engineer</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="customerAddressColumn"
+                        <input class="form-check-input column-check-input" type="checkbox" id="customerAddressColumn"
                             data-column="customerAddressColumn">
                         <label class="form-check-label" for="customerAddressColumn">Customer Address</label>
                     </div>
@@ -664,10 +780,110 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
     </div>
 
+    <div class="modal fade" id="filterProjectModal" tabindex="1" aria-labelledby="filterProjectModal"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET">
+                        <div class="row">
+                            <div class="col-12 col-lg-4">
+                                <h5 class="signature-color fw-bold">Status</h5>
+                                <?php
+                                $statusFilters = ['Archived', 'By Others', 'In Progress', 'Completed', 'Cancelled'];
+                                $selected_status = isset($_GET['status']) ? (array) $_GET['status'] : [];
+                                foreach ($statusFilters as $statusFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>"
+                                            name="status[]" value="<?php echo $statusFilter ?>" 
+                                            <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>">
+                                            <?php echo $statusFilter ?>
+                                        </label>
+                                    </p>
+                                <?php } ?>
+                            </div>
+
+                            <div class="col-12 col-lg-4 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Project Type</h5>
+                                <?php 
+                                $projectTypeFilters = ['Local', 'Sitework', 'IOR & Commissioning', 'Export', 'R&D', 'Service'];
+                                $selected_project_type = isset(($_GET['projectType'])) ? (array) $_GET['projectType'] : [];
+                                foreach ($projectTypeFilters as $projectTypeFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $projectTypeFilter)); ?>"
+                                            name="projectType[]" value="<?php echo $projectTypeFilter ?>"
+                                            <?php echo in_array($projectTypeFilter, $selected_project_type) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $projectTypeFilter)); ?>">
+                                            <?php echo $projectTypeFilter ?>
+                                        </label>
+                                    </p>
+                                    <?php 
+                                }
+                                ?>
+                            </div>
+
+                            <div class="col-12 col-lg-4 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Project Terms</h5>
+                                <?php 
+                                $paymentTermsFilters = ['COD', '0 Days', '30 Days', '60 Days'];
+                                $selected_payment_terms = isset(($_GET['paymentTerms'])) ? (array) $_GET['paymentTerms'] : [];
+                                foreach ($paymentTermsFilters as $paymentTermsFilter) {
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower(str_replace(' ', '', $paymentTermsFilter)); ?>"
+                                            name="paymentTerms[]" value="<?php echo $paymentTermsFilter ?>"
+                                            <?php echo in_array($paymentTermsFilter, $selected_payment_terms) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower(str_replace(' ', '', $paymentTermsFilter)); ?>">
+                                            <?php echo $paymentTermsFilter ?>
+                                        </label>
+                                    </p>
+                                    <?php 
+                                }
+                                ?>
+                            </div>
+
+                            <div class="d-flex justify-content-center mt-4">
+                                <button class="btn btn-secondary me-1" type="button"
+                                    data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== Project Dashboard Modal ================== -->
+    <div class="modal fade" id="projectDashboardModal" tab-index="-1" aria-labelledby="projectDashboardModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectDashboardModalLabel">Project Dashboard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class="modal-body background-color">
+                    <?php require_once("../PageContent/pj-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php require_once("../logout.php") ?>
     <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <script src=" https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
         function clearURLParameters() {
@@ -891,7 +1107,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
         // Save checkbox state to localStorage with a timestamp
-        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+        document.querySelectorAll('.column-check-input').forEach(checkbox => {
             checkbox.addEventListener('change', function () {
                 const columnClass = this.getAttribute('data-column');
                 const columns = document.querySelectorAll(`.${columnClass}`);
@@ -910,7 +1126,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 
         // Initialize checkboxes based on current column visibility
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            document.querySelectorAll('.column-check-input').forEach(checkbox => {
                 const columnClass = checkbox.getAttribute('data-column');
                 const columns = document.querySelectorAll(`.${columnClass}`);
 

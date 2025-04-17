@@ -27,10 +27,11 @@ $get_payroll_type_stmt->close();
 // Get login employee id from SESSION 
 $loginEmployeeId = $_SESSION["employee_id"];
 
-if ($role === "general" && $employee_payroll_type === "salary" && $employeeId != $loginEmployeeId) {
+if (($role === "general" || $role === "modify 1") && $employee_payroll_type === "salary" && $employeeId != $loginEmployeeId) {
     echo "<script>
     window.location.href = 'http://$serverAddress/$projectName/access_restricted.php';
-  </script>";
+    </script>";
+    exit; // Ensure script execution stops after redirect
 }
 
 $config = include('../config.php');
@@ -340,9 +341,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $profileImageToDeleteEmpId = $_POST['profileImageToDeleteEmpId'];
         $profileImage = $_FILES['profileImageToEdit'];
 
+        // Fetch first name and last name from the database
+        $empQuery = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $empStmt = $conn->prepare($empQuery);
+        $empStmt->bind_param("i", $profileImageToDeleteEmpId);
+        $empStmt->execute();
+        $empStmt->bind_result($firstName, $lastName);
+        $empStmt->fetch();
+        $empStmt->close();
+
+        // Ensure first and last names are not null
+        $firstName = $firstName ?? 'Unknown';
+        $lastName = $lastName ?? 'Unknown';
+
         // Process the uploaded file
         $imageExtension = pathinfo($profileImage["name"], PATHINFO_EXTENSION);
-        $newFileName = $profileImageToDeleteEmpId . '_profile.' . $imageExtension;
+        $newFileName = "01 - Employee Photo (" . $profileImageToDeleteEmpId . " " . $firstName . " " . $lastName . ")." . $imageExtension;
         $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
 
         if (move_uploaded_file($profileImage["tmp_name"], $imagePath)) {
@@ -375,10 +389,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['policiesToSubmit']) 
     $empNameToAddPolicy = htmlspecialchars($_POST['empNameToAddPolicy']);
     $selectedPolicyTypeToAdd = htmlspecialchars($_POST['selectedPolicyTypeToAdd']);
     $addPolicyDate = htmlspecialchars($_POST['addPolicyDate']);
-    $policiesToSubmit = $_FILES['policiesToSubmit'];  // $_FILES now contains the file
+    $policiesToSubmit = $_FILES['policiesToSubmit'];
 
-    // Define policy folder path
-    $policyFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddPolicy\\00 - Employee Documents\\02 - Policies\\";
+    // Prepare and execute the query to get payroll type
+    $payroll_type_sql = "SELECT payroll_type FROM employees WHERE employee_id = ?";
+    if ($payroll_type_result = $conn->prepare($payroll_type_sql)) {
+        $payroll_type_result->bind_param("s", $empIdToAddPolicy);
+        $payroll_type_result->execute();
+        $payroll_type_result->bind_result($emp_payroll_type);
+
+        if ($payroll_type_result->fetch()) {
+            if ($emp_payroll_type === "wage") {
+                // Define policy folder path for wage staff
+                $policyFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddPolicy\\00 - Employee Documents\\02 - Policies\\";
+            } else if ($emp_payroll_type === "salary") {
+                // Define policy folder path for salary staff
+                $policyFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddPolicy\\00 - Employee Documents\\02 - Policies\\";
+            } else {
+                echo "Invalid payroll type for the employee.";
+                exit;
+            }
+        } else {
+            echo "Employee not found.";
+            exit;
+        }
+
+        // Close the prepared statement
+        $payroll_type_result->close();
+    } else {
+        echo "Error preparing the query.";
+        exit;
+    }
 
     // Ensure the directory exists and has proper permissions
     if (!file_exists($policyFolder)) {
@@ -399,11 +440,169 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['policiesToSubmit']) 
 
         // Move the uploaded file to the target directory
         if (move_uploaded_file($policiesToSubmit['tmp_name'], $uploadedFilePath)) {
+            echo "<script> alert('Policy uploaded successfully.') </script>";
         } else {
             echo "Error uploading policy '$fileName'.<br>";
         }
     } else {
         echo "Error uploading policy '$fileName'.<br>";
+    }
+}
+
+// ========================= A D D  M A C H I N E  C O M P E T E N C Y =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['machineCompetenciesToSubmit']) && $_FILES['machineCompetenciesToSubmit']['error'] === UPLOAD_ERR_OK) {
+    // Sanitize and assign POST variables
+    $empIdToAddMachineCompetency = htmlspecialchars($_POST['empIdToAddMachineCompetency']);
+    $empNameToAddMachineCompetency = htmlspecialchars($_POST['empNameToAddMachineCompetency']);
+    $selectedMachineCompetencyTypeToAdd = htmlspecialchars($_POST['selectedMachineCompetencyTypeToAdd']);
+    $addMachineCompetencyDate = htmlspecialchars(($_POST['addMachineCompetencyDate']));
+    $machineCompetenciesToSubmit = $_FILES['machineCompetenciesToSubmit'];
+
+    // Prepare and execute the query to get the payroll type
+    $payroll_type_sql = "SELECT payroll_type FROM employees WHERE employee_id = ?";
+    if ($payroll_type_result = $conn->prepare($payroll_type_sql)) {
+        $payroll_type_result->bind_param("s", $empIdToAddMachineCompetency);
+        $payroll_type_result->execute();
+        $payroll_type_result->bind_result($emp_payroll_type);
+
+        if ($payroll_type_result->fetch()) {
+            if ($emp_payroll_type === "wage") {
+                // Define policy folder path for wage staff
+                $machineCompetencyFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddMachineCompetency\\01 - Induction and Training Documents\\";
+            } else if ($emp_payroll_type === "salary") {
+                // Define policy folder path for salary staff
+                $machineCompetencyFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddMachineCompetency\\01 - Induction and Training Documents\\";
+            } else {
+                echo "Invalid payroll type for the employee.";
+                exit;
+            }
+        } else {
+            echo "Employee not found.";
+            exit;
+        }
+        $payroll_type_result->close();
+    }
+
+    // Ensure the directory exists and has proper permissions
+    if (!file_exists($machineCompetencyFolder)) {
+        if (!mkdir($machineCompetencyFolder, 0777, true)) {
+            echo "Failed to create directory. Please check folder permissions.";
+            exit;
+        }
+    }
+
+    // Retrieve file name and check for errors
+    $fileName = $machineCompetenciesToSubmit['name'];
+    if ($machineCompetenciesToSubmit['error'] === UPLOAD_ERR_OK) {
+        // Construct the file name based on Machine Competency and employee info
+        $formattedDate = date("Y-m-d", strtotime($addMachineCompetencyDate));
+        $fileBaseName = $formattedDate . '-' . $selectedMachineCompetencyTypeToAdd . ' (' . $empIdToAddMachineCompetency . ' ' . $empNameToAddMachineCompetency . ') Signed';
+        $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
+        $uploadedFilePath = $machineCompetencyFolder . $fileBaseName . '.' . $fileExtension;  // Add extension to the filename
+
+        // Move the uploaded file to the target directory
+        if (move_uploaded_file($machineCompetenciesToSubmit['tmp_name'], $uploadedFilePath)) {
+        } else {
+            echo "Error uploading machineCompetency '$fileName'.<br>";
+        }
+    } else {
+        echo "Error uploading machineCompetency '$fileName'.<br>";
+    }
+}
+
+// ========================= A D D  L E A V E =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['leaveToSubmit'])) {
+    // Sanitise and assign POST variables
+    $empIdToAddLeave = htmlspecialchars($_POST['empIdToAddLeave']);
+    $empNameToAddLeave = htmlspecialchars($_POST['empNameToAddLeave']);
+    $selectedLeaveTypeToAdd = htmlspecialchars($_POST['selectedLeaveTypeToAdd']);
+    $addLeaveDate = htmlspecialchars($_POST['addLeaveDate']);
+    $leaveToSubmit = $_FILES['leaveToSubmit'];
+
+    // Prepare and execute the query to get payroll type
+    $payroll_type_sql = "SELECT payroll_type FROM employees WHERE employee_id = ?";
+    if ($payroll_type_result = $conn->prepare($payroll_type_sql)) {
+        $payroll_type_result->bind_param("s", $empIdToAddLeave);
+        $payroll_type_result->execute();
+        $payroll_type_result->bind_result($emp_payroll_type);
+
+        if ($payroll_type_result->fetch()) {
+            if ($emp_payroll_type === "wage") {
+                if ($selectedLeaveTypeToAdd === "personalLeave" || $selectedLeaveTypeToAdd === "medicalCertificate") {
+                    // Define leave folder path for wage staff
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddLeave\\04 - Leave\\00 - Personal Leave\\";
+                } else if ($selectedLeaveTypeToAdd === "annualLeave") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddLeave\\04 - Leave\\01 - Annual Leave\\";
+                } else if ($selectedLeaveTypeToAdd === "workingFromHome") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddLeave\\04 - Leave\\02 - Working from Home\\";
+                } else if ($selectedLeaveTypeToAdd === "longServiceLeave") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$empIdToAddLeave\\04 - Leave\\03 - Long Service Leave\\";
+                }
+            } else if ($emp_payroll_type === "salary") {
+                if ($selectedLeaveTypeToAdd === "personalLeave" || $selectedLeaveTypeToAdd === "medicalCertificate") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddLeave\\04 - Leave\\00 - Personal Leave\\";
+                } else if ($selectedLeaveTypeToAdd === "annualLeave") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddLeave\\04 - Leave\\01 - Annual Leave\\";
+                } else if ($selectedLeaveTypeToAdd === "workingFromHome") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddLeave\\04 - Leave\\02 - Working from Home\\";
+                } else if ($selectedLeaveTypeToAdd === "longServiceLeave") {
+                    $leaveFolder = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\$empIdToAddLeave\\04 - Leave\\03 - Long Service Leave\\";
+                }
+            } else {
+                echo "Invalid payroll type for the employee.";
+                exit;
+            }
+        } else {
+            echo "Employee not found.";
+            exit;
+        }
+        $payroll_type_result->close();
+    }
+
+
+
+    // Ensure the directory exists and has proper permissions
+    if (!file_exists($leaveFolder)) {
+        if (!mkdir($leaveFolder, 0777, true)) {
+            echo "Failed to create directory. Please check folder permissions.";
+            exit;
+        }
+    }
+
+    // Retrieve file name and check for errors
+    $fileName = $leaveToSubmit['name'];
+    if ($leaveToSubmit['error'] === UPLOAD_ERR_OK) {
+        // Construct the file name based on Leave and employee info
+        $formattedDate = date("Y-m-d", strtotime($addLeaveDate));
+
+        // Set the file base name based on selected leave type
+        if ($selectedLeaveTypeToAdd === "personalLeave" || $selectedLeaveTypeToAdd === "annualLeave" || $selectedLeaveTypeToAdd === "longServiceLeave") {
+            // For personal, annual, or long service leave
+            $fileBaseName = $formattedDate . '-09-HR-FO-007' . ' (' . $empIdToAddLeave . ' ' . $empNameToAddLeave . ') Signed';
+        } elseif ($selectedLeaveTypeToAdd === "workingFromHome") {
+            // For working from home leave
+            $fileBaseName = $formattedDate . '-09-HR-FO-014' . ' (' . $empIdToAddLeave . ' ' . $empNameToAddLeave . ') Signed';
+        } elseif ($selectedLeaveTypeToAdd === "medicalCertificate") {
+            // For medical certificate leave
+            $fileBaseName = $formattedDate . '-Doc-Cert (' . $empIdToAddLeave . ' ' . $empNameToAddLeave . ') Signed';
+        } else {
+            echo "Invalid leave type selected.";
+            exit;
+        }
+
+        // Get file extension
+        $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
+        // Define the full file path
+        $uploadedFilePath = $leaveFolder . $fileBaseName . '.' . $fileExtension;  // Add extension to the filename
+
+        // Move the uploaded file to the target directory
+        if (move_uploaded_file($leaveToSubmit['tmp_name'], $uploadedFilePath)) {
+            // File upload successful
+        } else {
+            echo "Error uploading leave '$fileName'.<br>";
+        }
+    } else {
+        echo "Error uploading leave '$fileName'.<br>";
     }
 }
 
@@ -581,6 +780,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         $submit_performance_review_result->close();
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -661,7 +862,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             .show-print {
-                display: block;
+                display: block !important;
                 column-count: 2;
                 column-gap: 5px;
             }
@@ -717,28 +918,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
 
             .mt-emergency-contact {
-                margin-top: 30px !important;
+                margin-top: 10px !important;
                 padding-top: 0px !important;
             }
 
             .mt-print-employment-details {
-                padding-top: 20px !important;
+                padding-top: 0px !important;
+                margin-top: 0 !important;
             }
 
             .address-print {
                 width: 100%;
-            }
-
-            .machineCompetencyPrint {
-                display: block !important;
-                top: 40px;
-                margin-top: 80px !important;
-                margin-left: 20px !important;
-                margin-right: 20px !important;
-                background-color: white !important;
-                /* Force white background */
-                color: black !important;
-                /* Set text color */
             }
 
             .card {
@@ -772,6 +962,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 /* Adjust this value as needed */
             }
 
+            .machineCompetencyPrint {
+                box-shadow: none !important;
+                background: none !important;
+            }
+
+            .machineCompetencyPrintTable {
+                display: table !important;
+                background: none !important;
+                width: 100% !important;
+                position: relative;
+                margin: auto;
+                margin-top: 20px;
+            }
+
+            .policiesPrint {
+                box-shadow: none !important;
+                background: none !important;
+            }
+
+            .policiesPrintTable {
+                display: table !important;
+                background: none !important;
+                width: 100% !important;
+                position: relative;
+                margin: auto;
+                margin-top: 20px;
+            }
+
             .currentWagePrint {
                 display: table !important;
             }
@@ -790,37 +1008,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
             .image-print-width {
                 margin-left: 30px !important;
-            }
-
-            .profile-pic,
-            .signature-bg-color {
-                width: 50px !important;
-                height: 50px !important;
-            }
-
-            @media print {
-                .print-profile {
-                    width: 60px !important;
-                    /* Smaller size when printing */
-                    height: 60px !important;
-                    box-shadow: none !important;
-                    /* Remove shadow */
-                }
-
-                .print-profile img {
-                    width: 100% !important;
-                    height: 100% !important;
-                    object-fit: cover !important;
-                }
-
-                .print-initials {
-                    width: 60px !important;
-                    height: 60px !important;
-                    font-size: 18px !important;
-                    /* Adjust font size for initials */
-                    box-shadow: none !important;
-                    /* Remove shadow */
-                }
             }
 
             @page {
@@ -921,7 +1108,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 </head>
 
 <body class="background-color">
-    <?php require_once("../Menu/DropdownNavMenu.php") ?>
+    <div class="hide-print">
+        <?php require_once("../Menu/NavBar.php") ?>
+    </div>
     <div class="container-fluid px-md-5 mb-5 mt-4">
         <nav aria-label="breadcrumb" class="mb-3 hide-print">
             <ol class="breadcrumb m-0">
@@ -939,7 +1128,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             </ol>
         </nav>
         <div class="row">
-            <div class="col-lg-8 show-print">
+            <div class="col-lg-8">
                 <?php
                 if ($employee_details_result->num_rows > 0) {
                     while ($row = $employee_details_result->fetch_assoc()) {
@@ -951,6 +1140,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $visaName = $row['visa_name'];
                         $visaExpiryDate = $row['visa_expiry_date'];
                         $lastDate = $row['last_date'];
+                        $workShift = $row['work_shift'];
+                        $lockerNumber = $row['locker_number'];
+                        $permanentDate = $row['permanent_date'];
                         $employeeId = $row['employee_id'];
                         $address = $row['address'];
                         $phoneNumber = $row['phone_number'];
@@ -1068,7 +1260,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </button>
 
 
-                                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
                                             id="editProfileBtn">
                                             Edit Profile <i class="fa-regular fa-pen-to-square"></i>
@@ -1078,253 +1270,283 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
-                    <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-personal-information">
-                        <div class="p-3">
-                            <p class="fw-bold signature-color">Personal Information</p>
-                            <div class="row">
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>First Name</small>
-                                    <h5 class="fw-bold"><?php echo (isset($firstName) ? $firstName : "N/A") ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Last Name</small>
-                                    <h5 class="fw-bold"><?php echo (isset($lastName) ? $lastName : "N/A") ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Nickname</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo ($nickname !== null && $nickname !== "" ? $nickname : "N/A"); ?>
-                                    </h5>
-                                </div>
-
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Gender</small>
-                                    <h5 class="fw-bold"><?php echo (isset($gender) ? $gender : "N/A") ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Date of Birth</small>
-                                    <h5 class="fw-bold"><?php echo isset($dob) ? date("j F Y", strtotime($dob)) : "N/A"; ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Visa Status</small>
-                                    <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
-                                    </h5>
-                                </div>
-                          
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Visa Expiry Date</small>
-                                    <?php
-                                    if ($visaExpiryDate != null) {
-                                        // Set the timezone to Sydney
-                                        $timezone = new DateTimeZone('Australia/Sydney');
-
-                                        // Create DateTime objects with the Sydney timezone
-                                        $today = new DateTime('now', $timezone);
-                                        $today->setTime(0, 0, 0);
-
-                                        $expiryDate = new DateTime($visaExpiryDate, $timezone);
-                                        $expiryDate->setTime(0, 0, 0);
-
-                                        // Calculate the difference in days between today and the visa expiry date
-                                        $interval = $today->diff($expiryDate);
-                                        $daysDifference = $interval->format('%r%a');
-
-                                        // Function to determine singular or plural "day"
-                                        function dayText($days)
-                                        {
-                                            return abs($days) == 1 ? 'day' : 'days';
-                                        }
-
-                                        $visaExpiryDate = isset($visaExpiryDate) ? $visaExpiryDate : "N/A";
-
-                                        // Check if the expiry date is less than 30 days from today
-                                        if ($daysDifference == 0) {
-                                            echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
-                                            data-bs-placement="top" title="Visa expired today"></i> </h5>';
-                                        } else if ($daysDifference < 30 && $daysDifference >= 0) {
-                                            echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
-                                            data-bs-placement="top" title="Visa expires in ' . $daysDifference . ' ' . dayText($daysDifference) . '"></i> </h5>';
-                                        } else if ($daysDifference < 0) {
-                                            echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
-                                            data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"></i> </h5>';
-                                        } else {
-                                            echo '<h5 class="fw-bold">' . $visaExpiryDate . '</h5>';
-                                        }
-                                    } else {
-                                        echo '<h5 class="fw-bold"> N/A</h5>';
-                                    }
-                                    ?>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column <?php if (isset($lastDate)) { echo "bg-danger text-white"; } ?> rounded-2">
-                                    <small>Last Date</small>
-                                    <h5 class="fw-bold rounded-2"><?php echo isset($lastDate) ? $lastDate : "N/A"; ?>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-contact">
-                        <div class="p-3">
-                            <p class="fw-bold signature-color">Contacts</p>
-                            <div class="row">
-                                <div class="col-lg-6 col-xl-12 d-flex flex-column address-print">
-                                    <small>Address</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo (isset($address) && $address !== "" ? $address : "N/A"); ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-4 col-xl-4 d-flex flex-column">
-                                    <small>Email</small>
-                                    <h5 class="fw-bold text-break"><?php echo isset($email) ? $email : "N/A"; ?></h5>
-                                </div>
-                                <div class="col-lg-4 col-xl-4 d-flex flex-column">
-                                    <small>Personal Email</small>
-                                    <h5 class="fw-bold text-break">
-                                        <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Phone Number</small>
-                                    <h5 class="fw-bold"><?php echo isset($phoneNumber) ? $phoneNumber : "N/A"; ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Plate Number</small>
-                                    <h5 class="fw-bold"><?php echo isset($plateNumber) ? $plateNumber : "N/A"; ?>
-                                    </h5>
-                                </div>
-                            </div>
-
-                            <p class="fw-bold signature-color mt-4 mt-emergency-contact">Emergency Contact</p>
-                            <div class="row">
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Emergency Contact Name</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($emergencyContactName) ? $emergencyContactName : "N/A"; ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Emergency Contact Relationship</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($emergencyContactRelationship) ? $emergencyContactRelationship : "N/A"; ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Emergency Contact</small>
-                                    <h5 class="fw-bold"><?php echo isset($emergencyContact) ? $emergencyContact : "N/A"; ?>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-print-employment-details">
-                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print">
+                    <div class="show-print">
+                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-personal-information">
                             <div class="p-3">
-                                <p class="fw-bold signature-color">Employment Details</p>
+                                <p class="fw-bold signature-color">Personal Information</p>
                                 <div class="row">
                                     <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small> Employee Id </small>
-                                        <h5 class="fw-bold"><?php echo isset($employeeId) ? $employeeId : "N/A"; ?></h5>
+                                        <small>First Name</small>
+                                        <h5 class="fw-bold"><?php echo (isset($firstName) ? $firstName : "N/A") ?></h5>
                                     </div>
                                     <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Date Hired</small>
+                                        <small>Last Name</small>
+                                        <h5 class="fw-bold"><?php echo (isset($lastName) ? $lastName : "N/A") ?></h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Nickname</small>
                                         <h5 class="fw-bold">
-                                            <?php echo isset($startDate) ? date("j F Y", strtotime($startDate)) : "N/A"; ?>
+                                            <?php echo ($nickname !== null && $nickname !== "" ? $nickname : "N/A"); ?>
+                                        </h5>
+                                    </div>
+
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Gender</small>
+                                        <h5 class="fw-bold"><?php echo (isset($gender) ? $gender : "N/A") ?></h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Date of Birth</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($dob) ? date("j F Y", strtotime($dob)) : "N/A"; ?>
                                         </h5>
                                     </div>
                                     <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Time with Company</small>
+                                        <small>Visa Status</small>
+                                        <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
+                                        </h5>
+                                    </div>
+
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Visa Expiry Date</small>
                                         <?php
-                                        if (isset($startDate)) {
-                                            $startDateObj = new DateTime($startDate);
-                                            $currentDateObj = new DateTime();
-                                            $interval = $startDateObj->diff($currentDateObj);
-                                            echo "<h5 class='fw-bold'> $interval->y  years, $interval->m  months, $interval->d  days </h5>";
+                                        if ($visaExpiryDate != null) {
+                                            // Set the timezone to Sydney
+                                            $timezone = new DateTimeZone('Australia/Sydney');
+
+                                            // Create DateTime objects with the Sydney timezone
+                                            $today = new DateTime('now', $timezone);
+                                            $today->setTime(0, 0, 0);
+
+                                            $expiryDate = new DateTime($visaExpiryDate, $timezone);
+                                            $expiryDate->setTime(0, 0, 0);
+
+                                            // Calculate the difference in days between today and the visa expiry date
+                                            $interval = $today->diff($expiryDate);
+                                            $daysDifference = $interval->format('%r%a');
+
+                                            // Function to determine singular or plural "day"
+                                            function dayText($days)
+                                            {
+                                                return abs($days) == 1 ? 'day' : 'days';
+                                            }
+
+                                            $visaExpiryDate = isset($visaExpiryDate) ? $visaExpiryDate : "N/A";
+
+                                            // Check if the expiry date is less than 30 days from today
+                                            if ($daysDifference == 0) {
+                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" title="Visa expired today"></i> </h5>';
+                                            } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" title="Visa expires in ' . $daysDifference . ' ' . dayText($daysDifference) . '"></i> </h5>';
+                                            } else if ($daysDifference < 0) {
+                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"></i> </h5>';
+                                            } else {
+                                                echo '<h5 class="fw-bold">' . $visaExpiryDate . '</h5>';
+                                            }
                                         } else {
-                                            echo "<h5 class='fw-bold'>N/A</h5>";
+                                            echo '<h5 class="fw-bold"> N/A</h5>';
                                         }
                                         ?>
                                     </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Department</small>
-                                        <h5 class="fw-bold"><?php echo isset($departmentName) ? $departmentName : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Section</small>
-                                        <h5 class="fw-bold"><?php echo isset($section) ? $section : "N/A"; ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Employment Type</small>
-                                        <h5 class="fw-bold"><?php echo isset($employmentType) ? $employmentType : "N/A"; ?>
-                                        </h5>
-                                    </div>
-
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Position</small>
-                                        <h5 class="fw-bold"><?php echo isset($positionName) ? $positionName : "N/A"; ?></h5>
-                                    </div>
-
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Payroll Type</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-contact">
+                            <div class="p-3 mt-print-contact">
+                                <p class="fw-bold signature-color">Contacts</p>
+                                <div class="row">
+                                    <div class="col-lg-6 col-xl-12 d-flex flex-column address-print">
+                                        <small>Address</small>
                                         <h5 class="fw-bold">
-                                            <?php echo isset($payrollType) ? ucwords($payrollType) : "N/A"; ?>
+                                            <?php echo (isset($address) && $address !== "" ? $address : "N/A"); ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-4 col-xl-4 d-flex flex-column">
+                                        <small>Email</small>
+                                        <h5 class="fw-bold text-break"><?php echo isset($email) ? $email : "N/A"; ?></h5>
+                                    </div>
+                                    <div class="col-lg-4 col-xl-4 d-flex flex-column">
+                                        <small>Personal Email</small>
+                                        <h5 class="fw-bold text-break">
+                                            <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Phone Number</small>
+                                        <h5 class="fw-bold"><?php echo isset($phoneNumber) ? $phoneNumber : "N/A"; ?></h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Plate Number</small>
+                                        <h5 class="fw-bold"><?php echo isset($plateNumber) ? $plateNumber : "N/A"; ?>
+                                        </h5>
+                                    </div>
+                                </div>
+
+                                <p class="fw-bold signature-color mt-4 mt-emergency-contact">Emergency Contact</p>
+                                <div class="row">
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Emergency Contact Name</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($emergencyContactName) ? $emergencyContactName : "N/A"; ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Emergency Contact Relationship</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($emergencyContactRelationship) ? $emergencyContactRelationship : "N/A"; ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Emergency Contact</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($emergencyContact) ? $emergencyContact : "N/A"; ?>
                                         </h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-bank">
-                        <div class="p-3">
-                            <p class="fw-bold signature-color ">Banking, Super and Tax Details</p>
-                            <div class="row">
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small> Banking/Building Society </small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($bankBuildingSociety) ? $bankBuildingSociety : "N/A" ?></h>
+                        <div class="mt-print-employment-details">
+                            <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print">
+                                <div class="p-3 mt-print-employment-details">
+                                    <p class="fw-bold signature-color">Employment Details</p>
+                                    <div class="row">
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small> Employee Id </small>
+                                            <h5 class="fw-bold"><?php echo isset($employeeId) ? $employeeId : "N/A"; ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Date Hired</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($startDate) ? date("j F Y", strtotime($startDate)) : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Time with Company</small>
+                                            <?php
+                                            if (isset($startDate)) {
+                                                $startDateObj = new DateTime($startDate);
+                                                $currentDateObj = new DateTime();
+                                                $interval = $startDateObj->diff($currentDateObj);
+                                                echo "<h5 class='fw-bold'> $interval->y  years, $interval->m  months, $interval->d  days </h5>";
+                                            } else {
+                                                echo "<h5 class='fw-bold'>N/A</h5>";
+                                            }
+                                            ?>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Permanent Date</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($permanentDate) ? $permanentDate : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Department</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($departmentName) ? $departmentName : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Section</small>
+                                            <h5 class="fw-bold"><?php echo isset($section) ? $section : "N/A"; ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Employment Type</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($employmentType) ? $employmentType : "N/A"; ?>
+                                            </h5>
+                                        </div>
+
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Position</small>
+                                            <h5 class="fw-bold"><?php echo isset($positionName) ? $positionName : "N/A"; ?>
+                                            </h5>
+                                        </div>
+
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Payroll Type</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($payrollType) ? ucwords($payrollType) : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column <?php if (isset($lastDate)) {
+                                            echo "bg-danger text-white";
+                                        } ?> rounded-2">
+                                            <small>Last Date</small>
+                                            <h5 class="fw-bold rounded-2">
+                                                <?php echo !empty($lastDate) ? date("j F Y", strtotime($lastDate)) : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Work Shift</small>
+                                            <h5 class="fw-bold rounded-2">
+                                                <?php echo isset($workShift) ? $workShift : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Locker Number</small>
+                                            <h5 class="fw-bold rounded-2">
+                                                <?php echo isset($lockerNumber) ? $lockerNumber : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>BSB</small>
-                                    <h5 class="fw-bold"><?php echo isset($bsb) ? $bsb : "N/A" ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Account Number</small>
-                                    <h5 class="fw-bold"><?php echo isset($accountNumber) ? $accountNumber : "N/A" ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Unique Superannuation Identifier</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($uniqueSuperannuationIdentifier) ? $uniqueSuperannuationIdentifier : "N/A" ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Superannuation Fund Name</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($superannuationFundName) ? $superannuationFundName : "N/A" ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Superannuation Member Number</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($superannuationMemberNumber) ? $superannuationMemberNumber : "N/A" ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Tax File Number</small>
-                                    <h5 class="fw-bold"><?php echo isset($taxFileNumber) ? $taxFileNumber : "N/A" ?></h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Higher Education Loan Programme</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($higherEducationLoanProgramme) ? ($higherEducationLoanProgramme == 1 ? "Yes" : "No") : "N/A"; ?>
-                                    </h5>
-                                </div>
-                                <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                    <small>Financial Supplement Debt</small>
-                                    <h5 class="fw-bold">
-                                        <?php echo isset($financialSupplementDebt) ? ($financialSupplementDebt == 1 ? "Yes" : "No") : "N/A" ?>
-                                    </h5>
+                            </div>
+                        </div>
+                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-bank">
+                            <div class="p-3 mt-print-bank">
+                                <p class="fw-bold signature-color">Banking, Super and Tax Details</p>
+                                <div class="row">
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small> Banking/Building Society </small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($bankBuildingSociety) ? $bankBuildingSociety : "N/A" ?></h>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>BSB</small>
+                                        <h5 class="fw-bold"><?php echo isset($bsb) ? $bsb : "N/A" ?></h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Account Number</small>
+                                        <h5 class="fw-bold"><?php echo isset($accountNumber) ? $accountNumber : "N/A" ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Unique Superannuation Identifier</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($uniqueSuperannuationIdentifier) ? $uniqueSuperannuationIdentifier : "N/A" ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Superannuation Fund Name</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($superannuationFundName) ? $superannuationFundName : "N/A" ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Superannuation Member Number</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($superannuationMemberNumber) ? $superannuationMemberNumber : "N/A" ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Tax File Number</small>
+                                        <h5 class="fw-bold"><?php echo isset($taxFileNumber) ? $taxFileNumber : "N/A" ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Higher Education Loan Programme</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($higherEducationLoanProgramme) ? ($higherEducationLoanProgramme == 1 ? "Yes" : "No") : "N/A"; ?>
+                                        </h5>
+                                    </div>
+                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <small>Financial Supplement Debt</small>
+                                        <h5 class="fw-bold">
+                                            <?php echo isset($financialSupplementDebt) ? ($financialSupplementDebt == 1 ? "Yes" : "No") : "N/A" ?>
+                                        </h5>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1333,57 +1555,64 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
 
                 <div class="col-lg-4">
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
-                        <div class="p-3 hide-print">
-                            <p class="fw-bold signature-color">Files</p>
-                            <!-- 00 - Employee Documents -->
-                            <div class="d-flex justify-content-center">
-                                <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                    <div class="col-auto d-flex align-items-center">
+                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                        <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
+                            <div class="p-3 hide-print">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <p class="fw-bold signature-color mb-0 pb-0">Files</p>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-success btn-sm" data-bs-toggle="modal"
+                                            data-bs-target="#uploadEmployeeFilesModal"><i
+                                                class="fa-solid fa-plus me-1"></i>Upload</button>
+                                    <?php } ?>
+                                </div>
+                                <!-- 00 - Employee Documents -->
+                                <div class="d-flex justify-content-center">
+                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
                                         <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </div>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex justify-content-start">
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                        00 - Employee Documents
-                                                    </a>
-                                                </div>
-                                                <span>
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip"
+                                                    data-bs-placement="top" title="Open Folder">
                                                     <div class="d-flex align-items-center">
-                                                        <small id="pay-review-directory-path" class="me-1 text-break"
-                                                            style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
-                                                        <!-- <input type="hidden"
-                                                            value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\00 - Employee Documents"; ?>">
-                                                        <button id="copy-button" class="btn rounded btn-sm"
-                                                            onclick="copyDirectoryPath(this)"><i
-                                                                class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                            <small class="text-primary">Copy</small>
-                                                        </button> -->
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                        </a>
                                                     </div>
                                                 </span>
                                             </div>
                                         </div>
+                                        <div class="col">
+                                            <div class="d-flex align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex justify-content-start">
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
+                                                            target="_blank"
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                            00 - Employee Documents
+                                                        </a>
+                                                    </div>
+                                                    <span>
+                                                        <div class="d-flex align-items-center">
+                                                            <small id="pay-review-directory-path" class="me-1 text-break"
+                                                                style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
+                                                            <!-- <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\00 - Employee Documents"; ?>">
+                                                            <button id="copy-button" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button> -->
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <?php if ($employee_payroll_type === "wage") { ?>
                                 <!-- 01 - Induction and Training Documents-->
                                 <div class="d-flex justify-content-center mt-3">
                                     <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -1541,7 +1770,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             </span>
                                         </div>
                                         <div class="col">
-                                            <div class="d-flex align-items-center">
+                                            <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex justify-content-start">
                                                         <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
@@ -1564,6 +1793,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                         </div>
                                                     </span>
                                                 </div>
+                                                <?php if ($role === "full control") { ?>
+                                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                                        data-bs-target="#addLeaveModal"><i
+                                                            class="fa-solid fa-plus me-1"></i>Upload</button>
+                                                <?php } ?>
                                             </div>
                                         </div>
                                     </div>
@@ -1699,13 +1933,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </div>
                                     </div>
                                 </div>
-                            <?php } ?>
-                        </div>
-                    </div>
 
+                            </div>
+                        </div>
+                    <?php } ?>
 
                     <!-- ================= Pay Raise History Chart (Wage) ================= -->
-                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                    <?php if ($role === "full control" || $role === "modify 1") { ?>
                         <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
                         <div
                             class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-wage <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
@@ -1723,7 +1957,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </small>
                                     </p>
 
-                                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
                                         <i id="payRaiseEditIconWage" role="button"
                                             class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
                                             data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
@@ -1737,7 +1971,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php } ?>
 
                     <!-- ================= Pay Raise History Chart (Salary) ================= -->
-                    <?php if ($role === "admin" || $role === "supervisor") { ?>
+                    <?php if ($role === "full control" || $role === "modify 1") { ?>
                         <?php $latestSalary = !empty($salariesData) ? $salariesData[array_key_last($salariesData)]['amount'] : 0; ?>
                         <div
                             class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-salary <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
@@ -1755,7 +1989,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </small>
                                     </p>
 
-                                    <?php if ($role === "admin") { ?>
+                                    <?php if ($role === "full control") { ?>
                                         <i id="payRaiseEditIconSalary" role="button"
                                             class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
                                             data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
@@ -2143,80 +2377,83 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             <div class="p-3">
                                 <p class="fw-bold signature-color">Access</p>
                                 <?php
-                                    // Check if there are any results
-                                    if ($employee_group_access_result->num_rows > 0) {
-                                        $current_group_id = null;
+                                // Check if there are any results
+                                if ($employee_group_access_result->num_rows > 0) {
+                                    $current_group_id = null;
 
-                                        // Initialize arrays to store unique group names, folder names, and roles
-                                        $unique_group_names = [];
-                                        $unique_folders = [];
+                                    // Initialize arrays to store unique group names, folder names, and roles
+                                    $unique_group_names = [];
+                                    $unique_folders = [];
 
-                                        // Fetch all rows from the result set
-                                        while ($row = $employee_group_access_result->fetch_assoc()) {
-                                            $group_id = $row['group_id'];
-                                            $group_name = htmlspecialchars($row['group_name']);
-                                            $folder_id = htmlspecialchars($row['folder_id']);
-                                            $folder_name = htmlspecialchars($row['folder_name']);
-                                            $role_access = htmlspecialchars($row['role']); // Get role from the result set
-
-                                            // Capitalize the role
-                                            $role_access = ucwords(strtolower($role_access)); // Capitalize the first letter of each word
-
-                                            // Collect unique group names and roles
-                                            if (!isset($unique_group_names[$group_id])) {
-                                                $unique_group_names[$group_id] = ['name' => $group_name, 'role' => $role_access];
-                                            }
-
-                                            // Collect unique folder names
-                                            $unique_folders[$folder_id] = $folder_name;
+                                    // Fetch all rows from the result set
+                                    while ($row = $employee_group_access_result->fetch_assoc()) {
+                                        $group_id = $row['group_id'];
+                                        $group_name = htmlspecialchars($row['group_name']);
+                                        $folder_id = htmlspecialchars($row['folder_id']);
+                                        $folder_name = htmlspecialchars($row['folder_name']);
+                                        $role_access = htmlspecialchars($row['role']); // Get role from the result set
+                            
+                                        // Capitalize the role
+                                        $role_access = ucwords(strtolower($role_access)); // Capitalize the first letter of each word
+                            
+                                        // Collect unique group names and roles
+                                        if (!isset($unique_group_names[$group_id])) {
+                                            $unique_group_names[$group_id] = ['name' => $group_name, 'role' => $role_access];
                                         }
 
-                                        // Output unique group names and roles in a table
-                                        if (!empty($unique_group_names)) {
-                                            echo "<strong>Groups:</strong><br>";
-                                            echo "<table class='table table-bordered'>";
-                                            echo "<thead><tr><th>Group Name</th><th>Role</th></tr></thead>";
-                                            echo "<tbody>";
-                                            foreach ($unique_group_names as $group_id => $group_info) {
-                                                echo "<tr><td>{$group_info['name']}</td><td>{$group_info['role']}</td></tr>";
-                                            }
-                                            echo "</tbody></table>";
-                                            echo "<hr>";
-                                        }
-
-                                        // Output unique folder names
-                                        if (!empty($unique_folders)) {
-                                            echo "<strong>Folders:</strong><br>";
-                                            echo "<ul>";
-                                            foreach ($unique_folders as $folder_id => $folder_name) {
-                                                echo "<li>$folder_name</li>";
-                                            }
-                                            echo "</ul>";
-                                        }
-                                    } else {
-                                        echo '<p>No group or folder access found.</p>';
+                                        // Collect unique folder names
+                                        $unique_folders[$folder_id] = $folder_name;
                                     }
+
+                                    // Output unique group names and roles in a table
+                                    if (!empty($unique_group_names)) {
+                                        echo "<strong>Groups:</strong><br>";
+                                        echo "<table class='table table-bordered'>";
+                                        echo "<thead><tr><th>Group Name</th><th>Role</th></tr></thead>";
+                                        echo "<tbody>";
+                                        foreach ($unique_group_names as $group_id => $group_info) {
+                                            echo "<tr><td>{$group_info['name']}</td><td>{$group_info['role']}</td></tr>";
+                                        }
+                                        echo "</tbody></table>";
+                                        echo "<hr>";
+                                    }
+
+                                    // Output unique folder names
+                                    if (!empty($unique_folders)) {
+                                        echo "<strong>Folders:</strong><br>";
+                                        echo "<ul>";
+                                        foreach ($unique_folders as $folder_id => $folder_name) {
+                                            echo "<li>$folder_name</li>";
+                                        }
+                                        echo "</ul>";
+                                    }
+                                } else {
+                                    echo '<p>No group or folder access found.</p>';
+                                }
                                 ?>
                             </div>
                         </div>
                     </div>
                     <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
                         <div class="p-3">
-                            <!-- Dropdown Toggle -->
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
-                                    data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
-                                    aria-expanded="false">
-                                    Machine Competency
-                                    <i class="fas fa-chevron-down"></i>
-                                </p>
-                                <?php if ($role === "admin" || $role === "supervisor") { ?>
-                                    <button class="btn btn-success btn-sm fw-bold"><i
-                                            class="fa-solid fa-plus me-1"></i>Upload</button>
-                                <?php } ?>
+                            <div class="hide-print">
+                                <!-- Dropdown Toggle -->
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
+                                        data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
+                                        aria-expanded="false">
+                                        Machine Competency
+                                        <i class="fas fa-chevron-down"></i>
+                                    </p>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-success btn-sm fw-bold" data-bs-toggle="modal"
+                                            data-bs-target="#addMachineCompetencyModal"><i
+                                                class="fa-solid fa-plus me-1"></i>Upload</button>
+                                    <?php } ?>
+                                </div>
                             </div>
                             <!-- Collapsible Content -->
-                            <div id="machineCompetencyContent" class="collapse">
+                            <div id="machineCompetencyContent" class="collapse machineCompetencyPrintTable">
                                 <?php require_once("../open-machine-competency-folder.php") ?>
                             </div>
                         </div>
@@ -2231,14 +2468,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     Policies
                                     <i class="fas fa-chevron-down"></i>
                                 </p>
-                                <?php if ($role === "admin" || $role === "supervisor") { ?>
-                                    <button class="btn btn-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addPoliciesModal"><i
-                                            class="fa-solid fa-plus me-1"></i>Upload</button>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
+                                        data-bs-target="#addPoliciesModal"><i class="fa-solid fa-plus me-1"></i>Upload</button>
                                 <?php } ?>
                             </div>
 
                             <!-- Collapsible Content -->
-                            <div id="policiesContent" class="collapse">
+                            <div id="policiesContent" class="collapse policiesPrintTable">
                                 <?php require_once("../open-policies-folder.php") ?>
                             </div>
                         </div>
@@ -2488,7 +2725,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                 </div>
                                                                 <div
                                                                     class="d-flex align-items-center edit-mode-team-leader d-none">
-                                                                    <input type="text" class="form-control mx-auto"
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
                                                                         name="teamLeaderAllowanceToEdit"
                                                                         value="<?php echo $teamLeaderAllowance ?>"
                                                                         style="width: 80%">
@@ -2536,7 +2774,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                 </div>
                                                                 <div
                                                                     class="d-flex align-items-center edit-mode-trainer d-none">
-                                                                    <input type="text" class="form-control mx-auto"
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
                                                                         name="trainerAllowanceToEdit"
                                                                         value="<?php echo $trainerAllowance ?>"
                                                                         style="width: 80%">
@@ -2583,7 +2822,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                 </div>
                                                                 <div
                                                                     class="d-flex align-items-center edit-mode-supervisor d-none">
-                                                                    <input type="text" class="form-control mx-auto"
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
                                                                         name="supervisorAllowanceToEdit"
                                                                         value="<?php echo $supervisorAllowance ?>"
                                                                         style="width: 80%">
@@ -2630,7 +2870,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                 </div>
                                                                 <div
                                                                     class="d-flex align-items-center edit-mode-painter d-none">
-                                                                    <input type="text" class="form-control mx-auto"
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
                                                                         name="painterAllowanceToEdit"
                                                                         value="<?php echo $painterAllowance ?>"
                                                                         style="width: 80%">
@@ -2679,7 +2920,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                 </div>
                                                                 <div
                                                                     class="d-flex align-items-center edit-mode-machine-maintenance d-none">
-                                                                    <input type="text" class="form-control mx-auto"
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
                                                                         name="machineMaintenanceAllowanceToEdit"
                                                                         value="<?php echo $machineMaintenanceAllowance ?>"
                                                                         style="width: 80%">
@@ -2955,34 +3197,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                            
-                                        <form method="POST" enctype="multipart/form-data">
-                                            <input type="hidden" name="empIdToAddPolicy" value="<?php echo $employeeId ?>">
-                                            <input type="hidden" name="empNameToAddPolicy" value="<?php echo $firstName . " " . $lastName ?>">
-                                            <div class="row">
+                                    <p class="mb-0 p-2 signature-bg-color text-white rounded-2 text-center fw-bold d-none mb-2"
+                                        id="policyFileName"></p>
+                                    <form method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="empIdToAddPolicy" id="empIdToAddPolicy"
+                                            value="<?php echo $employeeId ?>">
+                                        <input type="hidden" name="empNameToAddPolicy" id="empNameToAddPolicy"
+                                            value="<?php echo $firstName . " " . $lastName ?>">
+                                        <div class="row">
                                             <div class="form-group col-md-6">
                                                 <label for="selectedPolicyTypeToAdd" class="fw-bold">Policy</label>
-                                                <?php 
-                                                    // Query for policy files that match the pattern
-                                                    $select_policy_file_sql = "SELECT qa_document, document_name FROM quality_assurance WHERE qa_document LIKE '09-HR-PO-%' ORDER BY qa_document";
-                                                    $select_policy_file_result = $conn->query($select_policy_file_sql);
-                                                ?>  
-                                                <select class="form-select" name="selectedPolicyTypeToAdd" required>
-                                                    <option value="">Select a Policy</option> <!-- Default option -->
-                                                    <?php if ($select_policy_file_result->num_rows > 0) { 
+                                                <?php
+                                                // Query for policy files that match the pattern
+                                                $select_policy_file_sql = "SELECT qa_document, document_name FROM quality_assurance WHERE qa_document LIKE '09-HR-PO-%' ORDER BY qa_document";
+                                                $select_policy_file_result = $conn->query($select_policy_file_sql);
+                                                ?>
+                                                <select class="form-select" name="selectedPolicyTypeToAdd"
+                                                    id="selectedPolicyTypeToAdd" required>
+                                                    <option value="">Select Policy</option> <!-- Default option -->
+                                                    <?php if ($select_policy_file_result->num_rows > 0) {
                                                         while ($row = $select_policy_file_result->fetch_assoc()) { ?>
                                                             <option value="<?= htmlspecialchars($row['qa_document']) ?>">
-                                                                <?= htmlspecialchars($row['document_name']) ?>
+                                                                <?= htmlspecialchars($row['qa_document']) . " (" . htmlspecialchars($row['document_name']) . ")" ?>
                                                             </option>
-                                                        <?php } 
+                                                        <?php }
                                                     } ?>
                                                 </select>
                                             </div>
 
-
                                             <div class="form-group col-md-6 mt-md-0 mt-2">
                                                 <label for="addPolicyDate" class="fw-bold">Date</label>
-                                                <input type="date" class="form-control" name="addPolicyDate" value="<?php echo date('Y-m-d') ?>" required>
+                                                <input type="date" class="form-control" name="addPolicyDate"
+                                                    id="addPolicyDate" value="<?php echo date('Y-m-d') ?>" required>
                                             </div>
                                         </div>
 
@@ -2994,8 +3240,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     Files</button>
                                             </p>
                                         </div>
-                                
-                                        <input type="file" id="fileInput" name="policiesToSubmit" class="d-none" required/>
+
+                                        <input type="file" id="fileInput" name="policiesToSubmit" class="d-none" required />
                                         <!-- Display uploaded file names -->
                                         <div id="fileList" class="mt-3"></div>
                                         <div class="d-flex justify-content-center">
@@ -3004,6 +3250,156 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </div>
                                     </form>
                                 </div> <!-- End modal-body -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================== Add Machine Competency Modal ================== -->
+                    <div class="modal fade" id="addMachineCompetencyModal" tabindex="-1"
+                        aria-labelledby="addMachineCompetencyModal" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="addMachineCompetencyModalLabel">Add Machine Competency</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-0 p-2 signature-bg-color text-white rounded-2 text-center fw-bold mb-2 d-none"
+                                        id="machineCompetencyFileName"></p>
+                                    <form method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="empIdToAddMachineCompetency"
+                                            id="empIdToAddMachineCompetency" value="<?php echo $employeeId ?>">
+                                        <input type="hidden" name="empNameToAddMachineCompetency"
+                                            id="empNameToAddMachineCompetency"
+                                            value="<?php echo $firstName . " " . $lastName ?>">
+                                        <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="selectedMachineCompetencyTypeToAdd" class="fw-bold">Machine
+                                                    Competency</label>
+                                                <?php
+                                                // Query for machine competency files that match the pattern
+                                                $select_machine_competency_file_sql = "SELECT qa_document, document_name FROM quality_assurance WHERE qa_document LIKE '11-WH-WI-%' ORDER BY qa_document";
+                                                $select_machine_competency_file_result = $conn->query($select_machine_competency_file_sql);
+                                                ?>
+                                                <select class="form-select" name="selectedMachineCompetencyTypeToAdd"
+                                                    id="selectedMachineCompetencyTypeToAdd" required>
+                                                    <option value="">Select Machine Competency</option>
+                                                    <?php if ($select_machine_competency_file_result->num_rows > 0) {
+                                                        while ($row = $select_machine_competency_file_result->fetch_assoc()) { ?>
+                                                            <option value="<?= htmlspecialchars($row['qa_document']) ?>">
+                                                                <?= htmlspecialchars($row['qa_document']) . " (" . htmlspecialchars($row['document_name']) . ")" ?>
+                                                            </option>
+                                                        <?php }
+                                                    } ?>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group col-md-6 mt-md-0 mt-2">
+                                                <label for="addMachineCompetencyDate" class="fw-bold">Date</label>
+                                                <input type="date" class="form-control" name="addMachineCompetencyDate"
+                                                    id="addMachineCompetencyDate" value="<?php echo date('Y-m-d') ?>"
+                                                    required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Drag and Drop area -->
+                                        <div class="border rounded-2 p-4 text-center mt-3" id="machineCompetencyDropZone">
+                                            <p class="mb-0">Drag & Drop your documents here or <br>
+                                                <button class="btn btn-primary btn-sm mt-2" type="button"
+                                                    onclick="document.getElementById('machineCompetencyFileInput').click()">Browse
+                                                    Files</button>
+                                                </button>
+                                            </p>
+                                        </div>
+
+                                        <input type="file" id="machineCompetencyFileInput"
+                                            name="machineCompetenciesToSubmit" class="d-none" required />
+                                        <div id="machineCompetencyFileList" class="mt-3"></div>
+                                        <div class="d-flex justify-content-center">
+                                            <button type="submit" class="btn btn-dark btn-sm">Add Machine
+                                                Competency</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================== Add Leave Modal ================== -->
+                    <div class="modal fade" id="addLeaveModal" tabindex="-1" aria-labelledby="addLeaveModal"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="addLeaveModalLabel">Add Leave</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-0 p-2 signature-bg-color text-white rounded-2 text-center fw-bold mb-2 d-none"
+                                        id="leaveFileName"></p>
+                                    <form method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="empIdToAddLeave" id="empIdToAddLeave"
+                                            value="<?php echo $employeeId ?>">
+                                        <input type="hidden" name="empNameToAddLeave" id="empNameToAddLeave"
+                                            value="<?php echo $firstName . " " . $lastName ?>">
+                                        <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="selectedLeaveTypeToAdd" class="fw-bold">Leave Type</label>
+                                                <select class="form-select" name="selectedLeaveTypeToAdd"
+                                                    id="selectedLeaveTypeToAdd" required>
+                                                    <option value="">Select Leave File Type</option>
+                                                    <option value="medicalCertificate">Medical Certificate</option>
+                                                    <option value="personalLeave">Personal Leave</option>
+                                                    <option value="annualLeave">Annual Leave</option>
+                                                    <option value="workingFromHome">Working From Home</option>
+                                                    <option value="longServiceLeave">Long Service Leave</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group col-md-6 mt-md-0 mt-2">
+                                                <label for="addLeaveDate" class="fw-bold">Date</label>
+                                                <input type="date" class="form-control" name="addLeaveDate"
+                                                    id="addLeaveDate" value="<?php echo date('Y-m-d') ?>" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Drag and Drop Zone -->
+                                        <div class="border rounded-2 p-4 text-center mt-3" id="leaveDropZone">
+                                            <p class="mb-0">Drag & Drop your documents here or <br>
+                                                <button class="btn btn-primary btn-sm mt-2" type="button"
+                                                    onclick="document.getElementById('leaveFileInput').click()">Browse
+                                                    Files</button>
+                                                </button>
+                                            </p>
+                                        </div>
+
+                                        <input type="file" id="leaveFileInput" name="leaveToSubmit" class="d-none"
+                                            required />
+                                        <div id="leaveFileList" class="mt-3"></div>
+                                        <div class="d-flex justify-content-center">
+                                            <button type="submit" class="btn btn-dark btn-sm">Add Leave</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================== Upload Employee Files Modal ================== -->
+                    <div class="modal fade" id="uploadEmployeeFilesModal" tabindex="-1"
+                        aria-labelledby="uploadEmployeeFilesModal" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="uploadEmployeeFilesModal">Upload Employee Files</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <?php require_once("../PageContent/ModalContent/upload-employee-files.php") ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3414,9 +3810,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 </div>
                                 <div class="modal-body">
                                     <form method="POST">
-                                        <input type="hidden" name="employeeIdToDeactivate" class="form-control" value="<?php echo $employeeId ?>">
+                                        <input type="hidden" name="employeeIdToDeactivate" class="form-control"
+                                            value="<?php echo $employeeId ?>">
                                         <label for="lastDate" class="fw-bold">Last Date </label>
-                                        <input type="date" class="form-control" name="lastDate" value="<?php echo date('Y-m-d')?>" required>
+                                        <input type="date" class="form-control" name="lastDate"
+                                            value="<?php echo date('Y-m-d') ?>" required>
                                         <div class="d-flex justify-content-end mt-2">
                                             <button class="btn btn-danger">Deactivate Employee</button>
                                         </div>
@@ -3432,7 +3830,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 ?>
 
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 
             <script>
@@ -3561,7 +3958,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 const dropZone = document.getElementById('dropZone');
                 const fileInput = document.getElementById('fileInput');
                 const fileList = document.getElementById('fileList');
-                let selectedFiles = [];
 
                 dropZone.addEventListener('dragover', function (event) {
                     event.preventDefault();
@@ -3576,52 +3972,196 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     event.preventDefault();
                     dropZone.classList.remove('bg-light');
                     const files = event.dataTransfer.files;
-                    handleFiles(files);
+                    updateFileInput(files);
                 });
 
                 fileInput.addEventListener('change', function (event) {
-                    const files = event.target.files;
-                    handleFiles(files);
+                    updateFileList(event.target.files);
                 });
 
-                function handleFiles(files) {
-                    for (let i = 0; i < files.length; i++) {
-                        addFile(files[i]);
+                function updateFileInput(files) {
+                    const dataTransfer = new DataTransfer();
+
+                    // Add existing files (if any) from the input
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        dataTransfer.items.add(fileInput.files[i]);
                     }
-                    renderFileList();
+
+                    // Add new files from the drop event
+                    for (let i = 0; i < files.length; i++) {
+                        dataTransfer.items.add(files[i]);
+                    }
+
+                    fileInput.files = dataTransfer.files;
+                    updateFileList(fileInput.files);
                 }
 
-                function addFile(file) {
-                    selectedFiles.push(file);
-                }
+                function updateFileList(files) {
+                    fileList.innerHTML = ''; // Clear previous list
 
-                function removeFile(index) {
-                    selectedFiles.splice(index, 1);
-                    renderFileList();
-                }
-
-                function renderFileList() {
-                    fileList.innerHTML = '';
-                    selectedFiles.forEach((file, index) => {
+                    for (let i = 0; i < files.length; i++) {
                         const listItem = document.createElement('div');
                         listItem.className = 'd-flex justify-content-between align-items-center border p-2 mb-2';
                         listItem.innerHTML = `
-                    <span>${file.name}</span>
-                    <button class="btn btn-danger btn-sm" onclick="removeFile(${index})">Remove</button>
-                `;
+                            <span>${files[i].name}</span>
+                            <button class="btn btn-danger btn-sm" type="button" onclick="removeFile(${i})">Remove</button>
+                        `;
                         fileList.appendChild(listItem);
-                    });
+                    }
                 }
 
-                // Reset file input and selected files when the modal is closed
-                document.getElementById('addPoliciesModal').addEventListener('hidden.bs.modal', function () {
-                    resetFileInput();
+                function removeFile(index) {
+                    const dataTransfer = new DataTransfer();
+
+                    // Keep only the files except the one being removed
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        if (i !== index) {
+                            dataTransfer.items.add(fileInput.files[i]);
+                        }
+                    }
+
+                    fileInput.files = dataTransfer.files;
+                    updateFileList(fileInput.files);
+                }
+            </script>
+
+            <script>
+                const machineCompetencyDropZone = document.getElementById('machineCompetencyDropZone');
+                const machineCompetencyFileInput = document.getElementById('machineCompetencyFileInput');
+                const machineCompetencyFileList = document.getElementById('machineCompetencyFileList');
+
+                machineCompetencyDropZone.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    machineCompetencyDropZone.classList.add('bg-light');
                 });
 
-                function resetFileInput() {
-                    fileInput.value = ''; // Clear the file input
-                    selectedFiles = []; // Clear the array of selected files
-                    renderFileList(); // Clear the file list display
+                machineCompetencyDropZone.addEventListener('dragleave', function () {
+                    machineCompetencyDropZone.classList.remove('bg-light');
+                });
+
+                machineCompetencyDropZone.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    machineCompetencyDropZone.classList.remove('bg-light');
+                    const files = event.dataTransfer.files;
+                    updateMachineCompetencyFileInput(files);
+                });
+
+                machineCompetencyFileInput.addEventListener('change', function (event) {
+                    updateMachineCompetencyFileList(event.target.files);
+                });
+
+                function updateMachineCompetencyFileInput(files) {
+                    const dataTransfer = new DataTransfer();
+
+                    // Add existing files (if any)
+                    for (let i = 0; i < machineCompetencyFileInput.files.length; i++) {
+                        dataTransfer.items.add(machineCompetencyFileInput.files[i]);
+                    }
+
+                    // Add new files
+                    for (let i = 0; i < files.length; i++) {
+                        dataTransfer.items.add(files[i]);
+                    }
+
+                    machineCompetencyFileInput.files = dataTransfer.files;
+                    updateMachineCompetencyFileList(machineCompetencyFileInput.files);
+                }
+
+                function updateMachineCompetencyFileList(files) {
+                    machineCompetencyFileList.innerHTML = ''; // Clear previous list
+
+                    for (let i = 0; i < files.length; i++) {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'd-flex justify-content-between align-items-center border p-2 mb-2';
+                        listItem.innerHTML = `
+                            <span>${files[i].name}</span>
+                            <button class="btn btn-danger btn-sm" type="button" onclick="removeMachineCompetencyFile(${i})">Remove</button>
+                        `;
+                        machineCompetencyFileList.appendChild(listItem);
+                    }
+                }
+
+                function removeMachineCompetencyFile(index) {
+                    const dataTransfer = new DataTransfer();
+
+                    for (let i = 0; i < machineCompetencyFileInput.files.length; i++) {
+                        if (i !== index) {
+                            dataTransfer.items.add(machineCompetencyFileInput.files[i]);
+                        }
+                    }
+
+                    machineCompetencyFileInput.files = dataTransfer.files;
+                    updateMachineCompetencyFileList(machineCompetencyFileInput.files);
+                }
+            </script>
+
+            <script>
+                const leaveDropZone = document.getElementById('leaveDropZone');
+                const leaveFileInput = document.getElementById('leaveFileInput');
+                const leaveFileList = document.getElementById('leaveFileList');
+
+                leaveDropZone.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    leaveDropZone.classList.add('bg-light');
+                });
+
+                leaveDropZone.addEventListener('dragleave', function () {
+                    leaveDropZone.classList.remove('bg-light');
+                });
+
+                leaveDropZone.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    leaveDropZone.classList.remove('bg-light');
+                    const files = event.dataTransfer.files;
+                    updateLeaveFileInput(files);
+                });
+
+                leaveFileInput.addEventListener('change', function (event) {
+                    updateLeaveFileList(event.target.files);
+                });
+
+                function updateLeaveFileInput(files) {
+                    const dataTransfer = new DataTransfer();
+
+                    // Add existing files (if any)
+                    for (let i = 0; i < leaveFileInput.files.length; i++) {
+                        dataTransfer.items.add(leaveFileInput.files[i]);
+                    }
+
+                    // Add new files
+                    for (let i = 0; i < files.length; i++) {
+                        dataTransfer.items.add(files[i]);
+                    }
+
+                    leaveFileInput.files = dataTransfer.files;
+                    updateLeaveFileList(leaveFileInput.files);
+                }
+
+                function updateLeaveFileList(files) {
+                    leaveFileList.innerHTML = ''; // Clear previous list
+
+                    for (let i = 0; i < files.length; i++) {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'd-flex justify-content-between align-items-center border p-2 mb-2';
+                        listItem.innerHTML = `
+                            <span>${files[i].name}</span>
+                            <button class="btn btn-danger btn-sm" type="button" onclick="removeLeaveFile(${i})">Remove</button>
+                        `;
+                        leaveFileList.appendChild(listItem);
+                    }
+                }
+
+                function removeLeaveFile(index) {
+                    const dataTransfer = new DataTransfer();
+
+                    for (let i = 0; i < leaveFileInput.files.length; i++) {
+                        if (i !== index) {
+                            dataTransfer.items.add(leaveFileInput.files[i]);
+                        }
+                    }
+
+                    leaveFileInput.files = dataTransfer.files;
+                    updateLeaveFileList(leaveFileInput.files);
                 }
             </script>
 
@@ -3750,7 +4290,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                 // Delay adding the d-none class by 40 milliseconds on page load
                 document.addEventListener('DOMContentLoaded', function () {
-                    3
                     setTimeout(function () {
                         salaryPayRaiseHistoryChart.classList.add('d-none')
                     }, 40);
@@ -4477,6 +5016,80 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         }, 200); // Small delay to allow Bootstrap collapse to update `aria-expanded`
                     });
                 });
+            </script>
+            <script>
+                // Function to update the policyFileName
+                function updatePolicyFileName() {
+                    let EmpId = document.getElementById("empIdToAddPolicy").value;
+                    let EmpName = document.getElementById("empNameToAddPolicy").value;
+                    let policy = document.getElementById("selectedPolicyTypeToAdd").value;
+                    let date = document.getElementById("addPolicyDate").value;
+                    let fileNameDisplay = document.getElementById("policyFileName");
+
+                    if (policy && date) {
+                        fileNameDisplay.classList.remove("d-none");
+                        fileNameDisplay.textContent = `${date}-${policy} (${EmpId} ${EmpName}) Signed`;
+                    } else {
+                        fileNameDisplay.textContent = "";
+                    }
+                }
+
+                // Add event listeners to update on change
+                document.getElementById("selectedPolicyTypeToAdd").addEventListener("change", updatePolicyFileName);
+                document.getElementById("addPolicyDate").addEventListener("input", updatePolicyFileName);
+            </script>
+
+            <script>
+                // Function to update the machineCompetencyName
+                function updateMachineCompetencyFileName() {
+                    let EmpId = document.getElementById("empIdToAddMachineCompetency").value;
+                    let EmpName = document.getElementById("empNameToAddMachineCompetency").value;
+                    let machineCompetency = document.getElementById("selectedMachineCompetencyTypeToAdd").value;
+                    let date = document.getElementById("addMachineCompetencyDate").value;
+                    let fileNameDisplay = document.getElementById("machineCompetencyFileName");
+
+                    if (machineCompetency && date) {
+                        fileNameDisplay.classList.remove("d-none");
+                        fileNameDisplay.textContent = `${date}-${machineCompetency} (${EmpId} ${EmpName}) Signed`;
+                    } else {
+                        fileNameDisplay.textContent = "";
+                    }
+                }
+
+                // Add event listeners to update on change
+                document.getElementById("selectedMachineCompetencyTypeToAdd").addEventListener("change", updateMachineCompetencyFileName);
+                document.getElementById("addMachineCompetencyDate").addEventListener("input", updateMachineCompetencyFileName);
+            </script>
+
+            <script>
+                // Function to update the leaveName
+                function updateLeaveFileName() {
+                    let EmpId = document.getElementById("empIdToAddLeave").value;
+                    let EmpName = document.getElementById("empNameToAddLeave").value;
+                    let leave = document.getElementById("selectedLeaveTypeToAdd").value;
+                    let date = document.getElementById("addLeaveDate").value;
+                    let fileNameDisplay = document.getElementById("leaveFileName");
+
+                    if (leave && date) {
+                        fileNameDisplay.classList.remove("d-none");
+                        let leaveFileName = "";
+                        if (leave === "personalLeave" || leave === "annualLeave" || leave === "longServiceLeave") {
+                            leaveFileName = "09-HR-F0-007";
+                        } else if (leave === "medicalCertificate") {
+                            leaveFileName = "Doc-Cert";
+                        } else if (leave === "workingFromHome") {
+                            leaveFileName = "09-HR-FO-014";
+                        }
+
+                        fileNameDisplay.textContent = `${date}-${leaveFileName} (${EmpId} ${EmpName}) Signed`;
+                    } else {
+                        fileNameDisplay.textContent = "";
+                    }
+                }
+
+                // Add event listeners to update on change
+                document.getElementById("selectedLeaveTypeToAdd").addEventListener("change", updateLeaveFileName);
+                document.getElementById("addLeaveDate").addEventListener("input", updateLeaveFileName);
             </script>
 </body>
 

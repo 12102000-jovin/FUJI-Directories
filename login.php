@@ -4,9 +4,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require ("db_connect.php");
+require("db_connect.php");
 
-$config = include ('config.php');
+$config = include('config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
@@ -99,7 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="row">
                     <div class="col-md-6 d-flex flex-column justify-content-start p-5">
                         <img src="Images/FE-logo.png" alt="Logo" class="img-fluid">
-                        <h2 class="fw-bold">PowerFusion</h2>
+                        <h2 class="fw-bold">
+                            <img class="img-fluid" src="./Images/PowerFusionWordLogo.png" alt="PowerFusionLogo"
+                                style="width: 20rem;" sizes="(max-width: 576px) 10rem, 20rem">
+                        </h2>
+
                     </div>
 
                     <div class="col-md-6 d-flex flex-column justify-content-center">

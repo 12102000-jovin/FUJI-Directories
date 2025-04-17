@@ -99,7 +99,7 @@ $visa_result = $conn->query($visa_sql);
                     </ol>
                 </nav>
             </div>
-            <?php if ($role == "admin") { ?>
+            <?php if ($role == "full control") { ?>
                 <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
                     <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
                         <i class="fa-solid fa-user-plus"></i> Add Employee
@@ -112,7 +112,7 @@ $visa_result = $conn->query($visa_sql);
         <div class="row d-flex align-items-center justify-content-center">
             <div class="col-12 col-md-6">
                 <ul class="nav nav-pills mb-3" id="employee-filter" role="tablist">
-                    <?php if ($role == "admin") { ?>
+                    <?php if ($role == "full control") { ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active text-dark rounded-0" id="all-employees-tab" data-bs-toggle="pill"
                                 data-bs-target="#all-employees" type="button" role="tab" aria-controls="all-employees"
@@ -137,7 +137,7 @@ $visa_result = $conn->query($visa_sql);
                             type="button" role="tab" aria-controls="wages-employees"
                             aria-selected="false"><small><?php echo $role === "general" ? "All Employees" : "Wage Employees" ?></small></button>
                     </li>
-                    <?php if ($role == "admin") { ?>
+                    <?php if ($role == "full control") { ?>
                         <li class="nav-item" role="presentaion">
                             <button class="nav-link text-dark rounded-0" id="salary-employees-tab" data-bs-toggle="pill"
                                 data-bs-target="#salary-employees" type="button" role="tab" aria-controls="salary-employees"
@@ -155,7 +155,7 @@ $visa_result = $conn->query($visa_sql);
                             placeholder="Search Employee" oninput="filterEmployees(this.value)">
                     </div>
                     <div class="d-flex">
-                        <?php if ($role == "admin") { ?>
+                        <?php if ($role == "full control") { ?>
                             <div class="dropdown">
                                 <button class="btn text-white dropdown-toggle" data-bs-toggle="dropdown"
                                     aria-expanded="false" style="background-color:#043f9d;">
@@ -239,7 +239,7 @@ $visa_result = $conn->query($visa_sql);
 
         <div class="tab-content" id="employee-list">
 
-            <?php if ($role == "admin") { ?>
+            <?php if ($role == "full control") { ?>
                 <!-- ============================= Tab panes for employees ============================= -->
                 <div class="tab-pane fade show active" id="all-employees" role="tabpanel"
                     aria-labelledby="all-employees-tab">
@@ -647,7 +647,7 @@ $visa_result = $conn->query($visa_sql);
             </div>
 
             <!-- ============================= Tab panes for salary-employees ============================= -->
-            <?php if ($role == "admin") { ?>
+            <?php if ($role == "full control") { ?>
                 <div class="tab-pane fade" id="salary-employees" role="tabpanel" aria-labelledby="salary-employees-tab">
                     <div class="row row-cols-1 row-cols-md-3 g-4" id="salary-employee-cards">
                         <?php foreach ($employees as $employee) {

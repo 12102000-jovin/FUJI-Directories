@@ -5,7 +5,7 @@ error_reporting(E_ALL);
 
 require_once("../db_connect.php");
 require_once("../status_check.php");
-require_once("../system_role_check.php");
+require_once("../system_role_check.php"); 
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
@@ -145,7 +145,7 @@ $user_details_result->free();
                     aria-expanded="false" aria-label="Toggle navigation">
                     <i class="fa fa-bars fa-lg"></i>
                 </button>
-                <img src="./../Images/FE-logo.png" class="ms-2 py-3" style="width:3rem">
+                <img src="./../Images/PowerFusionFullLogo.png" class="ms-2 py-3" style="width:8rem">
                 <div class="vr mx-2 my-3"></div>
                 <h5 id="top-menu-title" style="color: #043f9d;" class="m-0 fw-bold"></h5>
             </div>
@@ -211,17 +211,24 @@ $user_details_result->free();
                 </ul>
             </div>
         </div>
-        <div class="row d-none d-md-block">
+        <div class="d-none d-md-block">
             <div class="d-flex justify-content-center signature-bg-color">
+            <a href="<?php echo 'http://' . $serverAddress . '/' . $projectName . '/Pages/index.php'; ?>"
+                class="col py-2 text-decoration-none text-white text-center fw-bold border-end abbreviation"
+                style="cursor:pointer">
+                <i class="fa-solid fa-house me-1 mb-1"></i> Home
+            </a>
+
                 <?php
                 $folders_abbr = [
-                    'AC' => 'Accountancy',
+                    'AC' => 'Accounts',
                     'AS' => 'Asset',
-                    'CAPA' => ' Corrective and Preventive Actions',
-                    'EL' => 'Employee Leave',
+                    'CAPA' => 'Corrective and Preventive Actions',
+                    'EL' => 'Electrical',
                     'EN' => 'Engineering',
+                    'ES' => 'Estimating',
                     'HR' => 'Human Resources',
-                    'OS' => 'Operations',
+                    'OS' => 'Operations Support',
                     'PJ' => 'Project',
                     'QA' => 'Quality Assurances',
                     'QC' => 'Quality Control',
@@ -236,8 +243,27 @@ $user_details_result->free();
                     $folder_exists = in_array($full_name, $folders) || in_array($abbr, $folders);
 
                     $isDisabled = $folder_exists ? '' : 'disabled';
+
+                    if (htmlspecialchars($abbr) == "AS") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/asset-table.php";
+                    } else if (htmlspecialchars($abbr) == "CAPA") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
+                    } else if (htmlspecialchars($abbr) == "HR") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                    }  else if (htmlspecialchars($abbr) == "PJ") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
+                    } else if (htmlspecialchars($abbr) == "QA") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/qa-table.php";
+                    } else if ($abbr == "T&T") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
+                    } else if ($abbr == "WHS") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
+                    } else {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
+                    }
                     ?>
-                    <a class="col py-2 text-decoration-none text-white text-center fw-bold border-end abbreviation <?php echo $isDisabled; ?>"
+                    <a href="<?php echo $folder_page ?>"
+                        class="col py-2 text-decoration-none text-white text-center fw-bold border-end abbreviation <?php echo $isDisabled; ?>"
                         style="cursor:pointer">
                         <span class="short m-0 p-0"><?php echo $abbr; ?></span>
                         <span class="long m-0 p-0 d-none" style="font-size: 12px"><?php echo $full_name; ?></span>
@@ -250,7 +276,25 @@ $user_details_result->free();
         <div class="collapse navbar-collapse text-center d-md-none" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto list-unstyled">
                 <?php foreach ($folders as $folder_name): ?>
-                    <a href="" class="text-decoration-none text-dark">
+                    <a href="<?php 
+                          if (htmlspecialchars($folder_name) == "Asset") {
+                            echo "http://$serverAddress/$projectName/Pages/asset-table.php";
+                        } else if (htmlspecialchars($folder_name) == "CAPA") {
+                            echo "http://$serverAddress/$projectName/Pages/capa-table.php";
+                        } else if (htmlspecialchars($folder_name) == "Human Resources") {
+                            echo "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                        }  else if (htmlspecialchars($folder_name) == "Project") {
+                            echo "http://$serverAddress/$projectName/Pages/project-table.php";
+                        } else if (htmlspecialchars($folder_name) == "Quality Assurances") {
+                            echo "http://$serverAddress/$projectName/Pages/qa-table.php";
+                        } else if ($folder_name == "Test and Tag") {
+                            echo "http://$serverAddress/$projectName/Pages/cable-table.php";
+                        } else if ($folder_name == "Work Health and Safety") {
+                            echo "http://$serverAddress/$projectName/Pages/whs-table.php";
+                        } else {
+                            echo "http://$serverAddress/$projectName/Pages/index.php";
+                        }
+                        ?>" class="text-decoration-none text-dark">
                         <li class=" py-2 p-1 fw-bold d-flex justify-content-center align-items-center">
                             <span class="folder-name"><?= htmlspecialchars($folder_name) ?></span>
                         </li>
@@ -287,12 +331,11 @@ $user_details_result->free();
         });
     });
 
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const resetFilterBtn = document.getElementById('resetFilterBtn');
-
-        resetFilterBtn.addEventListener("click", function () {
-            document.getElementById('searchDocuments')
-        })
+    document.addEventListener("DOMContentLoaded", function () {
+        const documentTitle = document.title;
+        const topMenuTitle = document.getElementById("top-menu-title");
+        topMenuTitle.textContent = documentTitle;
     })
 </script>
+
+
