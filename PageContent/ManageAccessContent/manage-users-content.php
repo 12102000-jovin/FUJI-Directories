@@ -237,11 +237,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                     <?php endwhile; ?>
                 </div>
                 <div class="d-none d-md-block">
-                    <div class="input-group mb-3 me-2">
-                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="search" class="form-control" id="searchUser" name="searchUser"
-                            placeholder="Search User" oninput="filterUsers(this.value)">
+                    <div class="d-flex align-items-start">
+                        <div class="input-group mb-3 me-2">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="search" class="form-control" id="searchUser" name="searchUser"
+                                placeholder="Search User" oninput="filterUsers(this.value)">
+                        </div>
+                        <button class="btn btn-dark printUserBtn"><i class="fa-solid fa-print"></i></button>
                     </div>
+
                     <div class="table-responsive rounded-3 shadow-lg bg-light m-0">
                         <table class="table table-hover mb-0 pb-0">
                             <thead class="table-primary">
@@ -262,9 +266,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                         <td class="py-4 align-middle userId"><?= $row['employee_id'] ?></td>
                                         <td class="py-4 align-middle">
                                             <?php if ($row['role'] === 'general'): ?>
-                                                <span class="badge rounded-pill  bg-success text-capitalize"><?= $row['role'] ?></span>
+                                                <span
+                                                    class="badge rounded-pill  bg-success text-capitalize"><?= $row['role'] ?></span>
                                             <?php elseif ($row['role'] === 'admin'): ?>
-                                                <span class="badge rounded-pill bg-danger text-capitalize"><?= $row['role'] ?></span>
+                                                <span
+                                                    class="badge rounded-pill bg-danger text-capitalize"><?= $row['role'] ?></span>
                                             <?php endif; ?>
                                         </td>
 
@@ -349,12 +355,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                         </div>
                     </div>
                 </div>
-                <div class="d-md-none">
+                <div class="d-md-none d-flex align-items-start">
                     <div class="input-group mb-3 me-2">
                         <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                         <input type="search" class="form-control" id="searchUser" name="searchUser"
                             placeholder="Search User" oninput="filterUsersSmallScreen(this.value)">
                     </div>
+                    <button class="btn btn-dark printUserBtn"><i class="fa-solid fa-print"></i></button>
                 </div>
             </div>
         </div>
@@ -376,7 +383,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
         $employee_group_access_result = $conn->query($employee_group_access_sql);
         ?>
         <!-- User Access Modal -->
-        <div class="modal fade" id="showAccessModal<?= $employee_id ?>" tabindex="-1" role="dialog"
+        <div class="modal fade showAccessModal" id="showAccessModal<?= $employee_id ?>" tabindex="-1" role="dialog"
             aria-labelledby="userAccessModalLabel<?= $employee_id ?>" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -384,7 +391,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                         <h5 class="modal-title" id="addUserModalLabel">User Access</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body showAccessModal">
                         <?php
                         // Check if there are any results
                         if ($employee_group_access_result->num_rows > 0) {
@@ -921,6 +928,136 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
             })
         }
     </script>
+
+    <script>
+        document.querySelectorAll('.printUserBtn').forEach(button => {
+            button.addEventListener('click', function () {
+                let printContent = '<h2 class="text-decoration-underline">FUJI-PowerFusion User Access List</h2>';
+
+                const userSections = [];
+
+                document.querySelectorAll('.showAccessModal').forEach(modal => {
+                    const modalBody = modal.querySelector('.modal-body');
+                    if (!modalBody) return;
+
+                    const employeeHeading = modalBody.querySelector('h4')?.textContent.trim() || 'Unknown Employee';
+                    if (employeeHeading === 'Unknown Employee') return;
+
+                    let userSection = `<div class="user-section">
+                    <h4 style="text-decoration: underline;">${employeeHeading}</h4>`;
+
+                    const groupRows = modalBody.querySelectorAll('table tbody tr');
+
+                    if (groupRows.length > 0) {
+                        userSection += '<ul>';
+                        groupRows.forEach(row => {
+                            const groupName = row.querySelector('td:nth-child(1)')?.textContent.trim();
+                            const role = row.querySelector('span.view-mode')?.textContent.trim();
+
+                            if (groupName && role) {
+                                userSection += `<li><strong>${groupName}</strong> - ${role.charAt(0).toUpperCase() + role.slice(1)}</li>`;
+                            }
+                        });
+                        userSection += '</ul>';
+                    } else {
+                        userSection += '<p>No group access listed.</p>';
+                    }
+
+                    userSection += '</div>';
+                    userSections.push(userSection);
+                });
+
+                const chunkSize = 24; // Number of user sections per page — adjust if needed
+                for (let i = 0; i < userSections.length; i += chunkSize) {
+                    const chunk = userSections.slice(i, i + chunkSize).join('<hr>');
+                    printContent += `<div class="print-page">${chunk}</div>`;
+                }
+
+                const printWindow = window.open('', '', 'width=800,height=600');
+                printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Print User Access</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            font-size: 10px;
+                            margin: 0;
+                        }
+                        h2 {
+                            text-align: center;
+                            page-break-after: avoid;
+                            break-after: avoid;
+                        }
+                        .print-page {
+                            margin-top: 60px; /* Add extra margin to avoid cut off on top */
+                            column-count: 3;
+                            column-gap: 40px;
+                            page-break-after: always;
+                            break-after: page;
+                        }
+                        .user-section {
+                            break-inside: avoid !important;
+                            page-break-inside: avoid !important;
+                            -webkit-column-break-inside: avoid !important;
+                            margin-bottom: 10px;
+                        }
+                        h4 {
+                            margin-bottom: 10px;
+                            break-inside: avoid !important;
+                            page-break-inside: avoid !important;
+                            -webkit-column-break-inside: avoid !important;
+                            /* prevent orphan heading cut */
+                            page-break-before: avoid;
+                            break-before: avoid;
+                            -webkit-column-break-before: avoid;
+                        }
+                        ul {
+                            list-style: none;
+                            padding-left: 0;
+                            margin: 0 0 10px 0;
+                            break-inside: avoid !important;
+                            page-break-inside: avoid !important;
+                            -webkit-column-break-inside: avoid !important;
+                        }
+                        li {
+                            margin-bottom: 5px;
+                        }
+                        p {
+                            break-inside: avoid !important;
+                            page-break-inside: avoid !important;
+                            -webkit-column-break-inside: avoid !important;
+                            margin-bottom: 10px;
+                        }
+                        hr {
+                            border: 0;
+                            border-top: 1px solid #ccc;
+                            margin: 20px 0;
+                            break-inside: avoid;
+                            page-break-inside: avoid;
+                            -webkit-column-break-inside: avoid;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function () {
+                            window.print();
+                            window.onafterprint = function () {
+                                window.close();
+                            };
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+                printWindow.document.close();
+            });
+        });
+    </script>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 </body>

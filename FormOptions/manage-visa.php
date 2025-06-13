@@ -15,7 +15,6 @@ if ($systemRole != "admin") {
   </script>";
 }
 
-
 ?>
 
 <!DOCTYPE html>

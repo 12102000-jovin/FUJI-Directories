@@ -1,4 +1,8 @@
 <?php
+
+require_once ("./db_connect.php");
+require_once("./status_check.php");
+
 // Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -13,9 +17,6 @@ $sub_folder = isset($_GET['sub_folder']) ? basename($_GET['sub_folder']) : '';
 $baseDirectory = 'D:\FSMBEH-Data\00 - QA\04 - Assets';
 $filePath = $baseDirectory . "/" . $assetNo . "/" . $folder . "/" . $sub_folder . "/" . $file;
 
-echo $file;
-echo $assetNo;
-echo $folder;
 echo $filePath;
 
 // Check if the file exists

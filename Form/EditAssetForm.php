@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
             <label for="assetNoToEdit" class="fw-bold">FE Number</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">FE</span>
-                <input type="number" min="0" step="any" class="form-control rounded-end" id="assetNoToEdit"
+                <input type="text" min="0" step="any" class="form-control rounded-end" id="assetNoToEdit"
                     name="assetNoToEdit" aria-describedby="assetNoToEdit" required>
                 <div class="invalid-feedback">
                     Please provide the FE Number.
@@ -168,6 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
                 <option value="Current">Current</option>
                 <option value="Obsolete">Obsolete</option>
                 <option value="Disposed">Disposed</option>
+                <option value="Out for Service / Calibration">Out for Service / Calibration</option>
             </select>
             <div class="invalid-feedback">
                 Please provide the status.
@@ -199,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
         <div class="form-group col-md-6 mt-3 d-none" id="otherLocationInputEdit">
             <label for="otherLocationEdit" class="fw-bold">Other Location</label>
             <input class="form-control" type="text" name="otherLocationEdit" id="otherLocationEdit">
-            <div class="invalid-feedback">s
+            <div class="invalid-feedback">
                 Please provide the other location.
             </div>
         </div>

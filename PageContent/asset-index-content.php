@@ -71,6 +71,7 @@ foreach ($department_counts as $department_name => $count) {
     );
     $i++;
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -141,22 +142,18 @@ foreach ($department_counts as $department_name => $count) {
 
 <body class="background-color">
     <div class="container-fluid mt-3 mb-5">
-        <div class="mx-md-0 mx-2">
-            <!-- <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- <div class="mx-md-0 mx-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a
                                 href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
                         </li>
-                        <li class="breadcrumb-item"><a
-                                href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php">Asset
-                                Table</a></li>
-                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Assets
-                            Dashboard</li>
+                        <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">Assets Dashboard</li>
                     </ol>
                 </nav>
-            </div> -->
-        </div>
+            </div>
+        </div> -->
         <div class="row">
             <div class="col-lg-4">
                 <div class="bg-white p-2 rounded-4">
@@ -166,8 +163,8 @@ foreach ($department_counts as $department_name => $count) {
                             style="cursor: pointer">
                             Assets
                         </h5>
-                        <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php"
-                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a>
+                        <!-- <a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/asset-table.php"
+                            class="btn btn-dark btn-sm">Table <i class="fa-solid fa-table ms-1"></i></a> -->
                     </div>
                     <div class="collapse show" id="assetCollapse">
                         <div class="card card-body border-0 pb-0 pt-2">
@@ -197,7 +194,6 @@ foreach ($department_counts as $department_name => $count) {
 </body>
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 <script>
-
     document.addEventListener("DOMContentLoaded", function () {
         var assetDashboardModal = document.getElementById("assetDashboardModal");
 
@@ -221,6 +217,7 @@ foreach ($department_counts as $department_name => $count) {
             });
 
             chart.render();
+          
         });
     });
 </script>

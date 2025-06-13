@@ -1,3 +1,8 @@
+<?php
+require_once("./db_connect.php");
+require_once("./status_check.php");
+?>
+
 <head>
     <title> <?php echo $folder ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">

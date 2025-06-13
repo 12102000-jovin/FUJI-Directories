@@ -407,21 +407,35 @@ WHERE
     function disableCheckboxIfNotAdmin() {
         let userRole = document.getElementById("userRole").value;
         let checkboxes = document.querySelectorAll(".form-check-input");
-        let actionButtons = document.querySelectorAll(".btn.editBtn, .btn.deleteProjectDetailsBtn");
 
+        // Disable checkboxes for non-full control roles
         if (userRole !== "full control") {
-            // Disable checkboxes
             checkboxes.forEach(function (checkbox) {
                 checkbox.disabled = true;
             });
-
-            // Hide action buttons (edit and delete)
-            actionButtons.forEach(function (button) {
-                button.closest('td').style.display = 'none';
-            });
         }
+
+        // Loop through each row
+        document.querySelectorAll("tr").forEach(function (row) {
+            const td = row.querySelector("td.hide-print");
+            const editBtn = td?.querySelector(".btn.editBtn");
+            const deleteBtn = td?.querySelector(".btn.deleteProjectDetailsBtn");
+
+            if (!td) return; // skip if no action td
+
+            if (userRole === "full control") {
+                td.style.display = "";
+                if (editBtn) editBtn.style.display = "";
+                if (deleteBtn) deleteBtn.style.display = "";
+            } else if (userRole === "modify 1") {
+                td.style.display = "";
+                if (editBtn) editBtn.style.display = "";
+                if (deleteBtn) deleteBtn.style.display = "none";
+            } else {
+                td.style.display = "none"; // hide the whole <td>
+            }
+        });
     }
 
-    // Run the function on page load or after AJAX response
     disableCheckboxIfNotAdmin();
 </script>

@@ -59,9 +59,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
     $insuranceNotified = (int) $_POST["insuranceNotified"];
     $directorNotified = (int) $_POST["directorNotified"];
     $additionalComments = $_POST["additionalComments"];
-    
+    $whsFiles = $_FILES['whsFiles'];
+
     $recordableIncident = 0; // Default value
-    
+
     // Check if any of the specified variables equals to 1
     if (
         $medicalTreatmentCase === 1 ||
@@ -105,12 +106,72 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
+
+        // Base directory path
+        $directory = "D:\\FSMBEH-Data\\09 - HR\\";
+
+        // Get payroll type based on employee_id
+        $payroll_type_sql = "SELECT payroll_type FROM employees WHERE employee_id = ?";
+        if ($payroll_type_result = $conn->prepare($payroll_type_sql)) {
+            $payroll_type_result->bind_param("s", $involvedPersonName);
+            $payroll_type_result->execute();
+            $payroll_type_result->bind_result($emp_payroll_type);
+
+            // Fetch the result
+            if ($payroll_type_result->fetch()) {
+                if ($emp_payroll_type === "wage") {
+                    $directory .= "04 - Wage Staff\\" . $involvedPersonName . "\\06 - Work Compensation";
+                } elseif ($emp_payroll_type === "salary") {
+                    $directory .= "05 - Salary Staff\\" . $involvedPersonName . "\\06 - Work Compensation";
+                }
+            } else {
+                $emp_payroll_type = 'Unknown';
+            }
+            $payroll_type_result->close();
+        } else {
+            $emp_payroll_type = 'Error fetching payroll type';
+        }
+
+        // Upload Files to the Created Folder
+        if (!empty($_FILES['whsFiles']['name'][0])) {
+            // Ensure the destination folder exists
+            if (!is_dir($directory)) {
+                if (!mkdir($directory, 0777, true)) {
+                    echo "Failed to create directory: $directory<br>";
+                } else {
+                    echo "Created directory: $directory<br>";
+                }
+            }
+
+            foreach ($_FILES['whsFiles']['name'] as $key => $fileName) {
+                $fileTmpPath = $_FILES['whsFiles']['tmp_name'][$key];
+                $fileError = $_FILES['whsFiles']['error'][$key];
+                $destinationPath = $directory . DIRECTORY_SEPARATOR . basename($fileName);
+
+                echo "Attempting to move uploaded file to: $destinationPath<br>";
+
+                if ($fileError !== UPLOAD_ERR_OK) {
+                    echo "Error with file '$fileName': error code $fileError<br>";
+                    continue;
+                }
+
+                if (move_uploaded_file($fileTmpPath, $destinationPath)) {
+                    echo "File '$fileName' uploaded successfully.<br>";
+                } else {
+                    echo "Error moving file '$fileName'. Check permissions and path.<br>";
+                }
+            }
+        } else {
+            echo "No files selected for upload.<br>";
+        }
+
         echo "<script>alert('Document added successfully');</script>";
         echo "<script>window.location.replace('" . $current_url . "');</script>";
         exit();
     } else {
         echo "Error updating record: " . $conn->error;
     }
+
 }
 
 ?>
@@ -132,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
     }
 </style>
 
-<form method="POST" id="addWHSDocumentForm" novalidate>
+<form method="POST" id="addWHSDocumentForm" enctype="multipart/form-data" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%" id="result">
     </p>
     <div class="row">
@@ -345,7 +406,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                 </div>
             </div>
         </div>
-
+        <div class="form-group col-md-12 mt-3">
+            <label for="whsFiles" class="fw-bold">File</label>
+            <input type="file" name="whsFiles[]" class="form-control" id="whsFiles" multiple>
+        </div>
         <div class="d-flex justify-content-center mt-3 mb-3">
             <button class="btn btn-dark" name="addWHSDocument" type="submit" id="addWHSBtn">Add Document</button>
         </div>

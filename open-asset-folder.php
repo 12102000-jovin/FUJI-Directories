@@ -1,3 +1,8 @@
+<?php
+require_once("./db_connect.php");
+require_once("./status_check.php");
+?>
+
 <head>
     <title>Asset Folder</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -15,8 +20,6 @@
     // Set the base directory path
     $baseDirectory = 'D:/FSMBEH-Data/00 - QA/04 - Assets';
     $directory = $baseDirectory . '/' . $asset_no . '/' . $sub_folder;
-
-    echo $directory;
 
     // Handle search query if provided
     $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
@@ -58,7 +61,8 @@
         // List files and directories
         echo "<div class='list-group rounded-3'>";
         foreach ($filesAndDirs as $item) {
-            if ($item === '.' || $item === '..') continue;
+            if ($item === '.' || $item === '..')
+                continue;
 
             $itemPath = $directory . '/' . $item;
             $itemName = htmlspecialchars($item);

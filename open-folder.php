@@ -1,4 +1,8 @@
 <?php
+
+require_once ("./db_connect.php");
+require_once("./status_check.php");
+
 $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
 $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
 $searchQuery = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';

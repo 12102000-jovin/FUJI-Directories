@@ -28,6 +28,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($payroll_type_result->fetch()) {
             if ($emp_payroll_type === "wage") {
                 $directory .= "04 - Wage Staff\\" . $employeeFileDirectory;
+            } else if ($emp_payroll_type === "salary") {
+                $directory .= "05 - Salary Staff\\" . $employeeFileDirectory;
             }
         } else {
             // If no result is found, set a default value or handle the error

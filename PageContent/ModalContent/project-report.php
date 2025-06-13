@@ -275,16 +275,17 @@ $projectName = $config['project_name'];
             // Create table headers
             var headers = document.createElement("tr");
             headers.innerHTML = `
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Project No.</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Payment Terms</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Project Type</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Project No.</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 400px">Project Name</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Payment Terms</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 300px">Project Type</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Description</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Estimated Delivery Date</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Estimated Delivery Date</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Unit Price</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Qty</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 100px">Qty</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Sub Total</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Invoiced</th>
-        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Approved By</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 100px">Invoiced</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Approved By</th>
     `;
             table.appendChild(headers);
 
@@ -298,6 +299,7 @@ $projectName = $config['project_name'];
             <td class="py-2 text-center">
                 <a  style="background-color: transparent" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/project-table.php?search=${project.project_no}" target="_blank">${project.project_no}</a>
             </td>
+            <td class="py-2 text-center">${project.project_name}</td>
             <td class="py-2 text-center">${project.payment_terms}</td>
             <td class="py-2 text-center">${project.project_type}</td>
             <td class="py-2 text-center">${project.description}</td>
@@ -314,10 +316,16 @@ $projectName = $config['project_name'];
             });
 
             // Sort dataPoints8 and dataPoints9 by date (using label as month-year)
+            function parseMonthYear(label) {
+                const [monthName, year] = label.split(" ");
+                const monthIndex = new Date(`${monthName} 1, 2000`).getMonth(); // Get month index from name
+                return new Date(parseInt(year), monthIndex);
+            }
+
             function sortByDate(a, b) {
-                var dateA = new Date(a.label);
-                var dateB = new Date(b.label);
-                return dateA - dateB; // Ascending order
+                const dateA = parseMonthYear(a.label);
+                const dateB = parseMonthYear(b.label);
+                return dateA - dateB;
             }
 
             const sortedDataPoints8 = response.dataPoints8.sort(sortByDate).map(point => ({
@@ -397,6 +405,27 @@ $projectName = $config['project_name'];
                         dataPoints: sortedDataPoints9
                     }
                 ]
+            });
+
+            function showOnlyDataset(datasetNameToShow) {
+                chart5.options.data.forEach(ds => {
+                    ds.visible = (ds.name === datasetNameToShow);
+                });
+                chart5.render();
+            }
+
+            document.getElementById("invoiceStatus").addEventListener("change", function () {
+                const selectedValue = this.value;
+
+                if (selectedValue === "Invoiced") {
+                    showOnlyDataset("Invoiced");
+                } else if (selectedValue === "NonInvoiced") {
+                    showOnlyDataset("Non-Invoiced");
+                } else {
+                    // Show both if 'Any'
+                    chart5.options.data.forEach(ds => ds.visible = true);
+                    chart5.render();
+                }
             });
 
             var chart6 = new CanvasJS.Chart("chartContainer6", {
@@ -496,8 +525,8 @@ $projectName = $config['project_name'];
                 // Get all the cells in the row
                 const cells = row.getElementsByTagName('td');
 
-                // Get the invoiced status from the 9th column (index 8)
-                const rowStatus = cells[8]?.textContent.trim().toLowerCase(); // Invoiced status is in the 9th column (index 8)
+                // Get the invoiced status from the 10th column (index 9)
+                const rowStatus = cells[9]?.textContent.trim().toLowerCase(); // Invoiced status is in the 9th column (index 8)
 
                 // Check if the row matches the search query and invoice status filter
                 let match = false;
@@ -576,7 +605,6 @@ $projectName = $config['project_name'];
             });
         });
     </script>
-
 
 </body>
 

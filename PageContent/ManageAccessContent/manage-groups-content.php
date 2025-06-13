@@ -21,7 +21,7 @@ $users_result = $conn->query($users_sql);
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['selectedUsers'])) {
     $selectedUsers = $_POST['selectedUsers'];
     $groupId = $_POST['group_id'];
-    $role = isset($_POST['role']) && $_POST['role'] === 'admin' ? 'admin' : 'general';
+    $role = isset($_POST['role']) && $_POST['role'] === 'full control' ? 'full control' : 'read';
 
     // Iterate over the array of selected user IDs
     foreach ($selectedUsers as $userId) {
@@ -470,9 +470,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                 <div class="d-flex justify-content-between">
                                     <p class="mb-1 signature-color fw-bold">Selected Users</p>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="role" name="role" value="admin">
+                                        <input class="form-check-input" type="checkbox" id="role" name="role" value="full control">
                                         <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm"
-                                            for="role"> Admin </label>
+                                            for="role"> Full Control </label>
                                     </div>
 
                                 </div>

@@ -534,7 +534,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["capaIdToEdit3"])) {
 </style>
 
 <!-- Form for editing CAPA Document -->
-<form method="POST" id="editCAPADocumentForm" novalidate>
+<form method="POST" id="editCAPADocumentForm" enctype="multipart/form-data" novalidate>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"
         id="result"></p>
     <p class="error-message alert alert-danger text-center p-1 d-none" style="font-size: 1.5vh; width:100%;"

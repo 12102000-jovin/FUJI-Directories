@@ -26,13 +26,97 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Search condition
-$whereClause = "(asset_no LIKE '%$searchTerm%')";
+$whereClause = "(asset_no LIKE '%$searchTerm%' OR asset_name LIKE '%$searchTerm%')";
+
+// Arrays to hold selected filter values
+$selected_departments = [];
+$selected_status = [];
+$selected_account = [];
+$selected_whs = [];
+$selected_due_date = [];
+
+$filterApplied = false; // Variable to check if any filter is applied
+
+if (isset($_GET['apply_filters'])) {
+    // Capture the selected departments (department IDs)
+    if (isset($_GET['department']) && is_array($_GET['department'])) {
+        $selected_departments = array_map('intval', $_GET['department']); // ensure safe integers
+        $department_placeholders = implode(',', $selected_departments);
+        $whereClause .= " AND assets.department_id IN ($department_placeholders)";
+        $filterApplied = true;
+    }
+
+    // Capture the selected status 
+    if (isset($_GET['status']) && is_array($_GET['status'])) {
+        $selected_status = $_GET['status'];
+        // Escape each value for SQL
+        $escaped_status = array_map(function ($s) use ($conn) {
+            return "'" . $conn->real_escape_string($s) . "'";
+        }, $selected_status);
+
+        $status_placeholders = implode(',', $escaped_status);
+        $whereClause .= " AND assets.status IN ($status_placeholders)";
+        $filterApplied = true;
+    }
+
+    // Capture the selected account
+    if (isset($_GET['account']) && is_array($_GET['account'])) {
+        $selected_accounts = array_map('intval', $_GET['account']); // ensure safe integers
+        $account_placeholders = implode(',', $selected_accounts);
+        $whereClause .= " AND assets.accounts_asset IN ($account_placeholders)";
+        $filterApplied = true;
+    }
+
+    // Capture the selected WHS
+    if (isset($_GET['whs']) && is_array($_GET['whs'])) {
+        $selected_whs = array_map('intval', $_GET['whs']); // ensure safe integers
+        $whs_placeholders = implode(',', $selected_whs);
+        $whereClause .= " AND assets.whs_asset IN ($whs_placeholders)";
+        $filterApplied = true;
+    }
+
+    date_default_timezone_set('Australia/Sydney');
+    $today = date('Y-m-d');
+    $next_30_days = date('Y-m-d', strtotime('+30 days'));
+
+    // Capture the due date filter
+    if (isset($_GET['due_dates']) && is_array($_GET['due_dates'])) {
+        $selected_due_dates = $_GET['due_dates'];
+        $today = new DateTime("now", new DateTimeZone("Australia/Sydney"));
+        $todayStr = $today->format('Y-m-d');
+        $thirtyDaysLater = $today->modify('+30 days')->format('Y-m-d');
+
+        $due_date_conditions = [];
+
+        $due_date_conditions = [];
+
+        foreach ($selected_due_dates as $filter) {
+            if ($filter === 'Almost Due for Calibration') {
+                $due_date_conditions[] = "(SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Calibration') > CURDATE() AND 
+                                           (SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Calibration') <= '$thirtyDaysLater'";
+            } elseif ($filter === 'Due for Calibration') {
+                $due_date_conditions[] = "(SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Calibration') <= CURDATE()";
+            } elseif ($filter === 'Almost Due for Maintenance') {
+                $due_date_conditions[] = "(SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Maintenance') > CURDATE() AND 
+                                           (SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Maintenance') <= '$thirtyDaysLater'";
+            } elseif ($filter === 'Due for Maintenance') {
+                $due_date_conditions[] = "(SELECT MAX(due_date) FROM asset_details WHERE asset_details.asset_id = assets.asset_id AND categories = 'Maintenance') <= CURDATE()";
+            }
+        }
+
+        if (!empty($due_date_conditions)) {
+            $whereClause .= " AND (" . implode(" OR ", $due_date_conditions) . ")";
+            $filterApplied = true;
+        }
+    }
+}
 
 $assets_sql = "SELECT 
                     assets.*, 
                     location.location_name,
                     department.department_name,
-                    latest_cal.latest_calibration
+                    latest_cal.latest_calibration,
+                    latest_main.latest_maintenance
                 FROM assets
                 LEFT JOIN location 
                     ON assets.location_id = location.location_id
@@ -45,6 +129,13 @@ $assets_sql = "SELECT
                     GROUP BY asset_id
                 ) AS latest_cal
                     ON assets.asset_id = latest_cal.asset_id
+                LEFT JOIN (
+                    SELECT asset_id, MAX(due_date) AS latest_maintenance
+                    FROM asset_details
+                    WHERE categories = 'Maintenance'
+                    GROUP BY asset_id
+                ) AS latest_main
+                    ON assets.asset_id = latest_main.asset_id
                 WHERE $whereClause 
                 ORDER BY $sort $order 
                 LIMIT $offset, $records_per_page";
@@ -58,10 +149,45 @@ $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
-// ========================= D E L E T E  C A B L E =========================
+// ========================= D E L E T E  A S S E T =========================
+$directoryBasePath = "D:/FSMBEH-Data/00 - QA/04 - Assets/";
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
     $assetIdToDelete = $_POST["assetIdToDelete"];
 
+    // Get asset number (you might need a query for this if it's not passed)
+    $get_asset_no_sql = "SELECT asset_no FROM assets WHERE asset_id = ?";
+    $get_asset_no_stmt = $conn->prepare($get_asset_no_sql);
+    $get_asset_no_stmt->bind_param("i", $assetIdToDelete);
+    $get_asset_no_stmt->execute();
+    $get_asset_no_stmt->bind_result($asset_no);
+    $get_asset_no_stmt->fetch();
+    $get_asset_no_stmt->close();
+
+    // Build full directory path
+    $directoryPath = $directoryBasePath . $asset_no;
+
+    // First delete the folder
+    if (is_dir($directoryPath)) {
+        // Function to delete folder recursively
+        function deleteFolder($folderPath)
+        {
+            $files = array_diff(scandir($folderPath), ['.', '..']);
+            foreach ($files as $file) {
+                $filePath = "$folderPath/$file";
+                if (is_dir($filePath)) {
+                    deleteFolder($filePath); // recursion
+                } else {
+                    unlink($filePath);
+                }
+            }
+            return rmdir($folderPath);
+        }
+
+        deleteFolder($directoryPath);
+    }
+
+    // Then delete the asset from database
     $delete_asset_sql = "DELETE FROM assets WHERE asset_id = ?";
     $delete_asset_result = $conn->prepare($delete_asset_sql);
     $delete_asset_result->bind_param("i", $assetIdToDelete);
@@ -78,6 +204,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
     }
     $delete_asset_result->close();
 }
+
+
+// Get all URL parameters from $_GET
+$urlParams = $_GET;
+
+// Get total count of filtered results (Total)
+$count_sql = "SELECT COUNT(*) as total FROM assets WHERE $whereClause";
+$count_stmt = $conn->prepare($count_sql);
+if (!empty($types)) {
+    $count_stmt->bind_param($types, ...$params);
+}
+$count_stmt->execute();
+$count_result = $count_stmt->get_result();
+$count_row = $count_result->fetch_assoc();
+$total_count = $count_row['total'];
 ?>
 
 <!DOCTYPE html>
@@ -161,6 +302,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                             <button class="btn btn-danger ms-2">
                                 <a class="dropdown-item" href="#" onclick="clearURLParameters()">Clear</a>
                             </button>
+                            <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal" type="button"
+                                data-bs-target="#filterAssetModal">
+                                <p class="text-nowrap fw-bold mb-0 pb-0">Filter <i class="fa-solid fa-filter py-1"></i>
+                                </p>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -172,6 +318,157 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                 </div>
             </div>
         </div>
+
+        <div class="d-flex flex-wrap mb-2">
+            <?php foreach ($urlParams as $key => $value): ?>
+                <?php if (!empty($value)): // Only show the span if the value is not empty ?>
+                    <?php
+                    if ($key === 'order' || $key === 'view') {
+                        continue;
+                    }
+
+                    // Check if the value is the department filter
+                    if ($key === 'search') {
+                        // Handle the search filter
+                        ?>
+                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                            <strong><span class="text-warning">Search:
+                                </span><?php echo htmlspecialchars($value); ?></strong>
+                            <a href="?<?php
+                            // Remove 'Search' from the URL
+                            $filteredParams = $_GET;
+                            unset($filteredParams['search']);
+                            echo http_build_query($filteredParams);
+                            ?>" class="text-white ms-1">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        </span>
+                        <?php
+                    } else if ($key === 'department' && is_array($value)) {
+                        // Map department IDs to department names and display each in a separate badge
+                        foreach ($value as $department_id) {
+                            // Fetch the department name for each selected department ID
+                            $department_sql = "SELECT department_name FROM department WHERE department_id = ?";
+                            $stmt = $conn->prepare($department_sql);
+                            $stmt->bind_param("i", $department_id);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+
+                            if ($row = $result->fetch_assoc()) {
+                                $department_name = $row['department_name'];
+                            }
+
+                            // Display a separate badge for each department
+                            ?>
+                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                    <strong><span class="text-warning">Department:
+                                        </span><?php echo htmlspecialchars($department_name); ?></strong>
+                                    <a href="?<?php
+                                    // Remove this specific department filter from the URL
+                                    $filteredParams = $_GET;
+                                    $filteredParams['department'] = array_diff($filteredParams['department'], [$department_id]);
+                                    echo http_build_query($filteredParams);
+                                    ?>" class="text-white ms-1">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </span>
+                            <?php
+                        }
+                    } else if ($key === 'status' && is_array($value)) {
+                        foreach ($value as $status) {
+                            ?>
+                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                        <strong><span class="text-warning">Status:
+                                            </span><?php echo htmlspecialchars($status) ?></strong>
+                                        <a href="?<?php
+                                        // Remove this specific status filter from URL
+                                        $filteredParams = $_GET;
+                                        $filteredParams['status'] = array_diff($filteredParams['status'], [$status]);
+                                        echo http_build_query($filteredParams);
+                                        ?>" class="text-white ms-1">
+                                            <i class="fa-solid fa-times fa-"></i>
+                                        </a>
+                                    </span>
+                            <?php
+                        }
+                    } else if ($key === 'account' && is_array($value)) {
+                        foreach ($value as $account) {
+                            ?>
+                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                            <strong><span class="text-warning">Accounts:
+                                                </span><?php if ($account === "1") {
+                                                    echo "Yes";
+                                                } else if ($account === "0") {
+                                                    echo "No";
+                                                } ?></strong>
+                                            <a href="?<?php
+                                            // Remove this specific account filter from URL
+                                            $filteredParams = $_GET;
+                                            $filteredParams['account'] = array_diff($filteredParams['account'], [$account]);
+                                            echo http_build_query($filteredParams);
+                                            ?>" class="text-white ms-1">
+                                                <i class="fa-solid fa-times fa-"></i>
+                                            </a>
+                                        </span>
+                            <?php
+                        }
+                    } else if ($key === 'whs' && is_array($value)) {
+                        foreach ($value as $whs) {
+                            ?>
+                                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                <strong><span class="text-warning">WHS:
+                                                    </span><?php if ($whs === "1") {
+                                                        echo "Yes";
+                                                    } else if ($whs === "0") {
+                                                        echo "No";
+                                                    } ?></strong>
+                                                <a href="?<?php
+                                                // Remove this specific whs filter from URL
+                                                $filteredParams = $_GET;
+                                                $filteredParams['whs'] = array_diff($filteredParams['whs'], [$whs]);
+                                                echo http_build_query($filteredParams);
+                                                ?>" class="text-white ms-1">
+                                                    <i class="fa-solid fa-times fa-"></i>
+                                                </a>
+                                            </span>
+                            <?php
+                        }
+                    } else if ($key === 'due_dates' && is_array($value)) {
+                        foreach ($value as $due_dates) {
+                            ?>
+                                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                    <strong><span class="text-warning">Due:
+                                                        </span><?php echo htmlspecialchars($due_dates) ?></strong>
+                                                    <a href="?<?php
+                                                    // Remove this specific due date filter from URL
+                                                    $filteredParams = $_GET;
+                                                    $filteredParams['due_dates'] = array_diff($filteredParams['due_dates'], [$due_dates]);
+                                                    echo http_build_query($filteredParams);
+                                                    ?>" class="text-white ms-1">
+                                                        <i class="fa-solid fa-times fa-"></i>
+                                                    </a>
+                                                </span>
+                            <?php
+                        }
+                    }
+                    ?>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Display message if filters are applied, and show total count or no results message -->
+        <?php if ($filterApplied): ?>
+            <div class="alert <?php echo ($total_records == 0) ? 'alert-danger' : 'alert-info'; ?>">
+                <?php if ($total_records > 0): ?>
+                    <strong>Total Results:</strong>
+                    <span class="fw-bold text-decoration-underline me-2"> <?php echo $total_records ?></span>
+                <?php else: ?>
+                    <strong>No results found for the selected filters.</strong>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+
         <div class="table-responsive rounded-3 shadow-lg bg-light mb-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
@@ -218,6 +515,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                 onclick="updateSort('latest_calibration', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Next Calibration Due <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('latest_maintenance', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Next Maintenance Due <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -256,6 +557,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                         echo "bg-danger bg-opacity-75 text-white";
                                     } else if ($row['status'] === "Disposed") {
                                         echo "bg-danger text-white";
+                                    } else if ($row['status'] === "Out for Service / Calibration") {
+                                        echo "bg-warning text-white";
                                     }
                                     ?>
                                 "><?= $row['status'] ?></td>
@@ -270,10 +573,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                                     style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['purchase_date']) && $row['purchase_date'] ? date('j F Y', strtotime($row['purchase_date'])) : 'N/A' ?>
                                 </td>
-                                <td class="py-3 align-middle text-center"
-                                    style="<?= isset($row['latest_calibration']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                <?php
+                                $today = new DateTime('now', new DateTimeZone('Australia/Sydney'));
+                                $calClass = '';
+                                $calStyle = '';
+                                $maintClass = '';
+                                $maintStyle = '';
+
+                                // Calibration logic
+                                if (isset($row['latest_calibration']) && $row['latest_calibration']) {
+                                    $calDate = new DateTime($row['latest_calibration'], new DateTimeZone('Australia/Sydney'));
+                                    $diff = $today->diff($calDate)->format('%r%a');
+                                    if ($diff < 0) {
+                                        $calClass = 'bg-danger text-white';
+                                    } elseif ($diff <= 30) {
+                                        $calClass = 'bg-danger text-white bg-opacity-50';
+                                    }
+                                } else {
+                                    $calStyle = 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;';
+                                }
+
+                                // Maintenance logic
+                                if (isset($row['latest_maintenance']) && $row['latest_maintenance']) {
+                                    $maintDate = new DateTime($row['latest_maintenance'], new DateTimeZone('Australia/Sydney'));
+                                    $diff = $today->diff($maintDate)->format('%r%a');
+                                    if ($diff < 0) {
+                                        $maintClass = 'bg-danger text-white';
+                                    } elseif ($diff <= 30) {
+                                        $maintClass = 'bg-danger text-white bg-opacity-50';
+                                    }
+                                } else {
+                                    $maintStyle = 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;';
+                                }
+                                ?>
+
+                                <!-- Calibration -->
+                                <td class="py-3 align-middle text-center <?= $calClass ?>" style="<?= $calStyle ?>">
                                     <?= isset($row['latest_calibration']) && $row['latest_calibration']
                                         ? date('j F Y', strtotime($row['latest_calibration']))
+                                        : 'N/A' ?>
+                                </td>
+
+                                <!-- Maintenance -->
+                                <td class="py-3 align-middle text-center <?= $maintClass ?>" style="<?= $maintStyle ?>">
+                                    <?= isset($row['latest_maintenance']) && $row['latest_maintenance']
+                                        ? date('j F Y', strtotime($row['latest_maintenance']))
                                         : 'N/A' ?>
                                 </td>
 
@@ -281,7 +625,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                         <?php } ?>
                     <?php } else { ?>
                         <tr>
-                            <td colspan="10" class="text-center py-3">No assets found</td>
+                            <td colspan="12" class="text-center py-3">No assets found</td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -455,6 +799,106 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
                 </div>
                 <div class="modal-body background-color">
                     <?php require_once("../PageContent/asset-index-content.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== Filter Asset Modal ================== -->
+    <div class="modal fade" id="filterAssetModal" tabindex="1" aria-labelledby="filterAssetModal" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET">
+                        <div class="row">
+                            <div class="col-12 col-lg-4">
+                                <h5 class="signature-color fw-bold">Department</h5>
+                                <?php
+                                $department_sql = "SELECT * FROM department";
+                                $department_result = $conn->query($department_sql);
+                                $selected_departments = isset($_GET['department']) ? $_GET['department'] : [];
+                                if ($department_result->num_rows > 0) { ?>
+                                    <?php while ($row = $department_result->fetch_assoc()) { ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="department_<?php echo $row['department_id'] ?>" name="department[]"
+                                                value="<?php echo $row['department_id']; ?>" <?php echo in_array($row['department_id'], $selected_departments) ? 'checked' : ''; ?> />
+                                            <label
+                                                for="department_<?php echo $row['department_id']; ?>"><?php echo $row['department_name']; ?></label>
+                                        </p>
+                                    <?php } ?>
+                                <?php } else { ?>
+                                    <p>No departments found.</p>
+                                <?php } ?>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <h5 class="signature-color fw-bold mt-4 mt-lg-0">Status</h5>
+                                <?php
+                                $status = ['Current', 'Obsolete', 'Disposed', 'Out for Service / Calibration'];
+                                $selected_status = isset($_GET['status']) ? $_GET['status'] : [];
+                                foreach ($status as $stat) {
+                                    ?>
+                                    <p class="mb-0 p-0">
+                                        <input type="checkbox" class="form-check-input" id="<?php echo strtolower($stat) ?>"
+                                            name="status[]" value="<?php echo $stat ?>" <?php echo in_array($stat, $selected_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($stat); ?>"><?php echo $stat; ?></label>
+                                    </p>
+                                <?php } ?>
+                                <h5 class="signature-color fw-bold mt-4">Almost / Over Due Date</h5>
+                                <?php
+                                $due_dates = ['Almost Due for Calibration', 'Almost Due for Maintenance', 'Due for Calibration', 'Due for Maintenance'];
+                                $selected_due_date = isset($_GET['due_dates']) ? $_GET['due_dates'] : [];
+                                foreach ($due_dates as $due_date) {
+                                    ?>
+                                    <p class="mb-0 p-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower($due_date) ?>" name="due_dates[]"
+                                            value="<?php echo $due_date ?>" <?php echo in_array($due_date, $selected_due_date) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($due_date); ?>"><?php echo $due_date; ?></label>
+                                    </p>
+                                <?php } ?>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <h5 class="signature-color fw-bold mt-4 mt-lg-0">Accounts</h5>
+                                <?php
+                                $account = [1, 0];
+                                $selected_account = isset($_GET['account']) ? $_GET['account'] : [];
+                                foreach ($account as $i) {
+                                    $id = "account_$i"; // unique ID
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input" id="<?php echo $id ?>"
+                                            name="account[]" value="<?php echo $i ?>" <?php echo in_array($i, $selected_account) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $id; ?>"><?php echo $i === 1 ? "Yes" : "No"; ?></label>
+                                    </p>
+                                <?php } ?>
+
+                                <h5 class="signature-color fw-bold mt-4">WHS</h5>
+                                <?php
+                                $whs = [1, 0];
+                                $selected_whs = isset($_GET['whs']) ? $_GET['whs'] : [];
+                                foreach ($whs as $j) {
+                                    $id = "whs_$j"; // unique ID
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input" id="<?php echo $id ?>" name="whs[]"
+                                            value="<?php echo $j ?>" <?php echo in_array($j, $selected_whs) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $id; ?>"><?php echo $j === 1 ? "Yes" : "No"; ?></label>
+                                    </p>
+                                <?php } ?>
+                            </div>
+                            <div class="d-flex justify-content-center mt-4">
+                                <button class="btn btn-secondary me-1" type="button"
+                                    data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply
+                                    Filter</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

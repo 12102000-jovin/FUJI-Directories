@@ -34,4 +34,15 @@ require_once("../group_role_check.php");
     </div>
     <?php require_once("../logout.php") ?>
 
+    <script>
+        // Restore scroll position after page reload
+        window.addEventListener('load', function () {
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                window.scrollTo(0, scrollPosition);
+                sessionStorage.removeItem('scrollPosition'); // Remove after restoring
+            }
+        });
+    </script>
+
 </body>

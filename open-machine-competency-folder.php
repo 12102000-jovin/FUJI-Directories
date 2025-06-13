@@ -3,7 +3,8 @@ $config = include('config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-require_once("db_connect.php");
+require_once ("db_connect.php");
+require_once("status_check.php");
 
 // Get payroll_type for the given employeeId
 $employeeId = $_GET['employee_id'] ?? null; // Ensure employeeId is received
@@ -69,7 +70,7 @@ if (is_dir($baseDirectory)) {
     ksort($sortedDocuments);
 
     echo '<div class="table-responsive">';
-    echo '<table class="table table-bordered table-hover mb-0 pb-0">';
+    echo '<table class="table table-bordered table-hover mb-0 pb-0" style="border: 2px solid black">';
     echo '<thead><tr><th>Document Id</th><th>Document Name</th></tr></thead>';
     echo '<tbody>';
 

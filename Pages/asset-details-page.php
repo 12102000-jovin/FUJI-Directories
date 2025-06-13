@@ -218,7 +218,156 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
     }
 }
 
+// Add Manual / Work Instruction
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['manualWorkInstructionDocument'])) {
+    $assetNo = $_POST["assetNoManualWorkInstruction"];
+    $manualWorkInstructionDocument = $_POST['manualWorkInstructionDocument'];
 
+    $link_manual_work_instruction_sql = "UPDATE assets SET `manual` = ? WHERE asset_no = ?";
+    $link_manual_work_instruction_result = $conn->prepare($link_manual_work_instruction_sql);
+    $link_manual_work_instruction_result->bind_param("ss", $manualWorkInstructionDocument, $assetNo);
+
+    // Execute the prepared statement
+    if ($link_manual_work_instruction_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Delete Manual / Work Instruction
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteManualWorkInstruction'])) {
+    $assetNo = $_GET['asset_no'];
+    $null = null;
+
+    $delete_manual_work_instruction_sql = "UPDATE assets SET `manual` = ? WHERE asset_no = ?";
+    $delete_manual_work_instruction_result = $conn->prepare($delete_manual_work_instruction_sql);
+    $delete_manual_work_instruction_result->bind_param("ss", $null, $assetNo);
+
+    // Execute the prepared statement
+    if ($delete_manual_work_instruction_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Add Manual / Handboook
+if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['manualDocument'])) {
+    $assetNo = $_POST["assetNoManual"];
+    $manualDocument = $_POST["manualDocument"];
+
+    $link_manual_sql = "UPDATE assets SET `handbook` = ? WHERE asset_no = ?";
+    $link_manual_result = $conn->prepare($link_manual_sql);
+    $link_manual_result->bind_param("ss", $manualDocument, $assetNo);
+
+    // Execute the prepared statement
+    if ($link_manual_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Delete Manual / Handboook
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteManual'])) {
+    $assetNo = $_GET['asset_no'];
+    $null = null;
+
+    $delete_manual_sql = "UPDATE assets SET `handbook` = ? WHERE asset_no = ?";
+    $delete_manual_result = $conn->prepare($delete_manual_sql);
+    $delete_manual_result->bind_param("ss", $null, $assetNo);
+
+    // Execute prepared statement
+    if ($delete_manual_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+
+// Add Risk Assessment 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['riskAssessmentDocument'])) {
+    $assetNo = $_POST["assetNoRiskAssessment"];
+    $riskAssessmentDocument = $_POST["riskAssessmentDocument"];
+
+    $link_risk_assessment_sql = "UPDATE assets SET risk_assessment = ? WHERE asset_no = ?";
+    $link_risk_assessment_result = $conn->prepare($link_risk_assessment_sql);
+    $link_risk_assessment_result->bind_param("ss", $riskAssessmentDocument, $assetNo);
+
+    // Execute the prepared statement
+    if ($link_risk_assessment_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Delete Risk Assessment
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteRiskAssessment'])) {
+    $assetNo = $_GET['asset_no'];
+    $null = null;
+
+    $delete_risk_assessment_sql = "UPDATE assets SET risk_assessment = ? WHERE asset_no = ?";
+    $delete_risk_assessment_result = $conn->prepare($delete_risk_assessment_sql);
+    $delete_risk_assessment_result->bind_param("ss", $null, $assetNo);
+
+    // Execute the prepared statement
+    if ($delete_risk_assessment_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Display manual files
+if (isset($_GET['file'])) {
+    $baseDirectory = 'D:/FSMBEH-Data/00 - QA/04 - Assets/04 - Manuals';
+    $file = basename($_GET['file']); // prevent directory traversal
+    $filePath = $baseDirectory . '/' . $file;
+
+    if (file_exists($filePath) && strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'pdf') {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+        readfile($filePath);
+        exit; // Stop further output
+    } else {
+        http_response_code(404);
+        echo "PDF file not found or access denied.";
+        exit;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -263,11 +412,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         }
 
         .btn-outline-dark:hover {
-            color: white;
+            color: white !important;
         }
 
         .btn-outline-dark {
-            color: black;
+            color: black !important;
         }
 
         @media (max-width: 768px) {
@@ -373,68 +522,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
             </button>
         </div>
 
-
         <?php if ($asset_details_result->num_rows > 0) { ?>
             <?php while ($row = $asset_details_result->fetch_assoc()) { ?>
-                <div class="d-flex align-items-center p-3 bg-white shadow-lg rounded-3 mt-4">
-                    <div class="row w-100">
-                        <div class="col-md-2">
-                            <small>Asset No.</small>
-                            <h4 class="fw-bold signature-color"><?php echo $asset_no ? $asset_no : "N/A"; ?></h4>
-                        </div>
+                <div class="position-relative">
+                    <a class="position-absolute top-0 end-0 m-2" type="button" data-bs-toggle="modal"
+                        data-bs-target="#editAssetModal" data-asset-id="<?= $row["asset_id"] ?>"
+                        data-asset-no="<?= $row["asset_no"] ?>" data-department-id="<?= $row["department_id"] ?>"
+                        data-asset-name="<?= $row["asset_name"] ?>" data-status="<?= $row["status"] ?>"
+                        data-serial-number="<?= $row["serial_number"] ?>" data-location="<?= $row["location_id"] ?>"
+                        data-accounts-asset="<?= $row["accounts_asset"] ?>" data-whs-asset="<?= $row["whs_asset"] ?>"
+                        data-purchase-date="<?= $row["purchase_date"] ?>">
+                        <i class="signature-color fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <div class="d-flex align-items-center p-3 bg-white shadow-lg rounded-3 mt-4">
 
-                        <div class="col-md-6">
-                            <small>Asset Name</small>
-                            <h4 class="fw-bold signature-color">
-                                <?= !empty($row['asset_name']) ? htmlspecialchars($row['asset_name']) : "N/A" ?>
-                            </h4>
-                        </div>
+                        <div class="row w-100">
+                            <div class="col-md-2">
+                                <small>Asset No.</small>
+                                <h4 class="fw-bold signature-color"><?php echo $asset_no ? $asset_no : "N/A"; ?></h4>
+                            </div>
 
-                        <div class="col-md-4">
-                            <small>Serial Number</small>
-                            <h4 class="fw-bold signature-color">
-                                <?= !empty($row['serial_number']) ? htmlspecialchars($row['serial_number']) : "N/A" ?>
-                            </h4>
-                        </div>
+                            <div class="col-md-6">
+                                <small>Asset Name</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['asset_name']) ? htmlspecialchars($row['asset_name']) : "N/A" ?>
+                                </h4>
+                            </div>
 
-                        <div class="col-md-2 mt-0 mt-md-3">
-                            <small>Department</small>
-                            <h4 class="fw-bold signature-color">
-                                <?= !empty($row['department_name']) ? htmlspecialchars($row['department_name']) : "N/A" ?>
-                            </h4>
-                        </div>
+                            <div class="col-md-4">
+                                <small>Serial Number</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['serial_number']) ? htmlspecialchars($row['serial_number']) : "N/A" ?>
+                                </h4>
+                            </div>
 
-                        <div class="col-md-3 mt-0 mt-md-3">
-                            <small>Purchase Date</small>
-                            <h4 class="fw-bold signature-color">
-                                <?php
-                                $purchase_date = !empty($row['purchase_date']) ? $row['purchase_date'] : null;
-                                if (!$purchase_date) {
-                                    echo "N/A";
-                                } else {
-                                    $date = DateTime::createFromFormat('Y-m-d', $purchase_date);
-                                    if ($date) {
-                                        echo $date->format('d F Y');  // Format as 12 January 2021
+                            <div class="col-md-2 mt-0 mt-md-3">
+                                <small>Department</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['department_name']) ? htmlspecialchars($row['department_name']) : "N/A" ?>
+                                </h4>
+                            </div>
+
+                            <div class="col-md-3 mt-0 mt-md-3">
+                                <small>Purchase Date</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?php
+                                    $purchase_date = !empty($row['purchase_date']) ? $row['purchase_date'] : null;
+                                    if (!$purchase_date) {
+                                        echo "N/A";
                                     } else {
-                                        echo "Invalid date format";
+                                        $date = DateTime::createFromFormat('Y-m-d', $purchase_date);
+                                        if ($date) {
+                                            echo $date->format('d F Y');  // Format as 12 January 2021
+                                        } else {
+                                            echo "Invalid date format";
+                                        }
                                     }
-                                }
-                                ?>
-                            </h4>
-                        </div>
+                                    ?>
+                                </h4>
+                            </div>
 
-                        <div class="col-md-3 mt-0 mt-md-3">
-                            <small>Location</small>
-                            <h4 class="fw-bold signature-color">
-                                <?= !empty($row['location_name']) ? htmlspecialchars($row['location_name']) : "N/A" ?>
-                            </h4>
-                        </div>
+                            <div class="col-md-3 mt-0 mt-md-3">
+                                <small>Location</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['location_name']) ? htmlspecialchars($row['location_name']) : "N/A" ?>
+                                </h4>
+                            </div>
 
-                        <div class="col-md-3 mt-0 mt-md-3">
-                            <small>Status</small>
-                            <h4 class="fw-bold signature-color">
-                                <?= !empty($row['status']) ? htmlspecialchars($row['status']) : "N/A" ?>
-                            </h4>
+                            <div class="col-md-3 mt-0 mt-md-3">
+                                <small>Status</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['status']) ? htmlspecialchars($row['status']) : "N/A" ?>
+                                </h4>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -684,53 +844,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 pb-0">Manual</h5>
+                                <h5 class="fw-bold mb-0 pb-0">Manual / Work Instruction</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info">
+                                        <i class="fa-solid fa-link fa-sm text-white" data-bs-toggle="modal"
+                                            data-bs-target="#linkManualToAssetModal"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                        data-bs-target="#manualWorkInstructionModal">
+                                        <i class="fa-solid fa-plus fa-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <?php if ($asset_details_result->num_rows > 0): ?>
+
+                                <?php if ($row['manual'] !== null): ?>
+                                    <div class="bg-white p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center">
+                                        <a class="text-decoration-none" href="pdf.php?file=<?= urlencode($row['manual']) ?>.pdf"
+                                            target="_blank">
+                                            <i class="fas fa-file-pdf text-danger me-1"></i><?= htmlspecialchars($row['manual']) ?>.pdf
+                                        </a>
+                                        <form method="POST">
+                                            <button class="btn text-danger" name="deleteManualWorkInstruction">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if ($row['handbook'] !== null): ?>
+                                    <div class="bg-white p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center">
+                                        <a href="?file=<?= urlencode($row['handbook']) ?>" class="text-decoration-none" target="_blank">
+                                            <i class="fas fa-file-pdf text-danger me-1"></i><?= htmlspecialchars($row['handbook']) ?>
+                                        </a>
+                                        <form method="POST">
+                                            <button class="btn text-danger" name="deleteManual">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if ($row['manual'] === null && $row['handbook'] === null): ?>
+                                    <div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">
+                                        No Manual / Work Instruction linked to this asset.
+                                    </div>
+                                <?php endif; ?>
+
+                            <?php endif; ?>
+
+
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mt-1 mb-1 pb-0">Risk Assessment</h5>
                                 <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
-                                    data-bs-target="#addAssetDetailsModal" data-details-type="Manual"
-                                    data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
+                                    data-bs-target="#riskAssessmentModal">
                                     <i class="fa-solid fa-plus fa-sm"></i>
                                 </button>
                             </div>
-
-                            <?php
-                            $directoryPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/01 - Manual";
-
-                            // Check if the directory exists
-                            if (is_dir($directoryPath)) {
-                                $files = scandir($directoryPath); // Get all files and directories in the specified folder
-                                $files = array_diff($files, ['.', '..']); // Remove '.' and '..' entries
-                    
-                                if (count($files) > 0) {
-                                    // Display the list of files
-                                    echo '<div class="bg-white p-3 rounded-3 mt-4">';
-                                    foreach ($files as $file) {
-                                        $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-
-                                        // Determine the icon based on file extension
-                                        if ($fileExtension === 'pdf') {
-                                            $icon = 'fa-file-pdf text-danger';
-                                        } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
-                                            $icon = 'fa-file-word text-primary';
-                                        } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                                            $icon = 'fa-file-image text-success';
-                                        } else {
-                                            $icon = 'fa-file';
-                                        }
-
-                                        // Output the file name with the icon
-                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=01 - Manual&file=' . urlencode($file) . '">';
-                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
-                                    }
-                                    echo '</div>';
-                                } else {
-                                    // If no files exist
-                                    echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">No manual records available.</div>';
-                                }
-                            } else {
-                                // If directory does not exist
-                                echo '<div class="alert alert-danger mt-3 mt-md-4 mb-0" role="alert">The manual directory does not exist.</div>';
-                            }
-                            ?>
+                            <?php if ($asset_details_result->num_rows > 0 && $row['risk_assessment'] !== null) { ?>
+                                <div class="bg-white p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center">
+                                    <a class="text-decoration-none"
+                                        href="pdf.php?file=<?= urlencode($row['risk_assessment']) ?>.pdf" target="_blank">
+                                        <i class="fas fa-file-pdf text-danger me-1"></i><?= $row["risk_assessment"]; ?>.pdf
+                                    </a>
+                                    <form method="POST">
+                                        <button class="btn text-danger" name="deleteRiskAssessment"><i
+                                                class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                </div>
+                            <?php } else {
+                                echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">No Risk Assessment linked to this asset.</div>';
+                            } ?>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -910,6 +1098,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         </div>
     </div>
 
+    <!-- ======================== E D I T  A S S E T  M O D A L ======================== -->
+    <div class="modal fade" id="editAssetModal" tabindex="-1" aria-labelledby="editAssetModal" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require_once("../Form/EditAssetForm.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========================  Modal for Displaying Larger Image ======================== -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -921,6 +1124,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
                 <div class="modal-body">
                     <img id="modalImage" src="" alt="Asset Image" class="img-fluid">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== L I N K  R I S K  A S S E S S M E N T  M O D A L ======================== -->
+    <div class="modal fade" id="riskAssessmentModal" tabindex="-1" aria-labelledby="riskAssessmentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="riskAssessmentModalLabel">Risk Assessment </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        <input type="hidden" name="assetNoRiskAssessment" value="<?php echo $_GET['asset_no'] ?>">
+                        <label for="riskAssessmentDocument" class="fw-bold">Risk Assessment Document</label>
+                        <?php
+                        // Query for risk assessment files that match the pattern
+                        $select_risk_assessment_file_sql = "SELECT qa_document, document_name FROM quality_assurance WHERE qa_document LIKE '11-WH-RA-%' ORDER BY qa_document";
+                        $select_risk_assessment_file_result = $conn->query($select_risk_assessment_file_sql);
+                        ?>
+                        <select class="form-select" name="riskAssessmentDocument" id="riskAssessmentDocument" required>
+                            <option value="">Select Risk Assessment</option>
+                            <?php if ($select_risk_assessment_file_result->num_rows > 0) {
+                                while ($row = $select_risk_assessment_file_result->fetch_assoc()) { ?>
+                                    <option value="<?= htmlspecialchars($row['qa_document']) ?>">
+                                        <?= htmlspecialchars($row['qa_document']) . " (" . htmlspecialchars($row['document_name']) . ") " ?>
+                                    </option>
+                                <?php }
+                            } ?>
+                        </select>
+                        <div class="d-flex justify-content-center mt-3">
+                            <button class="btn btn-dark" nsme>Add Risk Assessment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== L I N K  M A N U A L / W O R K  I N S T R U C T I O N   A S S E S S M E N T  M O D A L ======================== -->
+    <div class="modal fade" id="manualWorkInstructionModal" tabindex="-1"
+        aria-labelledby="manualWorkInstructionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manualWorkInstructionModalLabel">Manual / Work Instruction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        <input type="hidden" name="assetNoManualWorkInstruction"
+                            value="<?php echo $_GET["asset_no"] ?>">
+                        <label for="manualWorkInstructionDocument" class="fw-bold">Manual / Work Instruction
+                            Document</label>
+                        <?php
+                        // Query for manual / work instruction files that match pattern 
+                        $select_manual_work_instruction_file_sql = "SELECT qa_document, document_name 
+                        FROM quality_assurance 
+                        WHERE qa_document LIKE '%-WI-%' 
+                           OR qa_document LIKE '%-MA-%'
+                        ORDER BY qa_document ASC";
+                        $select_manual_work_instruction_file_result = $conn->query($select_manual_work_instruction_file_sql);
+                        ?>
+                        <select class="form-select" name="manualWorkInstructionDocument"
+                            id="manualWorkInstructionDocument" required>
+                            <option value="" hidden>Select Manual / Work Instruction</option>
+                            <?php if ($select_manual_work_instruction_file_result->num_rows > 0) {
+                                while ($row = $select_manual_work_instruction_file_result->fetch_assoc()) { ?>
+                                    <option value="<?= htmlspecialchars($row['qa_document']) ?>">
+                                        <?= htmlspecialchars($row['qa_document']) . " (" . htmlspecialchars($row['document_name']) . ") " ?>
+                                    </option>
+                                <?php }
+                            } ?>
+                        </select>
+                        <div class="d-flex justify-content-center mt-3">
+                            <button class="btn btn-dark" name="">Add Manual/Work Instruction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== L I N K  H A N D B O O K  M O D A L ======================== -->\
+    <div class="modal fade" id="linkManualToAssetModal" tabindex="-1" aria-labelledby="linkManualToAssetLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="linkManualToAssetLabel">Link Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        <input type="hidden" name="assetNoManual"
+                            value="<?php echo htmlspecialchars($_GET['asset_no']); ?>">
+                        <label for="manualDocument" class="fw-bold">Manual Document</label>
+
+                        <select class="form-select" name="manualDocument" id="manualDocument" required>
+                            <option value="" hidden>Select Manual</option>
+                            <?php
+                            $folderPath = 'D:/FSMBEH-Data/00 - QA/04 - Assets/04 - Manuals/';
+                            if (is_dir($folderPath)) {
+                                $files = scandir($folderPath);
+                                foreach ($files as $file) {
+                                    // Filter only PDF files
+                                    if (pathinfo($file, PATHINFO_EXTENSION) === 'pdf') {
+                                        echo '<option value="' . htmlspecialchars($file) . '">' . htmlspecialchars($file) . '</option>';
+                                    }
+                                }
+                            } else {
+                                echo '<option disabled>Folder not found</option>';
+                            }
+                            ?>
+                        </select>
+
+                        <div class="d-flex justify-content-center mt-3">
+                            <button class="btn btn-dark" name="">Add Manual</button>
+                        </div>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1154,7 +1481,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
 
     </script>
 
-
     <script>
         // Function to update due date
         function updateDueDate(timeToAdd) {
@@ -1204,6 +1530,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
             });
         });
     </script>
+
     <script>
         // Select all buttons with the class 'btn'
         const buttons = document.querySelectorAll('.deleteBtn');
@@ -1230,6 +1557,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         });
 
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('editAssetModal');
+            myModalEl.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget; // Button that triggered the modal
+
+                var assetId = button.getAttribute('data-asset-id');
+                var assetNo = button.getAttribute('data-asset-no');
+                var department = button.getAttribute('data-department-id');
+                var assetName = button.getAttribute('data-asset-name');
+                var status = button.getAttribute('data-status');
+                var serialNumber = button.getAttribute('data-serial-number');
+                var purchaseDate = button.getAttribute('data-purchase-date');
+                var location = button.getAttribute('data-location');
+                var accountsAsset = button.getAttribute('data-accounts-asset');
+                var whsAsset = button.getAttribute('data-whs-asset');
+
+
+                // Update the modal's content with the extracted info
+                var modalAssetId = myModalEl.querySelector('#assetIdToEdit');
+                var modalAssetNo = myModalEl.querySelector('#assetNoToEdit');
+                var modalDepartment = myModalEl.querySelector('#departmentToEdit');
+                var modalAssetName = myModalEl.querySelector('#assetNameToEdit');
+                var modalStatus = myModalEl.querySelector('#statusToEdit');
+                var modalSerialNumber = myModalEl.querySelector('#serialNumberToEdit');
+                var modalPurchaseDate = myModalEl.querySelector('#purchaseDateToEdit');
+                var modalLocation = myModalEl.querySelector('#locationToEdit');
+
+                modalAssetId.value = assetId
+                modalAssetNo.value = assetNo.startsWith("FE") ? assetNo.substring(2) : assetNo;
+                modalDepartment.value = department;
+                modalAssetName.value = assetName;
+                modalStatus.value = status;
+                modalSerialNumber.value = serialNumber;
+                modalPurchaseDate.value = purchaseDate;
+                modalLocation.value = location;
+
+                if (accountsAsset === "1") {
+                    document.getElementById("accountsAssetToEditYes").checked = true;
+                } else if (accountsAsset === "0") {
+                    document.getElementById("accountsAssetToEditNo").checked = true;
+                }
+
+                if (whsAsset === "1") {
+                    document.getElementById("whsAssetToEditYes").checked = true;
+                } else if (whsAsset === "0") {
+                    document.getElementById("whsAssetToEditNo").checked = true;
+                }
+            });
+        })
+    </script>
 </body>
 
 </html>
+

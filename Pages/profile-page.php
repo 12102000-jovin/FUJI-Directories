@@ -850,172 +850,96 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         }
 
         @media print {
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
 
-            .col-lg-6,
-            .col-xl-3 {
-                width: 45%;
-                /* Adjust columns to fit better in print */
-            }
-
-            .show-print {
-                display: block !important;
-                column-count: 2;
-                column-gap: 5px;
+            /* Remove shadow on specific container */
+            body .shadow-lg {
+                box-shadow: none !important;
             }
 
             .hide-print {
-                display: none;
+                display: none !important;
+            }
+
+            .row-print-2col {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .row-print-2col>div {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* Create a class for long text fields */
+            .long-text {
+                grid-column: span 2 !important;
+                /* Span across 2 columns */
+            }
+
+            .print-table {
+                display: table !important;
+                background: none !important;
+                width: 100% !important;
+                position: relative;
+                margin: auto;
+                margin-top: 20px;
+            }
+
+            .print-2col-wrapper {
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+                /* some space between columns */
+            }
+
+            .column-section {
+                width: 50%;
+                border: 2px solid black;
+                border-radius: 10px;
+                margin-top: 15px !important;
+            }
+
+            .column-section>div {
+                margin: 0px !important;
             }
 
             h5 {
                 font-size: 0.8rem !important;
             }
 
-
             small {
-                font-size: 0.6rem;
-            }
-
-            p {
-                font-size: 0.8rem;
-            }
-
-            .print-name {
-                font-size: 15px !important;
-            }
-
-            .print-position {
-                font-size: 12px;
-            }
-
-            .no-shadow-print {
-                box-shadow: none !important;
-            }
-
-            .mt-print-contact {
-                margin-top: 0px !important;
-                padding-top: 0px !important;
-                padding-bottom: 0px !important;
-                margin-bottom: 0px !important;
-            }
-
-            .mt-print-bank {
-                padding-top: 0px !important;
-                margin-top: 0px !important;
-                padding-bottom: 0px !important;
-                margin-bottom: 0px !important;
-            }
-
-            .mt-print-personal-information {
-                padding-top: 0px !important;
-                margin-top: 0 !important;
-                padding-bottom: 0px !important;
-                margin-bottom: 0 !important;
-            }
-
-            .mt-emergency-contact {
-                margin-top: 10px !important;
-                padding-top: 0px !important;
-            }
-
-            .mt-print-employment-details {
-                padding-top: 0px !important;
-                margin-top: 0 !important;
-            }
-
-            .address-print {
-                width: 100%;
-            }
-
-            .card {
-                background-color: white !important;
-                /* Ensure card background prints */
-                border: none !important;
+                font-size: 0.6rem !important;
             }
 
             #chartContainer,
             #chartContainer2 {
-                height: 240px !important;
-            }
-
-
-            /* You can also adjust margins, padding, and other styles for print */
-            .payRaiseHistoryPrint {
-                margin: 0 auto !important;
-                padding: 0px !important;
-                box-shadow: none;
-                width: 95% !important;
-                background-color: white;
-            }
-
-            .allowanceTablePrint {
-                display: table !important;
-                width: 95% !important;
-                position: relative;
-                margin: auto;
-                /* Add this line */
-                top: 40px;
-                /* Adjust this value as needed */
-            }
-
-            .machineCompetencyPrint {
-                box-shadow: none !important;
-                background: none !important;
-            }
-
-            .machineCompetencyPrintTable {
-                display: table !important;
-                background: none !important;
-                width: 100% !important;
-                position: relative;
-                margin: auto;
-                margin-top: 20px;
-            }
-
-            .policiesPrint {
-                box-shadow: none !important;
-                background: none !important;
-            }
-
-            .policiesPrintTable {
-                display: table !important;
-                background: none !important;
-                width: 100% !important;
-                position: relative;
-                margin: auto;
-                margin-top: 20px;
-            }
-
-            .currentWagePrint {
-                display: table !important;
-            }
-
-            .currentSalaryPrint {
-                display: table !important;
-            }
-
-            .hideWageSalaryEdit {
-                display: none;
-            }
-
-            .card {
+                page-break-before: always;
+                /* Forces a page break before the chart */
                 page-break-inside: avoid;
+                /* Prevents splitting of the chart */
+                margin: 0px !important;
+                padding: 0px !important;
+                height: 240px !important;
+                width: 95% !important;
             }
 
-            .image-print-width {
-                margin-left: 30px !important;
+            .currentWagePrint,
+            .currentSalaryPrint {
+                margin: 0px !important;
+                display: table !important;
             }
 
-            @page {
-                margin-top: 0;
-                margin-bottom: 0;
-                margin-left: 0;
-                margin-right: 0;
+            .chart-border {
+                border: 2px solid black !important;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
             }
+
+            .card .table-padding {
+                padding: 0px !important;
+            }
+
         }
     </style>
 
@@ -1112,21 +1036,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
         <?php require_once("../Menu/NavBar.php") ?>
     </div>
     <div class="container-fluid px-md-5 mb-5 mt-4">
-        <nav aria-label="breadcrumb" class="mb-3 hide-print">
-            <ol class="breadcrumb m-0">
-                <li class="breadcrumb-item"><a
-                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
-                </li>
-                <li class="breadcrumb-item active" style="color:#043f9d" aria-current="page">
-                    <a
-                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php">All
-                        Employees</a>
-                </li>
-                <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">
-                    <?php echo $_GET['employee_id']; ?>
-                </li>
-            </ol>
-        </nav>
+        <div class="hide-print">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a>
+                    </li>
+                    <li class="breadcrumb-item active" style="color:#043f9d" aria-current="page">
+                        <a
+                            href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-list-index.php">All
+                            Employees</a>
+                    </li>
+                    <li class="breadcrumb-item active fw-bold" style="color:#043f9d" aria-current="page">
+                        <?php echo $_GET['employee_id']; ?>
+                    </li>
+                </ol>
+            </nav>
+        </div>
         <div class="row">
             <div class="col-lg-8">
                 <?php
@@ -1139,6 +1065,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $visaStatus = $row['visa'];
                         $visaName = $row['visa_name'];
                         $visaExpiryDate = $row['visa_expiry_date'];
+                        $dietaryRestrictions = $row['dietary_restrictions'];
                         $lastDate = $row['last_date'];
                         $workShift = $row['work_shift'];
                         $lockerNumber = $row['locker_number'];
@@ -1187,12 +1114,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $machineMaintenanceAllowanceCheck = $row['machine_maintenance_allowance_check'];
                     }
                     ?>
-                    <div class="row g-0 image-print-width">
+                    <div class="row g-0">
                         <div class="d-flex align-items-center justify-content-between flex-wrap">
                             <div class="d-flex align-items-center flex-wrap">
                                 <?php if (!empty($profileImage)) { ?>
                                     <!-- Profile image -->
-                                    <div class="bg-gradient shadow-lg rounded-circle me-3 print-profile"
+                                    <div class="bg-gradient shadow-lg rounded-circle me-3"
                                         style="width: 100px; height: 100px; overflow: hidden;">
                                         <a data-bs-toggle="modal" data-bs-target="#profileImageModal" style="cursor: pointer">
                                             <img src="data:image/jpeg;base64,<?php echo $profileImage; ?>" alt="Profile Image"
@@ -1222,7 +1149,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } else { ?>
                                     <!-- Initials -->
-                                    <div class="signature-bg-color shadow-lg rounded-circle text-white d-flex justify-content-center align-items-center me-3 print-initials"
+                                    <div class="signature-bg-color shadow-sm rounded-circle text-white d-flex justify-content-center align-items-center me-3"
                                         style="width: 100px; height: 100px;">
                                         <h3 class="p-0 m-0">
                                             <?php echo strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1)); ?>
@@ -1234,10 +1161,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <div class="d-flex align-items-center justify-content-start">
                                         <h5 class="card-title fw-bold text-start">
                                             <div class="d-flex align-items-center">
-                                                <div class="print-name" id="print-name">
-                                                    <?php echo (isset($firstName) && isset($lastName)) ? $firstName . " " . $lastName : "N/A"; ?>
-                                                </div>
-                                                <div class="hide-print ms-2">
+                                                <?php echo (isset($firstName) && isset($lastName)) ? $firstName . " " . $lastName : "N/A"; ?>
+                                                <div class="ms-2 hide-print">
                                                     <?php if ($isActive == 0) {
                                                         echo '<small><span class="badge rounded-pill bg-danger mb-1">Inactive</span></small>';
                                                     } else if ($isActive == 1) {
@@ -1248,17 +1173,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                             </div>
                                         </h5>
                                     </div>
-                                    <small class="text-start print-position">
+                                    <small class="text-start">
                                         <?php echo (isset($positionName)) ? $positionName : "N/A" . " - " . ((isset($employeeId)) ? $employeeId : "N/A"); ?>
                                     </small>
                                 </div>
                             </div>
+
                             <div class="hide-print">
                                 <div class="d-flex flex-sm-row align-items-center mt-4 mt-sm-0">
                                     <button class="btn btn-secondary me-2" onclick="toggleAndPrint()">
                                         <i class="fa-solid fa-print"></i>
                                     </button>
-
 
                                     <?php if ($role === "full control" || $role === "modify 1") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
@@ -1270,148 +1195,163 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             </div>
                         </div>
                     </div>
-                    <div class="show-print">
-                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-personal-information">
-                            <div class="p-3">
-                                <p class="fw-bold signature-color">Personal Information</p>
-                                <div class="row">
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>First Name</small>
-                                        <h5 class="fw-bold"><?php echo (isset($firstName) ? $firstName : "N/A") ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Last Name</small>
-                                        <h5 class="fw-bold"><?php echo (isset($lastName) ? $lastName : "N/A") ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Nickname</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo ($nickname !== null && $nickname !== "" ? $nickname : "N/A"); ?>
-                                        </h5>
-                                    </div>
+                    <div class="print-2col-wrapper">
+                        <div class="column-section">
+                            <div class="p-3 mt-4 bg-white rounded shadow-lg">
+                                <div class="p-3">
+                                    <p class="fw-bold signature-color">Personal Information</p>
+                                    <div class="row row-print-2col">
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>First Name</small>
+                                            <h5 class="fw-bold"><?php echo (isset($firstName) ? $firstName : "N/A") ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Last Name</small>
+                                            <h5 class="fw-bold"><?php echo (isset($lastName) ? $lastName : "N/A") ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Nickname</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo ($nickname !== null && $nickname !== "" ? $nickname : "N/A"); ?>
+                                            </h5>
+                                        </div>
 
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Gender</small>
-                                        <h5 class="fw-bold"><?php echo (isset($gender) ? $gender : "N/A") ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Date of Birth</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($dob) ? date("j F Y", strtotime($dob)) : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Visa Status</small>
-                                        <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
-                                        </h5>
-                                    </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Gender</small>
+                                            <h5 class="fw-bold"><?php echo (isset($gender) ? $gender : "N/A") ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Date of Birth</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($dob) ? date("j F Y", strtotime($dob)) : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column long-text">
+                                            <small>Visa Status</small>
+                                            <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
+                                            </h5>
+                                        </div>
 
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Visa Expiry Date</small>
-                                        <?php
-                                        if ($visaExpiryDate != null) {
-                                            // Set the timezone to Sydney
-                                            $timezone = new DateTimeZone('Australia/Sydney');
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Visa Expiry Date</small>
+                                            <?php
+                                            if ($visaExpiryDate != null) {
+                                                // Set the timezone to Sydney
+                                                $timezone = new DateTimeZone('Australia/Sydney');
 
-                                            // Create DateTime objects with the Sydney timezone
-                                            $today = new DateTime('now', $timezone);
-                                            $today->setTime(0, 0, 0);
+                                                // Create DateTime objects with the Sydney timezone
+                                                $today = new DateTime('now', $timezone);
+                                                $today->setTime(0, 0, 0);
 
-                                            $expiryDate = new DateTime($visaExpiryDate, $timezone);
-                                            $expiryDate->setTime(0, 0, 0);
+                                                $expiryDate = new DateTime($visaExpiryDate, $timezone);
+                                                $expiryDate->setTime(0, 0, 0);
 
-                                            // Calculate the difference in days between today and the visa expiry date
-                                            $interval = $today->diff($expiryDate);
-                                            $daysDifference = $interval->format('%r%a');
+                                                // Calculate the difference in days between today and the visa expiry date
+                                                $interval = $today->diff($expiryDate);
+                                                $daysDifference = $interval->format('%r%a');
 
-                                            // Function to determine singular or plural "day"
-                                            function dayText($days)
-                                            {
-                                                return abs($days) == 1 ? 'day' : 'days';
-                                            }
+                                                // Function to determine singular or plural "day"
+                                                function dayText($days)
+                                                {
+                                                    return abs($days) == 1 ? 'day' : 'days';
+                                                }
 
-                                            $visaExpiryDate = isset($visaExpiryDate) ? $visaExpiryDate : "N/A";
+                                                $visaExpiryDate = isset($visaExpiryDate) ? $visaExpiryDate : "N/A";
 
-                                            // Check if the expiry date is less than 30 days from today
-                                            if ($daysDifference == 0) {
-                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                // Check if the expiry date is less than 30 days from today
+                                                if ($daysDifference == 0) {
+                                                    echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
                                                 data-bs-placement="top" title="Visa expired today"></i> </h5>';
-                                            } else if ($daysDifference < 30 && $daysDifference >= 0) {
-                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                } else if ($daysDifference < 30 && $daysDifference >= 0) {
+                                                    echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
                                                 data-bs-placement="top" title="Visa expires in ' . $daysDifference . ' ' . dayText($daysDifference) . '"></i> </h5>';
-                                            } else if ($daysDifference < 0) {
-                                                echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
+                                                } else if ($daysDifference < 0) {
+                                                    echo '<h5 class="fw-bold text-danger">' . $visaExpiryDate . '<i class="fa-solid fa-circle-exclamation fa-shake ms-1 tooltips" data-bs-toggle="tooltip" 
                                                 data-bs-placement="top" title="Visa expired ' . abs($daysDifference) . ' ' . dayText($daysDifference) . ' ago"></i> </h5>';
+                                                } else {
+                                                    echo '<h5 class="fw-bold">' . $visaExpiryDate . '</h5>';
+                                                }
                                             } else {
-                                                echo '<h5 class="fw-bold">' . $visaExpiryDate . '</h5>';
+                                                echo '<h5 class="fw-bold"> N/A</h5>';
                                             }
-                                        } else {
-                                            echo '<h5 class="fw-bold"> N/A</h5>';
-                                        }
-                                        ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-contact">
-                            <div class="p-3 mt-print-contact">
-                                <p class="fw-bold signature-color">Contacts</p>
-                                <div class="row">
-                                    <div class="col-lg-6 col-xl-12 d-flex flex-column address-print">
-                                        <small>Address</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo (isset($address) && $address !== "" ? $address : "N/A"); ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-4 col-xl-4 d-flex flex-column">
-                                        <small>Email</small>
-                                        <h5 class="fw-bold text-break"><?php echo isset($email) ? $email : "N/A"; ?></h5>
-                                    </div>
-                                    <div class="col-lg-4 col-xl-4 d-flex flex-column">
-                                        <small>Personal Email</small>
-                                        <h5 class="fw-bold text-break">
-                                            <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Phone Number</small>
-                                        <h5 class="fw-bold"><?php echo isset($phoneNumber) ? $phoneNumber : "N/A"; ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Plate Number</small>
-                                        <h5 class="fw-bold"><?php echo isset($plateNumber) ? $plateNumber : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                </div>
+                                            ?>
+                                        </div>
 
-                                <p class="fw-bold signature-color mt-4 mt-emergency-contact">Emergency Contact</p>
-                                <div class="row">
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Emergency Contact Name</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($emergencyContactName) ? $emergencyContactName : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Emergency Contact Relationship</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($emergencyContactRelationship) ? $emergencyContactRelationship : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Emergency Contact</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($emergencyContact) ? $emergencyContact : "N/A"; ?>
-                                        </h5>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Dietary Restrictions</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo !empty($dietaryRestrictions) ? htmlspecialchars($dietaryRestrictions) : "N/A"; ?>
+                                            </h5>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-print-employment-details">
-                            <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print">
-                                <div class="p-3 mt-print-employment-details">
+                        <div class="column-section">
+                            <div class="p-3 mt-4 bg-white rounded shadow-lg">
+                                <div class="p-3">
+                                    <p class="fw-bold signature-color">Contacts</p>
+                                    <div class="row row-print-2col">
+                                        <div class="col-lg-6 col-xl-12 d-flex flex-column long-text">
+                                            <small>Address</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo (isset($address) && $address !== "" ? $address : "N/A"); ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-4 col-xl-4 d-flex flex-column long-text">
+                                            <small>Email</small>
+                                            <h5 class="fw-bold text-break"><?php echo isset($email) ? $email : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-4 col-xl-4 d-flex flex-column long-text">
+                                            <small>Personal Email</small>
+                                            <h5 class="fw-bold text-break">
+                                                <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Phone Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($phoneNumber) ? $phoneNumber : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Plate Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($plateNumber) ? $plateNumber : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                    </div>
+
+                                    <p class="fw-bold signature-color mt-4 mt-emergency-contact">Emergency Contact</p>
+                                    <div class="row row-print-2col">
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Emergency Contact Name</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($emergencyContactName) ? $emergencyContactName : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Emergency Contact Relationship</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($emergencyContactRelationship) ? $emergencyContactRelationship : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Emergency Contact</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($emergencyContact) ? $emergencyContact : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="print-2col-wrapper">
+                        <div class="column-section">
+                            <div class="p-3 mt-4 bg-white rounded shadow-lg">
+                                <div class="p-3">
                                     <p class="fw-bold signature-color">Employment Details</p>
-                                    <div class="row">
+                                    <div class="row row-print-2col">
                                         <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                             <small> Employee Id </small>
                                             <h5 class="fw-bold"><?php echo isset($employeeId) ? $employeeId : "N/A"; ?></h5>
@@ -1438,7 +1378,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                             <small>Permanent Date</small>
                                             <h5 class="fw-bold">
-                                                <?php echo isset($permanentDate) ? $permanentDate : "N/A"; ?>
+                                                <?php echo isset($permanentDate) ? date("j F Y", strtotime($permanentDate)) : "N/A"; ?>
                                             </h5>
                                         </div>
                                         <div class="col-lg-6 col-xl-3 d-flex flex-column">
@@ -1494,65 +1434,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 </div>
                             </div>
                         </div>
-                        <div class="p-3 mt-4 bg-white rounded shadow-lg no-shadow-print mt-print-bank">
-                            <div class="p-3 mt-print-bank">
-                                <p class="fw-bold signature-color">Banking, Super and Tax Details</p>
-                                <div class="row">
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small> Banking/Building Society </small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($bankBuildingSociety) ? $bankBuildingSociety : "N/A" ?></h>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>BSB</small>
-                                        <h5 class="fw-bold"><?php echo isset($bsb) ? $bsb : "N/A" ?></h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Account Number</small>
-                                        <h5 class="fw-bold"><?php echo isset($accountNumber) ? $accountNumber : "N/A" ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Unique Superannuation Identifier</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($uniqueSuperannuationIdentifier) ? $uniqueSuperannuationIdentifier : "N/A" ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Superannuation Fund Name</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($superannuationFundName) ? $superannuationFundName : "N/A" ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Superannuation Member Number</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($superannuationMemberNumber) ? $superannuationMemberNumber : "N/A" ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Tax File Number</small>
-                                        <h5 class="fw-bold"><?php echo isset($taxFileNumber) ? $taxFileNumber : "N/A" ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Higher Education Loan Programme</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($higherEducationLoanProgramme) ? ($higherEducationLoanProgramme == 1 ? "Yes" : "No") : "N/A"; ?>
-                                        </h5>
-                                    </div>
-                                    <div class="col-lg-6 col-xl-3 d-flex flex-column">
-                                        <small>Financial Supplement Debt</small>
-                                        <h5 class="fw-bold">
-                                            <?php echo isset($financialSupplementDebt) ? ($financialSupplementDebt == 1 ? "Yes" : "No") : "N/A" ?>
-                                        </h5>
+                        <div class="column-section">
+                            <div class="p-3 mt-4 bg-white rounded shadow-lg">
+                                <div class="p-3">
+                                    <p class="fw-bold signature-color">Banking, Super and Tax Details</p>
+                                    <div class="row row-print-2col">
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small> Banking/Building Society </small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($bankBuildingSociety) ? $bankBuildingSociety : "N/A" ?></h>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>BSB</small>
+                                            <h5 class="fw-bold"><?php echo isset($bsb) ? $bsb : "N/A" ?></h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Account Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($accountNumber) ? $accountNumber : "N/A" ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Unique Superannuation Identifier</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($uniqueSuperannuationIdentifier) ? $uniqueSuperannuationIdentifier : "N/A" ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Superannuation Fund Name</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($superannuationFundName) ? $superannuationFundName : "N/A" ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Superannuation Member Number</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($superannuationMemberNumber) ? $superannuationMemberNumber : "N/A" ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Tax File Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($taxFileNumber) ? $taxFileNumber : "N/A" ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Higher Education Loan Programme</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($higherEducationLoanProgramme) ? ($higherEducationLoanProgramme == 1 ? "Yes" : "No") : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                            <small>Financial Supplement Debt</small>
+                                            <h5 class="fw-bold">
+                                                <?php echo isset($financialSupplementDebt) ? ($financialSupplementDebt == 1 ? "Yes" : "No") : "N/A" ?>
+                                            </h5>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
 
                 <div class="col-lg-4">
                     <?php if ($role === "full control" || $role === "modify 1") { ?>
@@ -1942,26 +1883,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php if ($role === "full control" || $role === "modify 1") { ?>
                         <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
                         <div
-                            class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-wage <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
-                            <div class="p-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <p class="fw-bold signature-color mb-0 d-flex align-items-center">
-                                        Pay Raise History
-                                        <span class="badge rounded-pill signature-btn mx-1">Wage</span>
-                                        <span class="mx-2 hideWageSalaryEdit">|</span>
-                                        <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn hideWageSalaryEdit"
-                                            role="button"></i>
-                                        <small
-                                            class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn hideWageSalaryEdit">
-                                            <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
-                                        </small>
-                                    </p>
+                            class="card bg-white border-0 rounded shadow-lg mt-4 <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
+                            <div class="p-3 chart-border">
+                                <div class="hide-print">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                            Pay Raise History
+                                            <span class="badge rounded-pill signature-btn mx-1">Wage</span>
+                                            <span class="mx-2 hideWageSalaryEdit">|</span>
+                                            <i class="fa-solid fa-eye text-danger me-1 showWagePayRaiseHistoryChartBtn hideWageSalaryEdit"
+                                                role="button"></i>
+                                            <small
+                                                class="pe-2 fw-bold text-decoration-underline showWagePayRaiseHistoryChartBtn hideWageSalaryEdit">
+                                                <a role="button" id="hideWagePayRaiseHistoryModalLabel">Show</a>
+                                            </small>
+                                        </p>
 
-                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
-                                        <i id="payRaiseEditIconWage" role="button"
-                                            class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                            data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
-                                    <?php } ?>
+                                        <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                            <i id="payRaiseEditIconWage" role="button"
+                                                class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                                data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                        <?php } ?>
+                                    </div>
                                 </div>
                                 <div class="px-4 py-2">
                                     <div id="chartContainer" style="height: 300px; width: 100%;" class="d-block"></div>
@@ -1974,50 +1917,62 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php if ($role === "full control" || $role === "modify 1") { ?>
                         <?php $latestSalary = !empty($salariesData) ? $salariesData[array_key_last($salariesData)]['amount'] : 0; ?>
                         <div
-                            class="card bg-white border-0 rounded shadow-lg mt-4 payRaiseHistoryPrint print-salary <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
-                            <div class="p-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <p class="fw-bold signature-color mb-0 d-flex align-items-center">
-                                        Pay Raise History
-                                        <span class="badge rounded-pill signature-btn mx-1">Salary</span>
-                                        <span class="mx-2 hideWageSalaryEdit">|</span>
-                                        <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit"
-                                            role="button"></i>
-                                        <small
-                                            class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit">
-                                            <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
-                                        </small>
-                                    </p>
+                            class="card bg-white border-0 rounded shadow-lg mt-4 <?php echo ($payrollType === "salary") ? 'd-block' : 'd-none'; ?>">
+                            <div class="p-3 chart-border">
+                                <div class="hide-print">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <p class="fw-bold signature-color mb-0 d-flex align-items-center">
+                                            Pay Raise History
+                                            <span class="badge rounded-pill signature-btn mx-1">Salary</span>
+                                            <span class="mx-2 hideWageSalaryEdit">|</span>
+                                            <i class="fa-solid fa-eye text-danger me-1 showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit"
+                                                role="button"></i>
+                                            <small
+                                                class="pe-2 fw-bold text-decoration-underline showSalaryPayRaiseHistoryChartBtn hideWageSalaryEdit">
+                                                <a role="button" id="hideSalaryPayRaiseHistoryModalLabel">Show</a>
+                                            </small>
+                                        </p>
 
-                                    <?php if ($role === "full control") { ?>
-                                        <i id="payRaiseEditIconSalary" role="button"
-                                            class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                            data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
-                                    <?php } ?>
+                                        <?php if ($role === "full control") { ?>
+                                            <i id="payRaiseEditIconSalary" role="button"
+                                                class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                                data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                        <?php } ?>
+                                    </div>
                                 </div>
                                 <div class="px-4 py-2">
-                                    <div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+                                    <div id="chartContainer2" style="height: 300px; width: 100%;" class="d-block"></div>
                                 </div>
                             </div>
                         </div>
                     <?php } ?>
 
                     <?php if ($payrollType === "wage") { ?>
-                        <div class="container-fluid px-3 currentWagePrint" style="display:none">
-                            <table class="table table-hover table-bordered">
+                        <div class="currentWagePrint" style="display:none; width: 100%;">
+                            <table class="table table-hover table-bordered"
+                                style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; border-top:none;">
                                 <tr class="text-center">
-                                    <td class="bg-dark text-white fw-bold col-5">Current Wage</td>
-                                    <td class="bg-dark text-white fw-bold col-5">$<?php echo number_format($latestWage, 2); ?>
+                                    <td class="bg-dark text-white fw-bold col-5"
+                                        style="border-width:2px; border-style:solid; border-top:none;">
+                                        Current Wage
+                                    </td>
+                                    <td class="bg-dark text-white fw-bold col-5"
+                                        style="border-width:2px; border-style:solid; border-top:none;">
+                                        $<?php echo number_format($latestWage, 2); ?>
                                     </td>
                                 </tr>
                             </table>
                         </div>
                     <?php } else if ($payrollType === "salary") { ?>
-                            <div class="container-fluid px-3 currentSalaryPrint" style="display:none">
-                                <table class="table table-hover table-bordered">
+                            <div class="currentSalaryPrint" style="display:none; width: 100%">
+                                <table class="table table-hover table-bordered"
+                                    style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; border-top:none;">
                                     <tr class="text-center">
-                                        <td class="bg-dark text-white fw-bold col-5">Current Salary</td>
-                                        <td class="bg-dark text-white fw-bold col-5">$<?php echo number_format($latestSalary, 2); ?>
+                                        <td class="bg-dark text-white fw-bold col-5"
+                                            style="border-width:2px; border-style:solid; border-top:none;">Current Salary</td>
+                                        <td class="bg-dark text-white fw-bold col-5"
+                                            style="border-width:2px; border-style:solid; border-top:none;">
+                                            $<?php echo number_format($latestSalary, 2); ?>
                                         </td>
                                     </tr>
                                 </table>
@@ -2025,7 +1980,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php } ?>
                     <!-- ======================================= A L L O W A N C E  T A B L E ( P R I N T) ======================================= -->
                     <?php if ($payrollType === "wage") { ?>
-                        <div class="allowanceTablePrint" style="display: none">
+                        <div style="display: none">
                             <table class="table table-hover table-bordered mb-0 pb-0">
                                 <p class="fw-bold signature-color">Allowances</p>
                                 <thead class="table-primary">
@@ -2372,110 +2327,115 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 </div>
                             </div>
                         <?php } ?>
+                    </div>
 
-                        <div class="card bg-white border-0 rounded shadow-lg mt-4">
-                            <div class="p-3">
-                                <p class="fw-bold signature-color">Access</p>
-                                <?php
-                                // Check if there are any results
-                                if ($employee_group_access_result->num_rows > 0) {
-                                    $current_group_id = null;
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                        <div class="p-3 hide-print">
+                            <p class="fw-bold signature-color">Access</p>
+                            <?php
+                            // Check if there are any results
+                            if ($employee_group_access_result->num_rows > 0) {
+                                $current_group_id = null;
 
-                                    // Initialize arrays to store unique group names, folder names, and roles
-                                    $unique_group_names = [];
-                                    $unique_folders = [];
+                                // Initialize arrays to store unique group names, folder names, and roles
+                                $unique_group_names = [];
+                                $unique_folders = [];
 
-                                    // Fetch all rows from the result set
-                                    while ($row = $employee_group_access_result->fetch_assoc()) {
-                                        $group_id = $row['group_id'];
-                                        $group_name = htmlspecialchars($row['group_name']);
-                                        $folder_id = htmlspecialchars($row['folder_id']);
-                                        $folder_name = htmlspecialchars($row['folder_name']);
-                                        $role_access = htmlspecialchars($row['role']); // Get role from the result set
-                            
-                                        // Capitalize the role
-                                        $role_access = ucwords(strtolower($role_access)); // Capitalize the first letter of each word
-                            
-                                        // Collect unique group names and roles
-                                        if (!isset($unique_group_names[$group_id])) {
-                                            $unique_group_names[$group_id] = ['name' => $group_name, 'role' => $role_access];
-                                        }
-
-                                        // Collect unique folder names
-                                        $unique_folders[$folder_id] = $folder_name;
+                                // Fetch all rows from the result set
+                                while ($row = $employee_group_access_result->fetch_assoc()) {
+                                    $group_id = $row['group_id'];
+                                    $group_name = htmlspecialchars($row['group_name']);
+                                    $folder_id = htmlspecialchars($row['folder_id']);
+                                    $folder_name = htmlspecialchars($row['folder_name']);
+                                    $role_access = htmlspecialchars($row['role']); // Get role from the result set
+                        
+                                    // Capitalize the role
+                                    $role_access = ucwords(strtolower($role_access)); // Capitalize the first letter of each word
+                        
+                                    // Collect unique group names and roles
+                                    if (!isset($unique_group_names[$group_id])) {
+                                        $unique_group_names[$group_id] = ['name' => $group_name, 'role' => $role_access];
                                     }
 
-                                    // Output unique group names and roles in a table
-                                    if (!empty($unique_group_names)) {
-                                        echo "<strong>Groups:</strong><br>";
-                                        echo "<table class='table table-bordered'>";
-                                        echo "<thead><tr><th>Group Name</th><th>Role</th></tr></thead>";
-                                        echo "<tbody>";
-                                        foreach ($unique_group_names as $group_id => $group_info) {
-                                            echo "<tr><td>{$group_info['name']}</td><td>{$group_info['role']}</td></tr>";
-                                        }
-                                        echo "</tbody></table>";
-                                        echo "<hr>";
-                                    }
-
-                                    // Output unique folder names
-                                    if (!empty($unique_folders)) {
-                                        echo "<strong>Folders:</strong><br>";
-                                        echo "<ul>";
-                                        foreach ($unique_folders as $folder_id => $folder_name) {
-                                            echo "<li>$folder_name</li>";
-                                        }
-                                        echo "</ul>";
-                                    }
-                                } else {
-                                    echo '<p>No group or folder access found.</p>';
+                                    // Collect unique folder names
+                                    $unique_folders[$folder_id] = $folder_name;
                                 }
-                                ?>
-                            </div>
+
+                                // Output unique group names and roles in a table
+                                if (!empty($unique_group_names)) {
+                                    echo "<strong>Groups:</strong><br>";
+                                    echo "<table class='table table-bordered'>";
+                                    echo "<thead><tr><th>Group Name</th><th>Role</th></tr></thead>";
+                                    echo "<tbody>";
+                                    foreach ($unique_group_names as $group_id => $group_info) {
+                                        echo "<tr><td>{$group_info['name']}</td><td>{$group_info['role']}</td></tr>";
+                                    }
+                                    echo "</tbody></table>";
+                                    echo "<hr>";
+                                }
+
+                                // Output unique folder names
+                                if (!empty($unique_folders)) {
+                                    echo "<strong>Folders:</strong><br>";
+                                    echo "<ul>";
+                                    foreach ($unique_folders as $folder_id => $folder_name) {
+                                        echo "<li>$folder_name</li>";
+                                    }
+                                    echo "</ul>";
+                                }
+                            } else {
+                                echo '<p>No group or folder access found.</p>';
+                            }
+                            ?>
                         </div>
                     </div>
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4 machineCompetencyPrint">
-                        <div class="p-3">
-                            <div class="hide-print">
-                                <!-- Dropdown Toggle -->
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
-                                        data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
-                                        aria-expanded="false">
-                                        Machine Competency
-                                        <i class="fas fa-chevron-down"></i>
-                                    </p>
+
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                        <div class="p-3 table-padding">
+                            <!-- Dropdown Toggle -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
+                                    data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
+                                    aria-expanded="false">
+                                    Machine Competency
+                                    <i class="fas fa-chevron-down hide-print"></i>
+                                </p>
+
+                                <div class="hide-print">
                                     <?php if ($role === "full control" || $role === "modify 1") { ?>
-                                        <button class="btn btn-success btn-sm fw-bold" data-bs-toggle="modal"
+                                        <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
                                             data-bs-target="#addMachineCompetencyModal"><i
                                                 class="fa-solid fa-plus me-1"></i>Upload</button>
                                     <?php } ?>
                                 </div>
                             </div>
                             <!-- Collapsible Content -->
-                            <div id="machineCompetencyContent" class="collapse machineCompetencyPrintTable">
+                            <div id="machineCompetencyContent" class="collapse print-table">
                                 <?php require_once("../open-machine-competency-folder.php") ?>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4 policiesPrint">
-                        <div class="p-3">
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                        <div class="p-3 table-padding">
                             <!-- Dropdown Toggle -->
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
                                     data-bs-toggle="collapse" data-bs-target="#policiesContent" aria-expanded="false">
                                     Policies
-                                    <i class="fas fa-chevron-down"></i>
+                                    <i class="fas fa-chevron-down hide-print"></i>
                                 </p>
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
-                                    <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
-                                        data-bs-target="#addPoliciesModal"><i class="fa-solid fa-plus me-1"></i>Upload</button>
-                                <?php } ?>
+                                <div class="hide-print">
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
+                                            data-bs-target="#addPoliciesModal"><i
+                                                class="fa-solid fa-plus me-1"></i>Upload</button>
+                                    <?php } ?>
+                                </div>
                             </div>
 
                             <!-- Collapsible Content -->
-                            <div id="policiesContent" class="collapse policiesPrintTable">
+                            <div id="policiesContent" class="collapse print-table">
                                 <?php require_once("../open-policies-folder.php") ?>
                             </div>
                         </div>
@@ -4969,17 +4929,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             });
                     });
                 });
-            </script>
-            <script>
-                const nameElement = document.getElementById('print-name');
-                const nameLength = nameElement.innerText.length;
-
-                if (nameLength > 10) { // Adjust the number as needed
-                    nameElement.style.fontSize = '18px';  // Smaller font size for longer names
-                } else {
-                    nameElement.style.fontSize = '24px';  // Default font size
-                }
-
             </script>
             <script>
                 document.addEventListener("DOMContentLoaded", function () {

@@ -922,6 +922,17 @@ img {
             window.location.href = url.toString();
         }
     </script>
+    <script>
+        // Listen for the modal close event
+        $('#cableTestTagModal').on('hidden.bs.modal', function () {
+            // Disable buttons during reload
+            $('button').prop('disabled', true);
+
+            // Reload the page and keep the parameters in the URL
+            location.reload();  // This reloads the page
+        });
+    </script>
+
 </body>
 
 </html>

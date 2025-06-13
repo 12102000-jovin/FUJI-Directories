@@ -18,9 +18,7 @@ $employees_result = $conn->query($employees_sql);
 
 $employees = [];
 
-// Store employee data in an associative array with employee_id as the key
 while ($employee_row = $employees_result->fetch_assoc()) {
-    // Check if visa_expiry_date is not null or empty
     $visa_expiry_date = !empty($employee_row['visa_expiry_date']) ? new DateTime($employee_row['visa_expiry_date']) : null;
 
     $employees[$employee_row['employee_id']] = [
@@ -31,69 +29,41 @@ while ($employee_row = $employees_result->fetch_assoc()) {
     ];
 }
 
-// Display loaded employees
-echo "<h2>Loaded Employees:</h2>";
-foreach ($employees as $id => $employee) {
-    echo "ID: $id, Name: {$employee['first_name']} {$employee['last_name']}, Email: {$employee['email']}, Visa Expiry: " . ($employee['visa_expiry_date'] ? $employee['visa_expiry_date']->format('Y-m-d') : 'N/A') . "<br>";
-}
-
-$emailSender = new emailSender();
-
 $currentDate = new DateTime();
-$emailSenderVisaExpiry = new emailSender();
-$emailSenderCapa = new emailSender();
-$emailSenderCapa2 = new emailSender();
-$emailSenderCapa3 = new emailSender();
-$emailSenderCapa4 = new emailSender();
-$emailSenderCapa5 = new emailSender();
-$emailSenderCapa6 = new emailSender();
-$emailSenderCapa7 = new emailSender();
-$emailSenderCapa8 = new emailSender();
 
 // ========================= Check Visa Expiry Dates =========================
-
 if (date('N') == 1) { // 1 = Monday
     foreach ($employees as $employee_id => $employee) {
         $expiryDate = $employee['visa_expiry_date'];
 
-        // Check if expiryDate is a valid DateTime object
         if ($expiryDate instanceof DateTime) {
             $interval = $currentDate->diff($expiryDate);
             $daysLeft = $interval->format('%r%a');
 
-            echo "Days left for employee ID $employee_id: $daysLeft<br>";
-
-            // Check if the expiry date is within 30 days
             if ($daysLeft < 30) {
                 $hrOfficerEmail = 'thi.tran@smbeharwal.fujielectric.com';
                 $recipientName = 'Thi Tran';
 
-                // Send the email notification
-                $emailSenderVisaExpiry->sendEmail(
-                    to: $hrOfficerEmail,
-                    toName: $recipientName,
-                    subject: "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
-                    body: "
-                    <p> Dear $recipientName,</p>
-
+                $visaEmailSender = new emailSender();
+                $visaEmailSender->sendEmail(
+                    $hrOfficerEmail,
+                    $recipientName,
+                    "Visa Expiry Alert (" . $employee['first_name'] . " " . $employee['last_name'] . ") : Action Required",
+                    "
+                    <p>Dear $recipientName,</p>
                     <p>This is to inform you that the visa of <strong>{$employee['first_name']} {$employee['last_name']}</strong> (Employee ID: $employee_id) will expire in <strong>$daysLeft days</strong> on <strong>{$expiryDate->format('Y-m-d')}</strong>.</p>
-
                     <p>Please take the necessary actions.</p>
                     <p>This email is sent automatically. Please do not reply.</p>
-
                     <p>Best regards,<br></p>
                     "
                 );
+                unset($visaEmailSender);
             }
         }
     }
-} else {
-    echo "Today is not Monday. No emails sent.";
 }
 
 // ========================= Check CAPA Expiry Dates ========================= 
-
-// Retrieve CAPA data
 $capa_sql = "SELECT * FROM capa";
 $capa_result = $conn->query($capa_sql);
 
@@ -109,259 +79,228 @@ if ($capa_result->num_rows > 0) {
             $status = $row['status'];
             $interval = $currentDate->diff($targetCloseDate);
             $daysLeft = $interval->format('%r%a');
-            if ($daysLeft == 0) {
-                $daysLeft = '0'; // Ensuring no negative sign appears for zero
-            }
+            $daysLeft = ($daysLeft == 0) ? '0' : $daysLeft;
             
             $timeframeInterval = $dateRaised->diff($targetCloseDate);
             $timeframeDays = $timeframeInterval->format('%r%a');
+            $daysLeftReminder = floor(0.10 * $timeframeDays);
 
-            $daysLeftReminder = floor(0.10 * $timeframeDays);  // Rounding to nearest integer
+            if (!isset($employees[$capaOwner]) || !isset($employees[$assignedTo])) {
+                error_log("Employee with ID $capaOwner or $assignedTo not found for CAPA $capaDocumentId");
+                continue;
+            }
 
-            echo $daysLeft . " " . $capaDocumentId . " <br>";
+            $ownerEmail = $employees[$capaOwner]['email'];
+            $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
+            $assignedToEmail = $employees[$assignedTo]['email'];
+            $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
 
-            // Check if the days left is 30 and send email to the capa_owner
-            if ($daysLeft == 30 && isset($employees[$capaOwner]) && $status === "Open") {
-                $ownerEmail = $employees[$capaOwner]['email'];
-                $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
-
-                $assignedToEmail = $employees[$assignedTo]['email'];
-                $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
-
-                // Send the email to the capa_owner
-                $emailSenderCapa->sendEmail(
-                    $ownerEmail, // Recipient email
-                    $ownerName, // Recipient name
-                    'CAPA Reminder: 30 Days Left', // Subject
-                    body: "
-                        <p>Dear $ownerName,</p>
-
-                        <p>This is a reminder that the CAPA document with ID <strong> {$row['capa_document_id']} </strong> has <strong> 30 days left </strong> before its target close date. </p>
-
-                        <p><strong>Details:</strong></p>
-                        <ul>
-                            <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName </strong></li>
-                        </ul>
-                        <p>Please take the necessary actions regarding this document.</p>
-                        <p>This email is send automatically. Please do not reply.</p>
-                        <p>Best regards,<br></p>
+            // 30 Days Left Reminder
+            if ($daysLeft == 30 && $status === "Open") {
+                // Send to Owner
+                $ownerEmailSender = new emailSender();
+                $ownerEmailSender->sendEmail(
+                    $ownerEmail,
+                    $ownerName,
+                    'CAPA Reminder: 30 Days Left',
                     "
-                );
-
-                // Send the email to the Assigned To
-                $emailSenderCapa2->sendEmail(
-                    $assignedToEmail, // Recipient email
-                    $assignedName, // Recipient name
-                    'CAPA Reminder: 30 Days Left', // Subject
-                    "
-                        <p> Dear $assignedName,</p>
-
-                        <p>This is a reminder that the CAPA document assigned to you, with ID <strong> {$row['capa_document_id']} </strong> has <strong> 30 days left </strong> before its target close date. </p>
-
-                        <p><strong>Details:</strong></p>
-                        <ul>
-                            <li><strong>Date Raised:</strong><b> {$row['date_raised']} </b></li>
-                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']}</b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName</strong></li>
-                        </ul>
-                        <p>Please take the necessary actions regarding this document.</p>
-                        <p>This email is send automatically. Please do not reply.</p>
-                        <p>Best regards,<br></p>
-                    "
-                );
-            } else if ($daysLeft == $daysLeftReminder && $status === "Open") {
-                $ownerEmail = $employees[$capaOwner]['email'];
-                $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
-
-                $assignedToEmail = $employees[$assignedTo]['email'];
-                $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
-
-                // Send the email to the capa_owner
-                $emailSenderCapa3->sendEmail(
-                    $ownerEmail, // Recipient email
-                    $ownerName, // Recipient name
-                    'CAPA Reminder: ' . $daysLeftReminder . ' Days Left', // Subject
-                    body: "
-                        <p>Dear $ownerName,</p>
-
-                        <p>This is a reminder that the CAPA document with ID <strong> {$row['capa_document_id']} </strong> has <strong> $daysLeftReminder days left </strong> before its target close date. </p>
-
-                        <p><strong>Details:</strong></p>
-                        <ul>
-                            <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName </strong></li>
-                        </ul>
-                        <p>Please take the necessary actions regarding this document.</p>
-                        <p>This email is send automatically. Please do not reply.</p>
-                        <p>Best regards,<br></p>
-                    "
-                );
-
-                // Send the email to the Assigned To
-                $emailSenderCapa4->sendEmail(
-                    $ownerEmail, // Recipient email
-                    $ownerName, // Recipient name
-                    'CAPA Reminder: ' . $daysLeftReminder . ' Days Left', // Subject
-                    "
-                        <p>Dear $assignedName,</p>
-
-                        <p>This is a reminder that the CAPA document assigned to you, with ID <strong> {$row['capa_document_id']} </strong> has <strong> $daysLeftReminder days left </strong> before its target close date. </p>
-
-                        <p><strong>Details:</strong></p>
-
-                        <ul> 
-                            <li><strong>Date Raised: </strong><b> {$row['date_raised']}</b></li>
-                            <li><strong>Severity: </strong><b> {$row['severity']} </b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName </strong></li>
-                        </ul>
-                        <p>Please take the necessary actions regarding this document.</p>
-                        <p>This email is send automatically. Please do not reply.</p>
-                        <p>Best regards,<br></p>
-                    "
-                );
-                error_log("Employee with ID $capaOwner not found.");
-            } else if ($daysLeft == 0 && $status === "Open") {
-                $ownerEmail = $employees[$capaOwner]['email'];
-                $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
-
-                $assignedToEmail = $employees[$assignedTo]['email'];
-                $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
-
-                // Send the email to the capa_owner
-                $emailSenderCapa5->sendEmail(
-                    $ownerEmail, // Recipient Email
-                    $ownerName, // Recipient Name
-                    'CAPA Overdue: Action Required Immediately', // Subject
-                    body: "
                     <p>Dear $ownerName,</p>
-
-                    <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue today</strong>. </p>
-
+                    <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> has <strong>30 days left</strong> before its target close date.</p>
                     <p><strong>Details:</strong></p>
                     <ul>
-                        <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                        <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                        <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                        <li><strong>CAPA Owner: $ownerName </strong></li>
-                        <li><strong>Assigned To: $assignedName </strong></li>
+                        <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                        <li><strong>Severity:</strong> {$row['severity']}</li>
+                        <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                        <li><strong>CAPA Owner:</strong> $ownerName</li>
+                        <li><strong>Assigned To:</strong> $assignedName</li>
                     </ul>
-                
-                    <p>Please address this overdue CAPA document immediately.</p>
+                    <p>Please take the necessary actions regarding this document.</p>
                     <p>This email is sent automatically. Please do not reply.</p>
-                
                     <p>Best regards,<br></p>
                     "
                 );
+                unset($ownerEmailSender);
 
-                // Send the email to the Assigned To
-                $emailSenderCapa6->sendEmail(
-                    $assignedToEmail, // Recipient Email
-                    $assignedName, // Recipient Name
-                    'CAPA Overdue: Action Required Immediately', // Subject
-                    "       
-                    <p>Dear $assignedName,</p>
-
-                    <p>This is a reminder that the CAPA document assigned to you, with ID <strong> {$row['capa_document_id']}</strong> is <strong> overdue today</strong>. </p>
-
-                    <p><strong>Details:</strong></p>
-                    <ul>
-                        <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                        <li><strong>Severity:</strong><b> {$row['severity']} </b></li>
-                        <li><strong>Raised Against:</strong><b> {$row['raised_against']}</b></li>
-                        <li><strong>CAPA Owner: $ownerName </strong></li>
-                        <li><strong>Assigned To: $assignedName </strong></li>
-                    </ul>
-
-                    <p> Please address this overdue CAPA document immediately.</p>
-                    <p> This email is sent automatically. Please do not reply.</p>
-
-                    <p> Best regards,<br></p>
-                    "
-                );
-            } else if ($daysLeft < 0 && $status === "Open") {
-                // Set timezone to Sydney, Australia
-                date_default_timezone_set('Australia/Sydney');
-
-                // Get the current week of the year (Monday = 1, Sunday = 7)
-                $currentWeek = date("N");
-
-                if ($currentWeek === "1") {
-
-                    $ownerEmail = $employees[$capaOwner]['email'];
-                    $ownerName = $employees[$capaOwner]['first_name'] . ' ' . $employees[$capaOwner]['last_name'];
-
-                    $assignedToEmail = $employees[$assignedTo]['email'];
-                    $assignedName = $employees[$assignedTo]['first_name'] . ' ' . $employees[$assignedTo]['last_name'];
-
-                    $absDaysLeft = abs($daysLeft);
-
-                    // Send the email to the capa_owner
-                    $emailSenderCapa7->sendEmail(
-                        $ownerEmail, // Recipient email
-                        $ownerName, // Recipient name
-                        'CAPA Overdue: Action Required Immediately', // Subject
-                        body: "
-                        <p>Dear $ownerName,</p>
-                    
-                        <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue</strong>. It was originally scheduled to be closed <strong>{$absDaysLeft} days ago</strong>.</p>
-                    
+                // Send to Assigned (if different)
+                if ($ownerEmail !== $assignedToEmail) {
+                    $assignedEmailSender = new emailSender();
+                    $assignedEmailSender->sendEmail(
+                        $assignedToEmail,
+                        $assignedName,
+                        'CAPA Reminder: 30 Days Left',
+                        "
+                        <p>Dear $assignedName,</p>
+                        <p>This is a reminder that the CAPA document assigned to you, with ID <strong>{$row['capa_document_id']}</strong> has <strong>30 days left</strong> before its target close date.</p>
                         <p><strong>Details:</strong></p>
                         <ul>
-                            <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName </strong></li>
+                            <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                            <li><strong>Severity:</strong> {$row['severity']}</li>
+                            <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                            <li><strong>CAPA Owner:</strong> $ownerName</li>
+                            <li><strong>Assigned To:</strong> $assignedName</li>
                         </ul>
-                    
-                        <p>Please address this overdue CAPA document immediately.</p>
+                        <p>Please take the necessary actions regarding this document.</p>
                         <p>This email is sent automatically. Please do not reply.</p>
-                    
                         <p>Best regards,<br></p>
                         "
                     );
+                    unset($assignedEmailSender);
+                }
+            } 
+            // 10% Timeframe Reminder
+            elseif ($daysLeft == $daysLeftReminder && $status === "Open") {
+                $ownerEmailSender = new emailSender();
+                $ownerEmailSender->sendEmail(
+                    $ownerEmail,
+                    $ownerName,
+                    'CAPA Reminder: ' . $daysLeftReminder . ' Days Left',
+                    "
+                    <p>Dear $ownerName,</p>
+                    <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> has <strong>$daysLeftReminder days left</strong> before its target close date.</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                        <li><strong>Severity:</strong> {$row['severity']}</li>
+                        <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                        <li><strong>CAPA Owner:</strong> $ownerName</li>
+                        <li><strong>Assigned To:</strong> $assignedName</li>
+                    </ul>
+                    <p>Please take the necessary actions regarding this document.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,<br></p>
+                    "
+                );
+                unset($ownerEmailSender);
 
-                    // Send the emeial to the assigned to
-                    $emailSenderCapa8->sendEmail(
-                        $assignedToEmail, // Recipient email
-                        $assignedName, // Recipient name
-                        'CAPA Overdue: Action Required Immidiately', // Subject
+                if ($ownerEmail !== $assignedToEmail) {
+                    $assignedEmailSender = new emailSender();
+                    $assignedEmailSender->sendEmail(
+                        $assignedToEmail,
+                        $assignedName,
+                        'CAPA Reminder: ' . $daysLeftReminder . ' Days Left',
                         "
                         <p>Dear $assignedName,</p>
-
-                        <p>This is a reminder that the CAPA document with ID <strong> {$row['capa_document_id']}</strong> is <strong>overdue</strong>. It was originally scheduled to be closed <strong>{$absDaysLeft} days ago</strong>.</p>
-
+                        <p>This is a reminder that the CAPA document assigned to you, with ID <strong>{$row['capa_document_id']}</strong> has <strong>$daysLeftReminder days left</strong> before its target close date.</p>
                         <p><strong>Details:</strong></p>
-                        <ul> 
-                            <li><strong>Date Raised:</strong><b> {$row['date_raised']}</b></li>
-                            <li><strong>Severity:</strong><b> {$row['severity']}</b></li>
-                            <li><strong>Raised Against:</strong><b> {$row['raised_against']} </b></li>
-                            <li><strong>CAPA Owner: $ownerName </strong></li>
-                            <li><strong>Assigned To: $assignedName </strong></li>
+                        <ul>
+                            <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                            <li><strong>Severity:</strong> {$row['severity']}</li>
+                            <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                            <li><strong>CAPA Owner:</strong> $ownerName</li>
+                            <li><strong>Assigned To:</strong> $assignedName</li>
                         </ul>
-
-                        <p> Please address this overdue CAPA document immediately. </p>
-                        <p> This email is sent automatically. Please do not reply. </p>
-
-                        <p> Best regards,<br></p>
+                        <p>Please take the necessary actions regarding this document.</p>
+                        <p>This email is sent automatically. Please do not reply.</p>
+                        <p>Best regards,<br></p>
                         "
                     );
+                    unset($assignedEmailSender);
                 }
-                error_log("Employee with ID $capaOwner not found.");
+            } 
+            // Due Today (0 days left)
+            elseif ($daysLeft == 0 && $status === "Open") {
+                $ownerEmailSender = new emailSender();
+                $ownerEmailSender->sendEmail(
+                    $ownerEmail,
+                    $ownerName,
+                    'CAPA Overdue: Action Required Immediately',
+                    "
+                    <p>Dear $ownerName,</p>
+                    <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue today</strong>.</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                        <li><strong>Severity:</strong> {$row['severity']}</li>
+                        <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                        <li><strong>CAPA Owner:</strong> $ownerName</li>
+                        <li><strong>Assigned To:</strong> $assignedName</li>
+                    </ul>
+                    <p>Please address this overdue CAPA document immediately.</p>
+                    <p>This email is sent automatically. Please do not reply.</p>
+                    <p>Best regards,<br></p>
+                    "
+                );
+                unset($ownerEmailSender);
+
+                if ($ownerEmail !== $assignedToEmail) {
+                    $assignedEmailSender = new emailSender();
+                    $assignedEmailSender->sendEmail(
+                        $assignedToEmail,
+                        $assignedName,
+                        'CAPA Overdue: Action Required Immediately',
+                        "
+                        <p>Dear $assignedName,</p>
+                        <p>This is a reminder that the CAPA document assigned to you, with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue today</strong>.</p>
+                        <p><strong>Details:</strong></p>
+                        <ul>
+                            <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                            <li><strong>Severity:</strong> {$row['severity']}</li>
+                            <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                            <li><strong>CAPA Owner:</strong> $ownerName</li>
+                            <li><strong>Assigned To:</strong> $assignedName</li>
+                        </ul>
+                        <p>Please address this overdue CAPA document immediately.</p>
+                        <p>This email is sent automatically. Please do not reply.</p>
+                        <p>Best regards,<br></p>
+                        "
+                    );
+                    unset($assignedEmailSender);
+                }
+            } 
+            // Overdue (negative days left)
+            elseif ($daysLeft < 0 && $status === "Open") {
+                if (date('N') === "4") { // Only on Mondays
+                    $absDaysLeft = abs($daysLeft);
+
+                    $ownerEmailSender = new emailSender();
+                    $ownerEmailSender->sendEmail(
+                        $ownerEmail,
+                        $ownerName,
+                        'CAPA Overdue: Action Required Immediately',
+                        "
+                        <p>Dear $ownerName,</p>
+                        <p>This is a reminder that the CAPA document with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue</strong>. It was originally scheduled to be closed <strong>{$absDaysLeft} days ago</strong>.</p>
+                        <p><strong>Details:</strong></p>
+                        <ul>
+                            <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                            <li><strong>Severity:</strong> {$row['severity']}</li>
+                            <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                            <li><strong>CAPA Owner:</strong> $ownerName</li>
+                            <li><strong>Assigned To:</strong> $assignedName</li>
+                        </ul>
+                        <p>Please address this overdue CAPA document immediately.</p>
+                        <p>This email is sent automatically. Please do not reply.</p>
+                        <p>Best regards,<br></p>
+                        "
+                    );
+                    unset($ownerEmailSender);
+
+                    if ($ownerEmail !== $assignedToEmail) {
+                        $assignedEmailSender = new emailSender();
+                        $assignedEmailSender->sendEmail(
+                            $assignedToEmail,
+                            $assignedName,
+                            'CAPA Overdue: Action Required Immediately',
+                            "
+                            <p>Dear $assignedName,</p>
+                            <p>This is a reminder that the CAPA document assigned to you, with ID <strong>{$row['capa_document_id']}</strong> is <strong>overdue</strong>. It was originally scheduled to be closed <strong>{$absDaysLeft} days ago</strong>.</p>
+                            <p><strong>Details:</strong></p>
+                            <ul>
+                                <li><strong>Date Raised:</strong> {$row['date_raised']}</li>
+                                <li><strong>Severity:</strong> {$row['severity']}</li>
+                                <li><strong>Raised Against:</strong> {$row['raised_against']}</li>
+                                <li><strong>CAPA Owner:</strong> $ownerName</li>
+                                <li><strong>Assigned To:</strong> $assignedName</li>
+                            </ul>
+                            <p>Please address this overdue CAPA document immediately.</p>
+                            <p>This email is sent automatically. Please do not reply.</p>
+                            <p>Best regards,<br></p>
+                            "
+                        );
+                        unset($assignedEmailSender);
+                    }
+                }
             }
         }
     }
 }
-
-

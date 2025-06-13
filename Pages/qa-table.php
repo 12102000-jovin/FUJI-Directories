@@ -362,58 +362,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                             style="background-color:#043f9d; color: white; transition: 0.3s ease !important;">Search</button>
                         <button class="btn btn-danger ms-2"><a class="dropdown-item" href="#"
                                 onclick="clearURLParameters()">Clear</a></button>
-
-                        <!-- Filter Dropdown -->
-                        <!-- <button class="btn btn-outline-dark dropdown-toggle ms-2" type="button"
-                            id="departmentDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo $departmentFilter ? $departmentFilter : "All Departments" ?>
-                        </button>
-                        <div class="dropdown">
-                            <form method="GET" action="">
-                                <input type="hidden" id="selectedDepartmentFilter" name="department" value="">
-                                <ul class="dropdown-menu" aria-labelledby="departmentDropdownMenuButton">
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="All Departments">All Departments</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Accounts">Accounts</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Company Compliance">Company Compliance</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Estimating">Estimating</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Electrical">Electrical</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Engineering">Engineering</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Human Resources">Human Resources</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Management">Management</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Operations Support">Operations Support</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Projects">Projects</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Quality Assurance">Quality Assurance</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Quality Control">Quality Control</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Research & Development">Research & Development</a>
-                                    </li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Sheet Metal">Sheet Metal</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Special Projects">Special Projects</a></li>
-                                    <li><a class="dropdown-item dropdown-department-item" href="#"
-                                            data-department-filter="Work, Health and Safety">Work, Health and Safety</a>
-                                    </li>
-                                </ul>
-                            </form>
-                        </div> -->
                     </form>
                     <!-- Filter Modal Trigger Button -->
                     <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal"
                         data-bs-target="#filterDocumentModal">
-                        <p class="text-nowrap fw-bold mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
+                        <p class="text-nowrap fw-bold mb-0 pb-0">Filter <i class="fa-solid fa-filter py-1"></i></p>
                     </button>
                 </div>
 
@@ -819,7 +772,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                     <option value="Not approved yet" <?= $row['status'] === 'Not approved yet' ? 'selected' : '' ?>>Not approved yet</option>
                                                     <option value="Revision/Creation requested"
                                                         <?= $row['status'] === 'Revision/Creation requested' ? 'selected' : '' ?>>
-                                                        Revision/Creation requested</option>
+                                                        Revision/Creation Requested</option>
                                                     <option value="N/A" <?= $row['status'] === 'N/A' ? 'selected' : '' ?>>
                                                         N/A</option>
                                                 </select>
@@ -1237,7 +1190,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 <div class="modal-body">
                     <form method="GET">
                         <div class="row">
-                            <div class="col-12 col-lg-3">
+                            <div class="col-12 <?php echo ($role === 'full control') ? 'col-lg-3' : 'col-lg-6' ?>">
                                 <h5 class="signature-color fw-bold">Department</h5>
                                 <?php
                                 // Hardcoded list of departments
@@ -1264,47 +1217,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 ?>
                             </div>
 
-                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
-                                <h5 class="signature-color fw-bold">Revision Status</h5>
-                                <?php
-                                $revisionStatusFilters = ['Normal', 'Revision Required', 'Urgent Revision Required'];
-                                $selected_revision_status = isset(($_GET['revisionStatus'])) ? (array) $_GET['revisionStatus'] : [];
-                                foreach ($revisionStatusFilters as $revisionStatusFilter) {
-                                    ?>
-                                    <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input"
-                                            id="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>"
-                                            name="revisionStatus[]" value="<?php echo $revisionStatusFilter ?>" <?php echo in_array($revisionStatusFilter, $selected_revision_status) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>">
-                                            <?php echo $revisionStatusFilter ?>
-                                        </label>
-                                    </p>
+                            <?php if ($role === "full control") { ?>
+                                <div
+                                    class="col-12 <?php echo ($role === 'full control') ? 'col-lg-3' : 'col-lg-4' ?> mt-3 mt-md-0">
+                                    <h5 class="signature-color fw-bold">Revision Status</h5>
                                     <?php
-                                }
-                                ?>
-
-                                <h5 class="signature-color fw-bold mt-3">ISO9001</h5>
-                                <?php
-                                $iso9001Filters = ['1', '0'];
-                                $selected_iso9001 = isset($_GET['iso9001']) ? (array) $_GET['iso9001'] : [];
-                                foreach ($iso9001Filters as $iso9001Filter) {
-                                    // Set the label to "Yes" or "No" based on the value
-                                    $label = ($iso9001Filter == '1') ? 'Yes' : 'No';
+                                    $revisionStatusFilters = ['Normal', 'Revision Required', 'Urgent Revision Required'];
+                                    $selected_revision_status = isset(($_GET['revisionStatus'])) ? (array) $_GET['revisionStatus'] : [];
+                                    foreach ($revisionStatusFilters as $revisionStatusFilter) {
+                                        ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>"
+                                                name="revisionStatus[]" value="<?php echo $revisionStatusFilter ?>" <?php echo in_array($revisionStatusFilter, $selected_revision_status) ? 'checked' : ''; ?>>
+                                            <label for="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>">
+                                                <?php echo $revisionStatusFilter ?>
+                                            </label>
+                                        </p>
+                                        <?php
+                                    }
                                     ?>
-                                    <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input"
-                                            id="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>"
-                                            name="iso9001[]" value="<?php echo $iso9001Filter ?>" <?php echo in_array($iso9001Filter, $selected_iso9001) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>">
-                                            <?php echo $label; ?>
-                                        </label>
-                                    </p>
-                                    <?php
-                                }
-                                ?>
-                            </div>
 
-                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
+                                    <h5 class="signature-color fw-bold mt-3">ISO9001</h5>
+                                    <?php
+                                    $iso9001Filters = ['1', '0'];
+                                    $selected_iso9001 = isset($_GET['iso9001']) ? (array) $_GET['iso9001'] : [];
+                                    foreach ($iso9001Filters as $iso9001Filter) {
+                                        // Set the label to "Yes" or "No" based on the value
+                                        $label = ($iso9001Filter == '1') ? 'Yes' : 'No';
+                                        ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>"
+                                                name="iso9001[]" value="<?php echo $iso9001Filter ?>" <?php echo in_array($iso9001Filter, $selected_iso9001) ? 'checked' : ''; ?>>
+                                            <label for="<?php echo strtolower(str_replace(' ', '', $iso9001Filter)); ?>">
+                                                <?php echo $label; ?>
+                                            </label>
+                                        </p>
+                                        <?php
+                                    }
+                                    ?>
+                                </div>
+                            <?php } ?>
+
+                            <div
+                                class="col-12 <?php echo ($role === 'full control') ? 'col-lg-3' : 'col-lg-6' ?> mt-3 mt-md-0">
                                 <h5 class="signature-color fw-bold">Type</h5>
                                 <?php
                                 $typeFilters = ['Additional Duties', 'CAPA', 'Employee Record', 'External Documents', 'Form', 'Internal Documents', 'Job Description', 'Manuals', 'Manufacturing Process', 'Policy', 'Process/Procedure', 'Quiz', 'Risk Assessment', 'Work Instruction'];
@@ -1325,26 +1282,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                 ?>
                             </div>
 
-                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
-                                <h5 class="signature-color fw-bold">Status</h5>
-                                <?php
-                                $statusFilters = ['Approved', 'Need to review', 'In progress', 'To be created', 'Pending approval', 'Not approved yet', 'Revision/Creation requested', 'N/A'];
-
-                                $selected_status = isset(($_GET['status'])) ? (array) $_GET['status'] : [];
-                                foreach ($statusFilters as $statusFilter) {
-                                    ?>
-                                    <p class="mb-0 pb-0">
-                                        <input type="checkbox" class="form-check-input"
-                                            id="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>"
-                                            name="status[]" value="<?php echo $statusFilter ?>" <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>">
-                                            <?php echo $statusFilter ?>
-                                        </label>
-                                    </p>
+                            <?php if ($role === "full control") { ?>
+                                <div
+                                    class="col-12 <?php echo ($role === 'full control') ? 'col-lg-3' : 'col-lg-4' ?> mt-3 mt-md-0">
+                                    <h5 class="signature-color fw-bold">Status</h5>
                                     <?php
-                                }
-                                ?>
-                            </div>
+                                    $statusFilters = ['Approved', 'Need to review', 'In progress', 'To be created', 'Pending approval', 'Not approved yet', 'Revision/Creation requested', 'N/A'];
+
+                                    $selected_status = isset(($_GET['status'])) ? (array) $_GET['status'] : [];
+                                    foreach ($statusFilters as $statusFilter) {
+                                        ?>
+                                        <p class="mb-0 pb-0">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>"
+                                                name="status[]" value="<?php echo $statusFilter ?>" <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
+                                            <label for="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>">
+                                                <?php echo $statusFilter ?>
+                                            </label>
+                                        </p>
+                                        <?php
+                                    }
+                                    ?>
+                                </div>
+                            <?php } ?>
 
                             <div class="d-flex justify-content-center mt-4">
                                 <button class="btn btn-secondary me-1" type="button"

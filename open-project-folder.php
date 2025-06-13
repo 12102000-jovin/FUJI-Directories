@@ -1,3 +1,8 @@
+<?php 
+require_once ("db_connect.php");
+require_once("status_check.php");
+?>
+
 <head>
     <title> <?php echo $folder ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -49,6 +54,7 @@
         echo '</form>';
         echo '</div>';
 
+        echo '<div class="d-flex justify-content-between align-items-center">';
         if ($currentDir) {
             $parentDirPath = dirname($currentDir);
             echo "<a href='?folder=" . urlencode($folder) . "&dir=" . urlencode($parentDirPath) . "' class='btn btn-sm btn-secondary'><i class='fas fa-arrow-left'></i> 
@@ -56,7 +62,17 @@
 Back</a>";
         }
 
+        echo '<div class="mb-3">
+                <button id="toggleGrid" class="btn btn-sm btn-outline-primary ms-2"> 
+                    <i class="fa-solid fa-grip me-2"></i>Grid View
+                </button>
+            </div>';
+
         echo "</div>";
+        echo "</div>";
+
+
+        echo "<div class='view-container list-view'>";
         echo "<div class='list-group rounded-3'>";
 
         foreach ($filesAndDirs as $item) {
@@ -111,6 +127,59 @@ Back</a>";
 
         echo "</div>";
         echo "</div>";
+
+        // Grid View (hidden initially)
+        echo "<div class='view-container grid-view d-none'>";
+        echo "<div class='row row-cols-1 row-cols-md-4 g-4'>";
+        foreach ($filesAndDirs as $item) {
+            if ($item === '.' || $item === '..') continue;
+        
+            $itemPath = realpath($fullDirectory . DIRECTORY_SEPARATOR . $item);
+            $itemUrl = '?folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . DIRECTORY_SEPARATOR . $item) . '&search=' . urlencode($searchQuery);
+            $itemName = htmlspecialchars($item);
+            $fileExtension = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+        
+            echo "<div class='col'>";
+            echo "<div class='card shadow-sm h-100'>";
+            echo "<div class='card-body d-flex justify-content-center align-items-center h-100 text-center'>"; // center all contents
+        
+            echo "<div class='d-flex flex-column align-items-center justify-content-center'>"; // wrap everything in a centered column
+        
+            if (is_dir($itemPath)) {
+                echo "<a href='" . $itemUrl . "' class='text-decoration-none text-dark'>";
+                echo "<i class='fa-solid fa-folder text-warning fa-3x mb-2'></i>";
+                echo "<p class='mb-0'><small>" . $itemName . "</small></p>";
+                echo "</a>";
+            } else {
+                $fileUrl = 'open-project-file.php?file=' . urlencode($item) . "&folder=" . urlencode($folder) . "&dir=" . urlencode($currentDir);
+                echo "<a href='" . $fileUrl . "' class='text-decoration-none text-dark'>";
+        
+                if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    echo "<img src='" . htmlspecialchars($fileUrl) . "' class='img-fluid mb-2' alt='" . $itemPath . "' style='max-height: 150px; object-fit: cover;'>";
+                } else {
+                    $icon = match ($fileExtension) {
+                        'pdf' => 'fa-file-pdf text-danger',
+                        'doc', 'docx' => 'fa-file-word text-primary',
+                        'dwg' => 'fa-solid fa-compass-drafting text-primary',
+                        default => 'fa-file',
+                    };
+                    echo "<i class='fa-solid " . $icon . " fa-3x mb-2'></i>";
+                }
+        
+                echo "<p class='mb-0 w-100' style='word-break: break-word;'><small>" . $itemName . "</small></p>";
+                echo "</a>";
+            }
+        
+            echo "</div>"; // close inner column
+            echo "</div>"; // close card-body
+            echo "</div>"; // close card
+            echo "</div>"; // close col
+        }
+        echo "</div>"; // close row
+        echo "</div>"; // close view-container
+        
+
+
     } else {
         echo "<div class='container mt-3'>";
         echo "<div class='alert alert-danger' role='alert'>Directory does not exist or access is restricted.</div>";
@@ -123,4 +192,29 @@ Back</a>";
     document.getElementById("closeButton").addEventListener("click", function () {
         window.close();
     });
+</script>
+
+<script>
+    document.getElementById("closeButton").addEventListener("click", function () {
+        window.close();
+    });
+
+    document.getElementById("toggleGrid").addEventListener("click", function () {
+        const listView = document.querySelector(".list-view");
+        const gridView = document.querySelector(".grid-view");
+        const btn = document.getElementById("toggleGrid");
+
+        const isList = !listView.classList.contains("d-none");
+
+        if (isList) {
+            listView.classList.add("d-none");
+            gridView.classList.remove("d-none");
+            btn.innerHTML = '<i class="fa-solid fa-bars me-2"></i>List View';
+        } else {
+            gridView.classList.add("d-none");
+            listView.classList.remove("d-none");
+            btn.innerHTML = '<i class="fa-solid fa-grip me-2"></i>Grid View';
+        }
+    });
+
 </script>

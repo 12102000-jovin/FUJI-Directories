@@ -1391,7 +1391,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
 
                 var documentCloseText = myModalEl.querySelector('#documentCloseText');
 
-                console.log("Heret");
                 console.log(status);
 
                 if (status !== "Open") {

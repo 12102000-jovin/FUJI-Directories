@@ -158,6 +158,7 @@
                 }
             }
 
+            $dietaryRestrictions = $_POST["dietaryRestrictions"];
             $workShift = $_POST["workShift"];
             $lockerNumber = !empty($_POST["lockerNumber"]) ? $_POST["lockerNumber"] : null;
             $permanentDate = !empty($_POST['permanentDate']) ? $_POST['permanentDate'] : null;
@@ -172,9 +173,9 @@
             $higherEducationLoanProgramme = $_POST['higherEducationLoanProgramme'];
             $financialSupplementDebt = $_POST['financialSupplementDebt'];
 
-            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, work_shift = ?, permanent_date = ?, locker_number = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ? WHERE employee_id = ?";
+            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, work_shift = ?, permanent_date = ?, locker_number = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ?, dietary_restrictions = ? WHERE employee_id = ?";
             $edit_employee_detail_result = $conn->prepare($edit_employee_detail_sql);
-            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssssssii", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $workShift, $permanentDate, $lockerNumber, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $employeeIdToEdit);
+            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssssssisi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $workShift, $permanentDate, $lockerNumber, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $dietaryRestrictions, $employeeIdToEdit);
 
             if ($edit_employee_detail_result->execute()) {
                 echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . urlencode(trim($employeeIdToEdit)) . '");</script>';
@@ -379,7 +380,13 @@
                                                 <i class="fas fa-plus"></i> <small>Add</small>
                                             </a>
                                         </div>
-                                    </div>        
+                                    </div>   
+                                    <div class="form-group col-md-4 mt-3">
+                                        <label for="dietaryRestrictions" class="fw-bold">Dietary Restrictions</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="text" id="dietaryRestrictions" name="dietaryRestrictions" class="form-control" value="<?php echo (isset($dietaryRestrictions) && $dietaryRestrictions !== "" ? $dietaryRestrictions : "") ?>">
+                                        </div>
+                                    </div>     
                                 </div>
                                 <div class="row">
                                     <p class="signature-color fw-bold mt-5"> Contacts</p>

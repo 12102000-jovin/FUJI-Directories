@@ -21,7 +21,8 @@ $whereClause = "(first_name LIKE '%$searchTerm%' OR
     last_name LIKE '%$searchTerm%' OR
     nickname LIKE '%$searchTerm%' OR
     employee_id LIKE '%$searchTerm%' OR
-    plate_number LIKE '%$searchTerm%')";
+    plate_number LIKE '%$searchTerm%' OR 
+    locker_number LIKE '%$searchTerm%')";
 
 // Arrays to hold selected filter values
 $selected_departments = [];
@@ -31,6 +32,7 @@ $selected_payroll_types = [];
 $selected_section = [];
 $selected_status = [];
 $selected_work_shift = [];
+$selected_gender = [];
 
 $filterApplied = false;  // Variable to check if any filter is applied
 
@@ -97,6 +99,28 @@ if (isset($_GET['apply_filters'])) {
         $whereClause .= " AND visa_expiry_date < ?";
         $filterApplied = true;
     }
+
+    // Check if "gender" is set and apply the filter for gender
+    if (isset($_GET['gender'])) {
+        $selected_gender = $_GET['gender'];
+        $gender_placeholders = implode(',', array_fill(0, count($selected_gender), '?'));
+        $whereClause .= " AND gender IN ($gender_placeholders)";
+        $filterApplied = true;
+    }
+
+    // Check if Dietary Restriction checked or not
+    if (isset($_GET['dietaryRestrictionsYes']) && isset($_GET['dietaryRestrictionsNo'])) {
+        // No filter applied on dietary_restrictions
+    }
+    // Only Yes filter applied
+    else if (isset($_GET['dietaryRestrictionsYes'])) {
+        $whereClause .= " AND dietary_restrictions IS NOT NULL AND dietary_restrictions <> ''";
+    }
+    // Only No filter applied
+    else if (isset($_GET['dietaryRestrictionsNo'])) {
+        $whereClause .= " AND (dietary_restrictions IS NULL OR dietary_restrictions = '')";
+    }
+
 }
 
 // Build the full SQL query with department filtering applied
@@ -144,6 +168,11 @@ if (!empty($selected_work_shift)) {
     $types .= str_repeat('s', count($selected_work_shift)); // 's' for string binding
 }
 
+// If there are gendert filters, bind them to the prepared statement
+if (!empty($selected_gender)) {
+    $types .= str_repeat('s', count($selected_gender)); // 's' for string binding
+}
+
 // If there are status filters, bind them to the prepared statement
 if (!empty($selected_status)) {
     $types .= str_repeat('i', count($selected_status)); // 'i' for integer binding
@@ -155,7 +184,7 @@ if (isset($_GET['expiredVisa'])) {
 }
 
 // Bind parameters only if there are types to bind
-$params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status, $selected_work_shift);
+$params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status, $selected_work_shift, $selected_gender);
 if (isset($_GET['expiredVisa'])) {
     $params[] = $current_date; // Bind the current date for expired visas
 }
@@ -186,7 +215,7 @@ if ($role !== "full control") {
 }
 
 // Get total count of filtered results (Total)
-$count_sql = "SELECT COUNT(*) as total FROM employees WHERE $whereClause";
+$count_sql = "SELECT COUNT(employee_id) as total FROM employees WHERE $whereClause";
 $count_stmt = $conn->prepare($count_sql);
 if (!empty($types)) {
     $count_stmt->bind_param($types, ...$params);
@@ -196,7 +225,7 @@ $count_result = $count_stmt->get_result();
 $count_row = $count_result->fetch_assoc();
 $total_count = $count_row['total'];
 
-$count_active_sql = "SELECT COUNT(*) as total_active FROM employees WHERE $whereClause AND is_active = 1";
+$count_active_sql = "SELECT COUNT(employee_id) as total_active FROM employees WHERE $whereClause AND is_active = 1";
 $count_active_stmt = $conn->prepare($count_active_sql);
 if (!empty($types)) {
     $count_active_stmt->bind_param($types, ...$params);
@@ -266,7 +295,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["wageCellToEdit"])) {
         // Improved error reporting
         echo "Error updating record: " . $conn->error;
     }
-
 }
 
 // ========================= A D D  S A L A R Y ========================= 
@@ -669,6 +697,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                                             </span>
                             <?php
                         }
+                    } else if ($key === 'gender' && is_array($value)) {
+                        foreach ($value as $gender) {
+                            ?>
+                                                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                                    <strong><?php echo htmlspecialchars(ucwords($gender)); ?></strong>
+
+                                                                    <a href="?<?php
+                                                                    // Remove this specific gender filter from URL
+                                                                    $filteredParams = $_GET;
+                                                                    $filteredParams['gender'] = array_diff($filteredParams['gender'], [$gender]);
+                                                                    echo http_build_query($filteredParams);
+                                                                    ?>" class="text-white ms-1">
+                                                                        <i class="fa-solid fa-times fa-"></i>
+                                                                    </a>
+                                                                </span>
+                            <?php
+                        }
+                    } else if ($key === 'dietaryRestrictionsYes') {
+                        ?>
+                                                                <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                                    <strong><span class="text-warning">Dietary Restrictions:</span> Yes</strong>
+                                                                    <a href="?<?php
+                                                                    // Remove dietaryRestrictionsYes filter from URL
+                                                                    $filteredParams = $_GET;
+                                                                    unset($filteredParams['dietaryRestrictionsYes']); // Remove this param
+                                                                    echo http_build_query($filteredParams);
+                                                                    ?>" class="text-white ms-1">
+                                                                        <i class="fa-solid fa-times"></i>
+                                                                    </a>
+                                                                </span>
+                        <?php
+                    } else if ($key === 'dietaryRestrictionsNo') {
+                        ?>
+                                                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                                        <strong><span class="text-warning">Dietary Restrictions:</span> No</strong>
+                                                                        <a href="?<?php
+                                                                        // Remove dietaryRestrictionsNo filter from URL
+                                                                        $filteredParams = $_GET;
+                                                                        unset($filteredParams['dietaryRestrictionsNo']); // Remove this param
+                                                                        echo http_build_query($filteredParams);
+                                                                        ?>" class="text-white ms-1">
+                                                                            <i class="fa-solid fa-times"></i>
+                                                                        </a>
+                                                                    </span>
+                        <?php
                     } else {
                         // Display other filters
                         if (is_array($value)) {
@@ -817,6 +890,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             <th class="py-3 align-middle text-center nicknameColumn">Nickname</th>
                             <th class="py-3 align-middle text-center statusColumn">Status</th>
                             <th class="py-3 align-middle text-center departmentColumn">Department</th>
+                            <th class="py-3 align-middle text-center dietaryRestrictionsColumn">Dietary Restrictions
+                            </th>
                             <th class="py-3 align-middle text-center payrollTypeColumn">Payroll Type</th>
                             <th class="py-3 align-middle text-center workShiftColumn">Work Shift</th>
                             <th class="py-3 align-middle text-center startDateColumn">Start Date</th>
@@ -840,6 +915,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             $nickname = $employee['nickname'];
                             $departmentId = $employee['department_id'];
                             $departmentName = $employee['department_name'];
+                            $dietaryRestrictions = $employee['dietary_restrictions'];
                             $payrollType = $employee['payroll_type'];
                             $startDate = $employee['start_date'];
                             $permanentDate = $employee['permanent_date'];
@@ -943,6 +1019,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                         </div>
                                     </form>
                                     <span><?php echo $departmentName ?></span>
+                                </td>
+                                <td class="align-middle text-center dietaryRestrictionsColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    <?php if (!$dietaryRestrictions)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
+                                    <?php echo $dietaryRestrictions ? $dietaryRestrictions : "N/A" ?>
                                 </td>
                                 <td
                                     class="align-middle text-center payrollTypeColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
@@ -1262,6 +1343,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                 <?php } else { ?>
                                     <p>No departments found.</p>
                                 <?php } ?>
+
+                                <h5 class="signature-color fw-bold mt-4">Dietary Restrictions</h5>
+                                <div class="d-flex flex-column">
+                                    <div>
+                                        <input type="checkbox" name="dietaryRestrictionsYes" id="dietaryRestrictionsYes"
+                                            class="form-check-input" <?php if (isset($_GET['dietaryRestrictionsYes']))
+                                                echo 'checked'; ?>>
+                                        <label for="dietaryRestrictionsYes">Yes</label>
+                                    </div>
+                                    <div>
+                                        <input type="checkbox" name="dietaryRestrictionsNo" id="dietaryRestrictionsNo"
+                                            class="form-check-input" <?php if (isset($_GET['dietaryRestrictionsNo']))
+                                                echo 'checked'; ?>>
+                                        <label for="dietaryRestrictionsNo">No</label>
+                                    </div>
+                                </div>
                             </div>
                             <div
                                 class="col-12  <?php echo ($role === "full control") ? "col-lg-2" : "col-lg-3"; ?> mt-3 mt-md-0">
@@ -1323,9 +1420,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                         <label for="<?php echo strtolower($workShift); ?>"><?php echo $workShift; ?></label>
                                     </p>
                                 <?php } ?>
+                                <h5 class="signature-color fw-bold mt-4">Gender</h5>
+                                <?php
+                                $genders = ['Male', 'Female'];
+                                $selected_gender = isset($_GET['gender']) ? $_GET['gender'] : [];
+                                foreach ($genders as $gender) {
+                                    ?>
+                                    <p class="mb-0 p-0">
+                                        <input type="checkbox" class="form-check-input"
+                                            id="<?php echo strtolower($gender) ?>" name="gender[]"
+                                            value="<?php echo $gender ?>" <?php echo in_array($gender, $selected_gender) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo strtolower($gender); ?>"><?php echo $gender; ?></label>
+                                    </p>
+                                <?php } ?>
                             </div>
-
-
 
                             <div class="col-12 <?php echo ($role === "full control") ? "col-lg-4" : "col-lg-5"; ?>">
                                 <h5 class="signature-color fw-bold mt-4 mt-lg-0">Visa</h5>
@@ -1355,7 +1463,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
 
                             <?php if ($role === "full control") { ?>
                                 <div
-                                    class="col-12 col-md-6 <?php echo ($role === "full control") ? "col-lg-3" : "col-lg-4"; ?> mt-3 mt-lg-0">
+                                    class="col-12  <?php echo ($role === "full control") ? "col-lg-3" : "col-lg-4"; ?> mt-3 mt-lg-0">
                                     <h5 class="signature-color fw-bold mt-4 mt-md-0">Payroll Type</h5>
                                     <?php
                                     $payroll_types = ['wage', 'salary'];
@@ -1429,10 +1537,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input column-check-input" type="checkbox" id="statusColumn"
-                            data-column="statusColumn">
-                        <label class="form-check-label" for="statusColumn">
-                            Status
+                        <input class="form-check-input column-check-input" type="checkbox"
+                            id="dietaryRestrictionsColumn" data-column="dietaryRestrictionsColumn">
+                        <label class="form-check-label" for="dietaryRestrictionsColumn">
+                            Dietary Restrictions
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="payrollTypeColumn"
+                            data-column="payrollTypeColumn">
+                        <label class="form-check-label" for="payrollTypeColumn">
+                            Payroll Type
                         </label>
                     </div>
                     <div class="form-check">
@@ -1986,16 +2101,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
         printWindow.document.close();
     }
 </script>
-
-<script>
-    // Restore scroll position after page reload
-    window.addEventListener('load', function () {
-        const scrollPosition = sessionStorage.getItem('scrollPosition');
-        if (scrollPosition) {
-            window.scrollTo(0, scrollPosition);
-            sessionStorage.removeItem('scrollPosition'); // Remove after restoring
-        }
-    });
-</script>
-
 </body>

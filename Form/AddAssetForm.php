@@ -128,7 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
             <label for="assetNo" class="fw-bold">FE Number</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">FE</span>
-                <input type="number" min="0" step="any" class="form-control rounded-end" id="assetNoToAdd"
+                <input type="text" min="0" step="any" class="form-control rounded-end" id="assetNoToAdd"
                     name="assetNo" aria-describedby="assetNo" required>
                 <div class="invalid-feedback">
                     Please provide the FE Number.
@@ -163,6 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
                 <option value="Current">Current</option>
                 <option value="Obsolete">Obsolete</option>
                 <option value="Disposed">Disposed</option>
+                <option value="Out for Service / Calibration">Out for Service / Calibration</option>
             </select>
             <div class="invalid-feedback">
                 Please provide the status.

@@ -65,7 +65,25 @@ if (isset($_GET['apply_filters'])) {
     }
 }
 
-$project_sql = "SELECT * FROM projects WHERE $whereClause ORDER BY $sort $order LIMIT $offset, $records_per_page";
+$project_sql = "
+SELECT 
+    projects.*, 
+    MIN(project_details.date) AS earliest_estimated_date,
+    MAX(project_details.date) AS latest_estimated_date 
+FROM 
+    projects
+LEFT JOIN 
+    project_details ON projects.project_id = project_details.project_id
+WHERE 
+    $whereClause
+GROUP BY 
+    projects.project_id
+ORDER BY 
+    $sort $order
+LIMIT 
+    $offset, $records_per_page
+";
+
 
 // Execute query
 $project_result = $conn->query($project_sql);
@@ -198,7 +216,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 <body class="background-color">
     <?php require("../Menu/NavBar.php") ?>
     <div class="container-fluid px-md-5 mb-5 mt-4">
-        <div class="d-flex justify-content-end align-items-center">
+        <div class="d-flex justify-content-between align-items-center">
+            <ul class="nav mb-3" role="tablist">
+                <li class="nav-item me-4" role="presentation">
+                    <a href="http://<?= $serverAddress ?>/<?= $projectName ?>/Pages/project-table.php"
+                    class="nav-link border-0 border-bottom <?= basename($_SERVER['PHP_SELF']) === 'project-table.php' ? 'border-3 border-primary text-primary fw-bold' : 'text-secondary' ?>">
+                        Projects
+                    </a>
+                </li>
+                <li class="nav-item me-4" role="presentation">
+                    <a href="<?= ($employee_id === '007' || $employee_id === '202') 
+                                ? "http://$serverAddress/$projectName/Pages/pdc-table.php" 
+                                : '#' ?>"
+                    class="nav-link border-0 border-bottom
+                        <?= ($employee_id !== '007' && $employee_id !== '202') ? 'disabled' : '' ?>"
+                    <?= ($employee_id !== '007' && $employee_id !== '202') ? 'tabindex="-1" aria-disabled="true"' : '' ?>>
+                        PDC Projects
+                    </a>
+                </li>
+
+            </ul>
+
             <!-- <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a
@@ -247,7 +285,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     </form>
                     <!-- Filter Modal Trigger Button -->
                     <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal" data-bs-target="#filterProjectModal">
-                        <p class="text-nowrap fw-bold mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
+                        <p class="text-nowrap mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
                     </button>
                 </div>
 
@@ -256,12 +294,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     <div class="d-flex align-items-center">
                         <?php if ($role === "full control") { ?>
                             <!-- Admin Buttons -->
-                            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#projectReportModal">
-                                <i class="fa-solid fa-square-poll-vertical"></i> Report
-                            </button>
-                            <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal" data-bs-target="#projectDashboardModal">
-                                <i class="fa-solid fa-chart-pie"></i> Dashboard
-                            </a>
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-chart-line"></i> Reports </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#ganttChartModal"><i class="fa-solid fa-chart-gantt"></i> Gantt</a>
+                                    <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#projectReportModal"><i class="fa-solid fa-square-poll-vertical"></i>  Report</a>
+                                    <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#projectDashboardModal"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                                </div>
+                            </div>
                             <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
                                 <i class="fa-solid fa-plus"></i> Add Project
                             </button>
@@ -388,6 +428,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 class="text-decoration-none text-white" style="cursor:pointer">Project Type <i
                                     class="fa-solid fa-sort fa-ms ms-1"></i></a>
                         </th>
+                        <th class="py-4 align-middle text-center earliestEstimatedTimeColumn" style="min-width: 250px;">
+                            <a onclick="updateSort('earliest_estimated_date', '<?= $order == 'asc' ? 'desc' : 'asc'?>')" class="text-decoration-none text-white" style="cursor: pointer">Earliest Estimated Time <i 
+                            class="fa-solid fa-sort fa-ms ms-1"></i></a>
+                        </th>
                         <th class="py-4 align-middle text-center customerColumn" style="min-width: 200px;">
                             <a onclick="updateSort('customer', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer">Customer <i
@@ -449,7 +493,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 
                                 <td class="align-middle">
                                     <div class="d-flex">
-                                        <?php if ($role === "full control") { ?>
+                                        <?php if ($role === "full control" || $role === "modify 1") { ?>
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
                                                 data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
                                                 data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
@@ -461,11 +505,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 data-project-engineer="<?= $row["project_engineer"] ?>"
                                                 data-customer-address="<?= $row["customer_address"] ?>"><i
                                                     class="fa-regular fa-pen-to-square"></i></button>
-                                            <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
-                                                data-project-id="<?= $row["project_id"] ?>"
-                                                data-project-no="<?= $row["project_no"] ?>"
-                                                data-quote-no="<?= $row["quote_no"] ?>"><i
-                                                    class="fa-regular fa-trash-can text-danger"></i></button>
+                                            <?php if ($role === "full control") { ?>
+                                                <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
+                                                    data-project-id="<?= $row["project_id"] ?>"
+                                                    data-project-no="<?= $row["project_no"] ?>"
+                                                    data-quote-no="<?= $row["quote_no"] ?>"><i
+                                                        class="fa-regular fa-trash-can text-danger"></i></button>
+                                            <?php } ?>
                                         <?php } ?>
                                         <button class="btn" data-bs-toggle="modal" data-bs-target="#detailsModal"
                                             data-project-id="<?= $row["project_id"] ?>"
@@ -496,6 +542,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     ?> currentColumn"><?= $row["current"] ?></td>
                                 <td class="py-3 align-middle text-center projectNameColumn"><?= $row["project_name"] ?></td>
                                 <td class="py-3 align-middle text-center projectTypeColumn"><?= $row["project_type"] ?></td>
+                                <td class="py-3 align-middle text-center earliestEstimatedTimeColumn"  <?= 
+                                    isset($row["earliest_estimated_date"]) && $row["earliest_estimated_date"] != 0
+                                        ? ""
+                                        : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
+                                    ?>>
+                                    <?= 
+                                        isset($row["earliest_estimated_date"]) && $row["earliest_estimated_date"] != 0 
+                                            ? date("j F Y", strtotime($row["earliest_estimated_date"])) 
+                                            : "N/A" 
+                                    ?>
+                                </td>
                                 <td class="py-3 align-middle text-center customerColumn"><?= $row["customer"] ?></td>
                                 <td class="py-3 align-middle text-center valueColumn" <?=
                                     isset($row["value"]) && $row["value"] != 0
@@ -718,6 +775,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         <label class="form-check-label" for="projectTypeColumn">Project Type</label>
                     </div>
                     <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="earliestEstimatedTimeColumn" data-column="earliestEstimatedTimeColumn"
+                            data-column="earliestEstimatedTimeColumn">
+                        <label class="form-check-label" for="earliestEstimatedTimeColumn">Earliest Estimated Time</label>
+                    </div>
+                    <div class="form-check">
                         <input class="form-check-input column-check-input" type="checkbox" id="customerColumn"
                             data-column="customerColumn">
                         <label class="form-check-label" for="customerColumn">Customer</label>
@@ -751,6 +813,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
     </div>
 
+    <!-- ========================== D E T A I L S  M O D A L ========================== -->
     <div class="modal fade" id="detailsModal" tab-index="-1" aria-labelledby="detailsModal" aria-hidden="true">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
@@ -765,6 +828,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
     </div>
 
+    <!-- ========================== R E P O R T  M O D A L ========================== -->
     <div class="modal fade" id="projectReportModal" tabindex="-1" aria-labelledby="projectReportModal"
         aria-hidden="true">
         <div class="modal-dialog modal-fullscreen">
@@ -780,6 +844,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         </div>
     </div>
 
+    <!-- ========================== G A N T T  M O D A L ========================== -->
+    <div class="modal fade" id="ganttChartModal" tabindex="-1" aria-labelledby="ganttChartModal" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Project Gantt Chart</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="true"></button>
+                </div>
+                <div class="modal-body">
+                    <?php require("../PageContent/ModalContent/project-gantt-chart.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================== F I L T E R  M O D A L ========================== -->
     <div class="modal fade" id="filterProjectModal" tabindex="1" aria-labelledby="filterProjectModal"
         aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1156,7 +1236,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
 
         function resetColumnFilter() {
             // Get all checkboxes
-            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            document.querySelectorAll('.column-check-input').forEach(checkbox => {
                 // Check each checkbox
                 checkbox.checked = true;
 
@@ -1180,6 +1260,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
     <script>
         // Listen for the modal close event
         $('#detailsModal').on('hidden.bs.modal', function () {
+            // Disable buttons during reload
+            $('button').prop('disabled', true);
+
             // Reload the page and keep the parameters in the URL
             location.reload();  // This reloads the page
         });

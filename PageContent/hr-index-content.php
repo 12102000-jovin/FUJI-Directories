@@ -881,7 +881,7 @@ $folders_result->free();
                         <input type="month" id="endMonth" name="endMonth" class="form-control">
                     </div>
                     <div class="d-flex justify-content-center mt-3">
-                        <button class="btn btn-danger fw-bold me-1">Reset</button>
+                        <button class="btn btn-danger fw-bold me-1" id="resetFilter">Reset</button>
                         <button class="btn btn-secondary fw-bold me-1" id="hideFilterEmployeeDashboard">Cancel</button>
                         <button id="filterButton" class="btn btn-dark fw-bold">Filter</button>
                     </div>
@@ -997,6 +997,7 @@ $folders_result->free();
                                 <table class="table">
                                     <tbody class="pe-none">
                                         <tr>
+                                            <td>Full-Time</td>
                                             <td><?php echo $permanent_count ?></td>
                                         </tr>
                                         <tr>
@@ -1350,9 +1351,13 @@ $folders_result->free();
             const showEmployeeChangesTable = document.getElementById("showEmployeeChangesTable");
             const employeeChangesTable = document.getElementById("employeeChangesTable");
 
-            // Get default timeframe on page load
-            const { startMonth, endMonth } = getDefaultTimeframe();
+            // Default timeframe on page load
+            let { startMonth, endMonth } = getDefaultTimeframe();
             updateHeader(startMonth, endMonth); // Update header right after the page loads
+
+            // Store the last entered values for start and end month
+            let lastStartMonth = startMonth;
+            let lastEndMonth = endMonth;
 
             function getDefaultTimeframe() {
                 const now = new Date();
@@ -1363,47 +1368,75 @@ $folders_result->free();
             }
 
             function updateHeader(startMonth, endMonth) {
-                // Convert start and end months from 'YYYY-MM' to 'Month YYYY' format
                 const formatMonth = (month) => {
-                    const date = new Date(month + '-01'); // Add a dummy day to the month string
+                    const date = new Date(month + '-01');
                     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
                 };
 
-                // Format the start and end months
                 const startFormatted = formatMonth(startMonth);
                 const endFormatted = formatMonth(endMonth);
 
-                // Update the header with formatted months
                 document.getElementById('startMonthText').innerText = startFormatted;
                 document.getElementById('endMonthText').innerText = endFormatted;
             }
 
+            // Show filter and set values based on the most recent inputs
             showFilterEmployeeDashboard.addEventListener("click", function () {
-                document.getElementById('startMonth').value = startMonth;
-                document.getElementById('endMonth').value = endMonth;
+                document.getElementById('startMonth').value = lastStartMonth; // Use the most recent inputted value
+                document.getElementById('endMonth').value = lastEndMonth; // Use the most recent inputted value
                 filterEmployeeDashboard.classList.remove("d-none");
                 showFilterEmployeeDashboard.classList.add("d-none");
             });
 
+            // Reset to default timeframe (TTM) when reset filter is clicked
+            resetFilter.addEventListener("click", function () {
+                const { startMonth, endMonth } = getDefaultTimeframe();
+                document.getElementById('startMonth').value = startMonth;
+                document.getElementById('endMonth').value = endMonth;
+                updateHeader(startMonth, endMonth);
+
+                // Also update the stored values to reflect the reset
+                lastStartMonth = startMonth;
+                lastEndMonth = endMonth;
+            });
+
+            // Hide the filter section
             hideFilterEmployeeDashboard.addEventListener("click", function () {
                 filterEmployeeDashboard.classList.add("d-none");
                 showFilterEmployeeDashboard.classList.remove("d-none");
             });
 
+            // Refresh button: use the current values in the input fields
             refreshButton.addEventListener("click", function () {
                 const startMonth = document.getElementById('startMonth').value;
                 const endMonth = document.getElementById('endMonth').value;
-                updateHeader(startMonth, endMonth);
-                filterData(startMonth, endMonth);
+
+                if (startMonth && endMonth) {
+                    updateHeader(startMonth, endMonth);
+                    filterData(startMonth, endMonth);
+
+                    // Update the stored values to reflect the refresh action
+                    lastStartMonth = startMonth;
+                    lastEndMonth = endMonth;
+                } else {
+                    console.warn("Start or end month is empty. Skipping update.");
+                }
+
                 filterEmployeeDashboard.classList.add("d-none");
                 showFilterEmployeeDashboard.classList.remove("d-none");
             });
 
+            // Filter button: apply the filter with the current values
             filterButton.addEventListener("click", function () {
                 const startMonth = document.getElementById('startMonth').value;
                 const endMonth = document.getElementById('endMonth').value;
                 updateHeader(startMonth, endMonth);
                 filterData(startMonth, endMonth);
+
+                // Update the stored values after applying the filter
+                lastStartMonth = startMonth;
+                lastEndMonth = endMonth;
+
                 filterEmployeeDashboard.classList.add("d-none");
                 showFilterEmployeeDashboard.classList.remove("d-none");
             });
@@ -1411,12 +1444,13 @@ $folders_result->free();
             showEmployeeChangesTable.addEventListener("click", function () {
                 employeeChangesTable.classList.toggle("d-none");
                 if (employeeChangesTable.classList.contains("d-none")) {
-                    showEmployeeChangesTable.innerHTML = 'Show Table <i class="fa-solid fa-table"></i>';  // Change text when table is hidden
+                    showEmployeeChangesTable.innerHTML = 'Show Table <i class="fa-solid fa-table"></i>';
                 } else {
-                    showEmployeeChangesTable.innerHTML = 'Hide Table <i class="fa-solid fa-table"></i>';  // Change text when table is visible
+                    showEmployeeChangesTable.innerHTML = 'Hide Table <i class="fa-solid fa-table"></i>';
                 }
-            })
+            });
         });
+
 
 
         function filterData(startMonth, endMonth) {
@@ -1444,7 +1478,6 @@ $folders_result->free();
             };
             xhr.send("startMonth=" + encodeURIComponent(startMonth) + "&endMonth=" + encodeURIComponent(endMonth));
         }
-
 
         function updateChart(data) {
             // Log the data structure to verify

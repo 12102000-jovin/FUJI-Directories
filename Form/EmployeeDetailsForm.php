@@ -260,6 +260,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         $workShift = $_POST["workShift"];
     }
 
+    $dietaryRestrictions = isset(($_POST['dietaryRestrictions'])) ? $_POST['dietaryRestrictions'] : null;
     $lockerNumber = isset($_POST["lockerNumber"]) ? $_POST["lockerNumber"] : null;
     $payRate = isset($_POST["payRate"]) ? $_POST["payRate"] : null;
     $annualSalary = isset($_POST["annualSalary"]) ? $_POST["annualSalary"] : null;
@@ -369,10 +370,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     } else if (empty($errors)) {
         // If there are no errors, proceed with database insertion
         // Prepare and execute SQL statement to insert data into 'employees' table
-        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift, dietary_restrictions) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssssssissssssssssiissis", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift);
+        $stmt->bind_param("ssssssssssssssssssissssssssssiississ", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift, $dietaryRestrictions);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -520,7 +521,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         }
     }
 
-
     // Close prepared statements and database connection
     $stmt->close();
     $conn->close();
@@ -667,6 +667,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <p class="text-danger d-none" id="visaNote"></p>
                             <div class="invalid-feedback">
                                 Please provide a visa expiry date.
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-6 mt-3">
+                            <label for="dietaryRestrictionsSelection" class="fw-bold"><small>Dietary
+                                    Restrictions?</small></label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="dietaryRestrictionsSelection"
+                                        value="Yes" id="dietaryRestrictionsSelectionYes" required>
+                                    <label class="form-check-label" for="dietaryRestrictionsSelectionYes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="dietaryRestrictionsSelection"
+                                        value="No" id="dietaryRestrictionsSelectionNo" required>
+                                    <label class="form-check-label" for="dietaryRestrictionsSelectionNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-6 mt-3 d-none" id="dietaryRestrictionsInput">
+                            <label for="dietaryRestrictions" class="fw-bold"><small>Dietary Restrictions</small></label>
+                            <input class="form-control" type="text" name="dietaryRestrictions" id="dietaryRestrictions"
+                                required>
+                            <div class="invalid-feedback">
+                                Please provide the dietary restrictions.
                             </div>
                         </div>
 
@@ -836,7 +862,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                         </div>
                         <div class="form-group col-md-4 mt-3" id="workShiftField">
                             <label for="workShift" class="fw-bold"><small>Work Shift</small></label>
-                            <select class="form-select" aria-label="Work Shift" name="workShift" id="workShift" required>
+                            <select class="form-select" aria-label="Work Shift" name="workShift" id="workShift"
+                                required>
                                 <option disabled selected hidden></option>
                                 <option value="Day">Day</option>
                                 <option value="Evening">Evening</option>
@@ -1459,19 +1486,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
         })
     </script>
 
-    <!-- <script>
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const toolAllowanceCheckbox = document.getElementById("toolAllowanceCheckbox");
+            const dietaryRestrictionsInputWrapper = document.getElementById("dietaryRestrictionsInput");
+            const dietaryRestrictionsInput = document.getElementById("dietaryRestrictions");
+            const dietaryRestrictionsSelectionYes = document.getElementById("dietaryRestrictionsSelectionYes");
+            const dietaryRestrictionsSelectionNo = document.getElementById("dietaryRestrictionsSelectionNo");
 
-            toolAllowanceCheckbox.addEventListener("change", function () {
-                if (toolAllowanceCheckbox.checked === true) {
-                    console.log("True");
-                } else if (toolAllowanceCheckbox.checked === false) {
-                    console.log("False");
+            function toggleInput() {
+                if (dietaryRestrictionsSelectionYes.checked) {
+                    dietaryRestrictionsInputWrapper.classList.remove("d-none");
+                    dietaryRestrictionsInput.required = true;
+                } else if (dietaryRestrictionsSelectionNo.checked) {
+                    dietaryRestrictionsInputWrapper.classList.add("d-none");
+                    dietaryRestrictionsInput.required = false;
+                    dietaryRestrictionsInput.value = ""; // Clear input
+                    dietaryRestrictionsInput.classList.remove("is-invalid", "is-valid"); // Remove validation classes
                 }
-            })
-        })
-    </script> -->
+            }
+
+            dietaryRestrictionsSelectionYes.addEventListener("change", toggleInput);
+            dietaryRestrictionsSelectionNo.addEventListener("change", toggleInput);
+        });
+
+
+    </script>
 
 
 </div>
