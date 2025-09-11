@@ -31,6 +31,15 @@ if ($qa_accounts_result->num_rows > 0) {
     $qa_accounts_count = 0;
 }
 
+// QA Company Compliance
+$qa_cc_sql = "SELECT COUNT(*) AS qa_cc_count FROM quality_assurance WHERE department = 'Company Compliance'";
+$qa_cc_result = $conn->query($qa_cc_sql);
+if ($qa_cc_result->num_rows > 0) {
+    $row = $qa_cc_result->fetch_assoc();
+    $qa_cc_count = $row['qa_cc_count'];
+    $total_qa_document_count += $qa_cc_count;
+}
+
 // QA Engineering
 $qa_engineering_sql = "SELECT COUNT(*) AS qa_engineering_count FROM quality_assurance WHERE department = 'Engineering'";
 $qa_engineering_result = $conn->query($qa_engineering_sql);
@@ -95,6 +104,17 @@ if ($qa_operations_support_result->num_rows > 0) {
     $total_qa_document_count += $qa_operations_support_count;
 } else {
     $qa_operations_support_count = 0;
+}
+
+// QA Projects
+$qa_projects_sql = "SELECT COUNT(*) AS qa_projects_count FROM quality_assurance WHERE department = 'Projects'";
+$qa_projects_result = $conn->query($qa_projects_sql);
+if ($qa_projects_result->num_rows > 0) {
+    $row = $qa_projects_result->fetch_assoc();
+    $qa_projects_count = $row['qa_projects_count'];
+    $total_qa_document_count += $qa_projects_count;
+} else {
+    $qa_projects_count = 0;
 }
 
 // QA Quality Assurance
@@ -188,6 +208,7 @@ if ($total_qa_document_count > 0) {
     // Array of departments
     $departments = [
         "Accounts" => $qa_accounts_count,
+        "Company Compliance" => $qa_cc_count,
         "Engineering" => $qa_engineering_count,
         "Estimating" => $qa_estimating_count,
         "Electrical" => $qa_electrical_count,
@@ -196,6 +217,7 @@ if ($total_qa_document_count > 0) {
         "Operations Support" => $qa_operations_support_count,
         "Quality Assurance" => $qa_quality_assurance_count,
         "Quality Control" => $qa_quality_control_count,
+        "Projects" => $qa_projects_count,
         "Research & Development" => $qa_research_development_count,
         "Sheet Metal" => $qa_sheet_metal_count,
         "Special Projects" => $qa_special_project_count,
@@ -322,6 +344,10 @@ if ($total_qa_document_count > 0) {
                                         <td><?php echo isset($qa_accounts_count) ? $qa_accounts_count : '0'; ?></td>
                                     </tr>
                                     <tr>
+                                        <td>Company Compliance</td>
+                                        <td><?php echo isset($qa_cc_count) ? $qa_cc_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
                                         <td>Engineering</td>
                                         <td><?php echo isset($qa_engineering_count) ? $qa_engineering_count : '0'; ?>
                                         </td>
@@ -349,6 +375,11 @@ if ($total_qa_document_count > 0) {
                                         </td>
                                     </tr>
                                     <tr>
+                                        <td>Projects</td>
+                                        <td><?php echo isset($qa_projects_count) ? $qa_projects_count : '0' ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td>Quality Assurances</td>
                                         <td><?php echo isset($qa_quality_assurance_count) ? $qa_quality_assurance_count : '0' ?>
                                         </td>
@@ -366,6 +397,11 @@ if ($total_qa_document_count > 0) {
                                     <tr>
                                         <td>Sheet Metal</td>
                                         <td><?php echo isset($qa_sheet_metal_count) ? $qa_sheet_metal_count : '0' ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Special Projects</td>
+                                        <td><?php echo isset($qa_special_project_count) ? $qa_special_project_count : '0' ?>
                                         </td>
                                     </tr>
                                     <tr>
@@ -416,7 +452,5 @@ if ($total_qa_document_count > 0) {
             })
         });
     </script>
-
 </body>
-
 </html>

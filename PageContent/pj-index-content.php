@@ -181,6 +181,26 @@ if ($pj_service_result->num_rows > 0) {
     $pj_service_count;
 }
 
+$pj_pdc_international_sql = "SELECT COUNT(*) AS pj_pdc_international_count FROM projects WHERE project_type = 'PDC - International'";
+$pj_pdc_international_result = $conn->query($pj_pdc_international_sql);
+if ($pj_pdc_international_result->num_rows > 0) {
+    $row = $pj_pdc_international_result->fetch_assoc();
+    $pj_pdc_international_count = $row['pj_pdc_international_count'];
+    $total_pj_document_type_count += $pj_pdc_international_count;
+} else {
+    $pj_pdc_international_count;
+}
+
+$pj_pdc_local_sql = "SELECT COUNT(*) AS pj_pdc_local_count FROM projects WHERE project_type = 'PDC - Local'";
+$pj_pdc_local_result = $conn->query($pj_pdc_local_sql);
+if ($pj_pdc_local_result->num_rows > 0) {
+    $row = $pj_pdc_local_result->fetch_assoc();
+    $pj_pdc_local_count = $row['pj_pdc_local_count'];
+    $total_pj_document_type_count += $pj_pdc_local_count;
+} else {
+    $pj_pdc_local_count;
+}
+
 if ($total_pj_document_type_count > 0) {
     // Array of types
     $types = [
@@ -190,6 +210,8 @@ if ($total_pj_document_type_count > 0) {
         "Export" => $pj_export_count,
         "R&D" => $pj_rd_count,
         "Service" => $pj_service_count,
+        "PDC - International" => $pj_pdc_international_count,
+        "PDC - Local" => $pj_pdc_local_count
     ];
 
     // Iterate through types to create data points with colors
@@ -386,6 +408,14 @@ if ($total_pj_document_type_count > 0) {
                                         <td><?php echo isset($pj_service_count) ? $pj_service_count : '0' ?></td>
                                     </tr>
                                     <tr>
+                                        <td>PDC - International</td>
+                                        <td><?php echo isset($pj_pdc_international_count) ? $pj_pdc_international_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>PDC - Local</td>
+                                        <td><?php echo isset($pj_pdc_local_count) ? $pj_pdc_local_count : '0' ?></td>
+                                    </tr>
+                                    <tr>
                                         <td class="fw-bold" style="color:#043f9d">Total Projects
                                         </td>
                                         <td class="fw-bold" style="color:#043f9d">
@@ -402,7 +432,6 @@ if ($total_pj_document_type_count > 0) {
             <caption></caption>
         </div>
     </div>
-
 </body>
 
 </html>

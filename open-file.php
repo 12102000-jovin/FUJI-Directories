@@ -1,6 +1,6 @@
 <?php
 
-require_once ("./db_connect.php");
+require_once("./db_connect.php");
 require_once("./status_check.php");
 
 // Enable error reporting
@@ -12,7 +12,7 @@ error_reporting(E_ALL);
 $currentFile = isset($_GET['file']) ? basename($_GET['file']) : '';
 $folder = isset($_GET['folder']) ? basename($_GET['folder']) : '';
 $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
-$subDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
+$subDir = isset($_GET['dir']) ? $_GET['dir'] : '';
 $payrollType = isset($_GET['payrollType']) ? basename($_GET['payrollType']) : '';
 
 // Set the base directory based on payroll type
@@ -48,6 +48,17 @@ if (file_exists($filePath)) {
         $mimeType = mime_content_type($filePath); // Detect MIME type for images
         header('Content-Type: ' . $mimeType);
         header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+        readfile($filePath);
+        exit;
+    } elseif ($fileExtension === 'msg') {
+        // Force file download
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filePath));
         readfile($filePath);
         exit;
     } else {

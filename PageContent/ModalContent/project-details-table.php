@@ -103,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     <table class="table table-bordered table-hover mb-0 pb-0">
         <thead class="print-table-head">
             <tr>
-                <?php if ($role == "full control" || $role == "modify 1") { ?>
+                <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
                     <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
                 <?php } ?>
                 <th class="py-3 align-middle text-center print-mode" style="min-width: 120px">Item No.</th>
@@ -121,6 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                         </ul>
                     </div>
                 </th>
+                <th class="py-3 align-middle text-center">Revised Delivery Date</th>
                 <th class="py-3 align-middle text-center" style="min-width: 160px">Unit Price</th>
                 <th class="py-3 align-middle text-center">Qty</th>
                 <th class="py-3 align-middle text-center" style="min-width: 200px">Sub-Total</th>
@@ -160,9 +161,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
 
 <div class="hide-print">
     <div class="d-flex justify-content-center mb-2 mt-5" id="groupBtn">
-        <button class="btn signature-btn print-button me-1" onclick="printPage()">Print</button>
+        <button class="btn signature-btn btn-sm print-button me-1" onclick="printPage()">Print</button>
         <button class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Close</button>
-        <button class="btn btn-dark btn-sm" id="addRowBtn">Add Project</button>
+        <button class="btn btn-dark btn-sm" id="addRowBtn">Add Item</button>
     </div>
 </div>
 
@@ -315,6 +316,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
             // Collect form values
             const projectId = $('#projectId').val();
             const date = $('input[name="date"]').val() || null;
+            const revisedDeliveryDate = $('input[name="date"]').val() || null;
             const description = $('textarea[name="description"]').val();
             const unitPrice = $('input[name="unitPrice"]').val();
             const quantity = $('input[name="quantity"]').val();
@@ -328,6 +330,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                     addProjectDetails: true,
                     projectIdToBeAdded: projectId,
                     date: date,
+                    revisedDeliveryDate : revisedDeliveryDate,
                     description: description,
                     unitPrice: unitPrice,
                     quantity: quantity,
@@ -485,7 +488,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
             groupBtn.classList.remove("d-none");
         });
     });
-
 </script>
 
 <script>

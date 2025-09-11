@@ -12,7 +12,8 @@ $sql = "
     SELECT 
         folders.folder_name, 
         users.user_id, 
-        users_groups.role 
+        users_groups.role,
+        position.position_name
     FROM 
         users 
     JOIN 
@@ -21,6 +22,10 @@ $sql = "
         groups_folders ON users_groups.group_id = groups_folders.group_id 
     JOIN 
         folders ON groups_folders.folder_id = folders.folder_id 
+    JOIN 
+        employees ON users.employee_id = employees.employee_id
+    JOIN 
+        position ON employees.position = position.position_id
     WHERE 
         folders.folder_name = ? 
         AND users.user_id = ?";
@@ -43,6 +48,7 @@ $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     // Get the user's role
     $role = $row['role'];
+    $position_name = $row['position_name'];
 
     // Check the role and employee ID conditions
     if ($role === "restricted") {
@@ -57,7 +63,7 @@ if ($row = $result->fetch_assoc()) {
             exit();
         }
         // If employeeId matches loginEmployeeId, do nothing (pass)
-    } 
+    }
 } else {
     $role = null;
     if ($employeeId !== $loginEmployeeId) {

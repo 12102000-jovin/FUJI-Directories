@@ -189,7 +189,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                             <option value="V1.0 630A TF Double Door (IEC)">V1.0 630A TF Double Door (IEC)</option>
                             <option value="V1.0 630A TF Double Door (AUS)">V1.0 630A TF Double Door (AUS)</option>
                             <option value="V2.0 630A TF Double Door (IEC)">V2.0 630A TF Double Door (IEC)</option>
-                            <option value="V2.0 630A BF Double Door (IEC)">V2.0 630A BF Double Door (IEC)</option>
                             <option value="V2.0 250A TF Double Door (IEC)">V2.0 250A TF Double Door (IEC)</option>
                             <option value="V2.0 250A BF Double Door (IEC)">V2.0 250A BF Double Door (IEC)</option>
                             <option value="V3.0. 1000A TF (IEC)">V3.0. 1000A TF (IEC)</option>
@@ -371,7 +370,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
             }
 
             // Check for hyphen-based format
-            if (fbnValue.includes('-')) {
+            if (fbnValue.includes('R1')) {
                 siteType.value = "RETRO";
             } else {
                 // Match 4 consecutive uppercase letters
@@ -384,7 +383,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
         const rosdForecast = document.getElementById("rosdForecastToEdit");
         const conflictBanner = document.getElementById("conflictBannerToEdit");
         const resolved = document.getElementById("resolvedToEdit");
-        const roadResolved = document.getElementById("rosdResolvedToEdit")
+        const rosdResolved = document.getElementById("rosdResolvedToEdit")
 
         rosdForecast.addEventListener("input", function () {
             rosdPO.disabled = false;

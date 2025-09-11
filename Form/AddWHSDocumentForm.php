@@ -205,23 +205,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
                 Please provide WHS Document ID.
             </div>
         </div>
-        <div class="form-group col-md-6 mt-md-0 mt-3">
-            <label for="involvedPersonName" class="fw-bold">Involved Person Name</label>
-            <select name="involvedPersonName" class="form-select" id="involvedPersonName" required
-                onchange="updateInvolvedPersonNameEmail()">
-                <option disabled selected hidden></option>
-                <?php
-                foreach ($employees as $row) {
-                    echo '<option value="' . htmlspecialchars($row['employee_id']) . '" >' .
-                        htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . ' (' .
-                        htmlspecialchars($row['employee_id']) . ')</option>';
-                }
-                ?>
-            </select>
+        <div class="form-group col-md-6 mt-md-0 mt-3 position-relative">
+            <label for="involvedPersonDropdown" class="fw-bold">Involved Person Name</label>
+
+            <!-- Trigger Button -->
+            <div class="dropdown">
+                <button class="form-select text-start" type="button" id="involvedPersonDropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="selectedPersonText">Select Employee</span>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <ul class="dropdown-menu w-100 shadow" aria-labelledby="involvedPersonDropdown"
+                    style="max-height: 250px; overflow-y: auto;">
+                    <!-- Search box -->
+                    <li class="px-3 py-2">
+                        <input type="text" id="searchInvolvedPerson" class="form-control" placeholder="Search..." />
+                    </li>
+                    <div id="personList">
+                        <?php
+                        foreach ($employees as $row) {
+                            $fullName = htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']);
+                            $empId = htmlspecialchars($row['employee_id']);
+                            echo '<li><a class="dropdown-item involved-option" href="#" data-id="' . $empId . '">' . $fullName . ' (' . $empId . ')</a></li>';
+                        }
+                        ?>
+                    </div>
+                </ul>
+            </div>
+
+            <!-- Hidden input to store selected value -->
+            <input type="hidden" name="involvedPersonName" id="involvedPersonHidden" required>
             <div class="invalid-feedback">
                 Please provide the Involved Person Name.
             </div>
         </div>
+
         <div class="form-group col-md-12 mt-3">
             <label for="whsDescription" class="fw-bold">WHS Description</label>
             <textarea class="form-control" name="whsDescription" id="whsDescription" rows="4" required></textarea>
@@ -488,4 +507,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['whsDocumentId'])) {
             }
         })
     })
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("searchInvolvedPerson");
+        const personItems = document.querySelectorAll(".involved-option");
+        const selectedText = document.getElementById("selectedPersonText");
+        const hiddenInput = document.getElementById("involvedPersonHidden");
+
+        // Filter list based on search
+        searchInput.addEventListener("input", function () {
+            const searchTerm = searchInput.value.toLowerCase();
+            personItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.parentElement.style.display = text.includes(searchTerm) ? "" : "none";
+            });
+        });
+
+        // Set selected person
+        personItems.forEach(item => {
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+                const name = item.textContent;
+                const id = item.getAttribute("data-id");
+
+                selectedText.textContent = name;
+                hiddenInput.value = id;
+
+                // Optional: trigger update
+                if (typeof updateInvolvedPersonNameEmail === "function") {
+                    updateInvolvedPersonNameEmail();
+                }
+            });
+        });
+    });
 </script>

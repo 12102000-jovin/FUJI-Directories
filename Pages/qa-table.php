@@ -49,6 +49,7 @@ $whereClause = "(qa_document LIKE '%$searchTerm%' OR
 $selected_departments = [];
 $selected_revision_status = [];
 $selected_types = [];
+$selected_revision_age = [];
 
 $filterApplied = false;
 
@@ -62,10 +63,21 @@ if (isset($_GET['apply_filters'])) {
     }
 
     if (isset($_GET['revisionStatus']) && is_array($_GET['revisionStatus'])) {
-        // Use the selected revision status from the form
         $selected_revision_status = $_GET['revisionStatus'];
-        $revision_status_placeholders = "'" . implode("','", $selected_revision_status) . "'";
-        $whereClause .= " AND revision_status IN ($revision_status_placeholders)";
+
+        // Build SQL condition based on last_updated
+        $revisionConditions = [];
+        foreach ($selected_revision_status as $status) {
+            if ($status === "Current") {
+                $revisionConditions[] = "DATEDIFF(CURDATE(), last_updated) <= 300";
+            } else if ($status === "Urgent Revision Required") {
+                $revisionConditions[] = "DATEDIFF(CURDATE(), last_updated) > 300";
+            }
+        }
+        if (!empty($revisionConditions)) {
+            $whereClause .= " AND (" . implode(" OR ", $revisionConditions) . ")";
+        }
+
         $filterApplied = true;
     }
 
@@ -553,7 +565,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                         </a>
                                     </div>
                                 </div> -->
-                                <a onclick="updateSort('revision_status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                <a onclick="updateSort('last_updated', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                     class="text-decoration-none text-white" style="cursor:pointer">
                                     Revision Status <i class="fa-solid fa-sort fa-md ms-1"></i>
                                 </a>
@@ -639,6 +651,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                             <?php if ($role !== "full control" && $row['status'] !== "Approved") {
                                 continue; // Skip this iteration if not full control and status is not "Approved"
                             } ?>
+                            
                             <tr class="document-row">
                                 <?php if ($role === "full control") { ?>
                                     <td class="align-middle">
@@ -710,7 +723,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                         </form>
                                         <span><?= $row["rev_no"] ?></span>
                                     </td>
-                                    <td class="py-2 align-middle text-center revisionStatus" ondblclick="editRevisionStatus(this)">
+                                    <!-- <td class="py-2 align-middle text-center revisionStatus" ondblclick="editRevisionStatus(this)">
                                         <div>
                                             <form method="POST" class="edit-revision-status-form d-none">
                                                 <div class="d-flex align-items-center">
@@ -742,7 +755,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     ?> rounded-pill w-100">
                                                 <?= $row["revision_status"] ?></span>
                                         </div>
+                                    </td> -->
+                                    <td class="py-2 align-middle text-center">
+                                        <?php
+                                        $lastUpdated = strtotime($row["last_updated"]);
+                                        $today = time();
+                                        $daysDiff = ($today - $lastUpdated) / (60 * 60 * 24);
+                                        ?>
+
+                                        <?php if ($daysDiff > 300): ?>
+                                            <span class="badge bg-danger rounded-pill w-100 fw-bold">Urgent Revision Required</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success rounded-pill w-100 fw-bold">Current</span>
+                                        <?php endif; ?>
                                     </td>
+
+
 
                                 <?php } ?>
 
@@ -1222,21 +1250,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                     class="col-12 <?php echo ($role === 'full control') ? 'col-lg-3' : 'col-lg-4' ?> mt-3 mt-md-0">
                                     <h5 class="signature-color fw-bold">Revision Status</h5>
                                     <?php
-                                    $revisionStatusFilters = ['Normal', 'Revision Required', 'Urgent Revision Required'];
-                                    $selected_revision_status = isset(($_GET['revisionStatus'])) ? (array) $_GET['revisionStatus'] : [];
-                                    foreach ($revisionStatusFilters as $revisionStatusFilter) {
-                                        ?>
-                                        <p class="mb-0 pb-0">
-                                            <input type="checkbox" class="form-check-input"
-                                                id="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>"
-                                                name="revisionStatus[]" value="<?php echo $revisionStatusFilter ?>" <?php echo in_array($revisionStatusFilter, $selected_revision_status) ? 'checked' : ''; ?>>
-                                            <label for="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>">
-                                                <?php echo $revisionStatusFilter ?>
-                                            </label>
-                                        </p>
-                                        <?php
-                                    }
-                                    ?>
+$revisionStatusFilters = ['Current', 'Urgent Revision Required'];
+$selected_revision_status = isset($_GET['revisionStatus']) ? (array) $_GET['revisionStatus'] : [];
+
+foreach ($revisionStatusFilters as $revisionStatusFilter) {
+    ?>
+    <p class="mb-0 pb-0">
+        <input type="checkbox" class="form-check-input"
+               id="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>"
+               name="revisionStatus[]" value="<?php echo $revisionStatusFilter ?>" 
+               <?php echo in_array($revisionStatusFilter, $selected_revision_status) ? 'checked' : ''; ?>>
+        <label for="<?php echo strtolower(str_replace(' ', '', $revisionStatusFilter)); ?>">
+            <?php echo $revisionStatusFilter ?>
+        </label>
+    </p>
+    <?php
+}
+?>
 
                                     <h5 class="signature-color fw-bold mt-3">ISO9001</h5>
                                     <?php
@@ -1547,6 +1577,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 }
             });
         });
+
         function resetColumnFilter() {
             // Get all checkboxes
             document.querySelectorAll('.form-check-input').forEach(checkbox => {
@@ -1569,7 +1600,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                 localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
             });
         }
-
     </script>
     <script>
         function editStatus(cell) {

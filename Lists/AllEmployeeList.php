@@ -121,13 +121,25 @@ if (isset($_GET['apply_filters'])) {
         $whereClause .= " AND (dietary_restrictions IS NULL OR dietary_restrictions = '')";
     }
 
+    if (!empty($_GET['minAge']) && !empty($_GET['maxAge'])) {
+        $minAge = intval($_GET['minAge']);
+        $maxAge = intval($_GET['maxAge']) + 1;
+
+        // Calculate date of birth range based on age
+        $maxDOB = date('Y-m-d', strtotime("-$minAge years +1 day")); // youngest acceptable DOB (inclusive)
+        $minDOB = date('Y-m-d', strtotime("-$maxAge years"));        // oldest acceptable DOB
+
+        $whereClause .= " AND dob BETWEEN ? AND ?";
+        $filterApplied = true;
+    }
 }
 
 // Build the full SQL query with department filtering applied
-$employee_list_sql = "SELECT employees.*, department_id, department_name, visa_name
+$employee_list_sql = "SELECT employees.*, department_id, department_name, visa_name, position_name
 FROM employees 
 JOIN department ON department.department_id = employees.department
 JOIN visa ON visa.visa_id = employees.visa
+JOIN position ON position.position_id = employees.position
 WHERE $whereClause 
 ORDER BY $sort $order;
 ";
@@ -183,10 +195,19 @@ if (isset($_GET['expiredVisa'])) {
     $types .= 's'; // 's' for string (date format)
 }
 
+if (!empty($_GET['minAge']) && !empty($_GET['maxAge'])) {
+    $types .= 'ss'; // both dates are strings
+}
+
 // Bind parameters only if there are types to bind
 $params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status, $selected_work_shift, $selected_gender);
 if (isset($_GET['expiredVisa'])) {
     $params[] = $current_date; // Bind the current date for expired visas
+}
+
+if (!empty($_GET['minAge']) && !empty($_GET['maxAge'])) {
+    $params[] = $minDOB;
+    $params[] = $maxDOB;
 }
 
 // Only bind parameters if $types is not empty
@@ -209,13 +230,32 @@ if ($employee_list_result->num_rows > 0) {
 }
 
 // Adjust the WHERE clause based on the role
-if ($role !== "full control") {
+if ($role !== "full control" && $role !== "modify 1") {
     // Exclude payroll_type = 'salary' for non-admin roles
     $whereClause .= " AND payroll_type != 'salary'";
 }
 
+// Further restrict based on the position name
+if ($position_name == "Sheet Metal Manager") {
+    $whereClause .= " AND department_name = 'Sheet Metal'";
+} else if ($position_name == "Sheet Metal Production Supervisor") {
+    $whereClause .= " AND department_name = 'Sheet Metal'";
+} else if ($position_name == "Engineering Manager") {
+    $whereClause .= " AND department_name = 'Engineering'";
+} else if ($position_name == "Operations Support Manager") {
+    $whereClause .= " AND department_name = 'Operations Support'";
+} else if ($position_name == "Electrical") {
+    $whereClause .= " AND department_name = 'Electrical'";
+}
+
 // Get total count of filtered results (Total)
-$count_sql = "SELECT COUNT(employee_id) as total FROM employees WHERE $whereClause";
+$count_sql = "
+    SELECT COUNT(e.employee_id) as total
+    FROM employees e
+    JOIN department d ON e.department = d.department_id
+    WHERE $whereClause
+";
+
 $count_stmt = $conn->prepare($count_sql);
 if (!empty($types)) {
     $count_stmt->bind_param($types, ...$params);
@@ -225,7 +265,13 @@ $count_result = $count_stmt->get_result();
 $count_row = $count_result->fetch_assoc();
 $total_count = $count_row['total'];
 
-$count_active_sql = "SELECT COUNT(employee_id) as total_active FROM employees WHERE $whereClause AND is_active = 1";
+$count_active_sql = "
+    SELECT COUNT(e.employee_id) as total_active
+    FROM employees e
+    JOIN department d ON e.department = d.department_id
+    WHERE $whereClause AND e.is_active = 1
+";
+
 $count_active_stmt = $conn->prepare($count_active_sql);
 if (!empty($types)) {
     $count_active_stmt->bind_param($types, ...$params);
@@ -396,14 +442,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                     </ol>
                 </nav> -->
             </div>
-            <?php if ($role == "full control" || $role == "modify 1") { ?>
+            <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
                 <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
                     <!-- <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a> -->
+                    <a class="btn btn-warning text-white fw-bold me-2"
+                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/leaves-table.php"> <i
+                            class="fa-solid fa-calendar-days"></i> Leaves</a>
                     <a class="btn btn-primary fw-bold me-2" type="button" data-bs-toggle="modal"
                         data-bs-target="#HRDashboardModal"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a>
-                    <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
-                        <i class="fa-solid fa-user-plus"></i> Add Employee
-                    </a>
+                    <?php if ($role == "full control") { ?>
+                        <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                            <i class="fa-solid fa-user-plus"></i> Add Employee
+                        </a>
+                    <?php } ?>
                 </div>
             <?php } ?>
         </div>
@@ -412,6 +463,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
             <!-- Search Employee Input -->
             <div class="col-12 col-lg-6 mb-3">
                 <form method="GET" id="searchForm">
+                    <?php
+                    foreach ($urlParams as $key => $value) {
+                        if ($key === 'search')
+                            continue; // skip search because it has its own input
+                        // If the param is an array (e.g. filters with multiple values), add one hidden input per value
+                        if (is_array($value)) {
+                            foreach ($value as $v) {
+                                echo '<input type="hidden" name="' . htmlspecialchars($key) . '[]" value="' . htmlspecialchars($v) . '">';
+                            }
+                        } else {
+                            echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
+                        }
+                    }
+                    ?>
                     <input type="hidden" id="viewInput2" name="view">
                     <div class="d-flex align-items-center">
                         <div class="input-group me-2">
@@ -431,6 +496,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
             <div class="col-12 col-lg-6 mb-3">
                 <div class="d-flex justify-content-start justify-content-md-end">
                     <div class="d-flex align-items-start gap-1 me-1">
+                        <button class="btn btn-info text-white fw-bold d-flex align-items-center d-none"
+                            id="exportToExcelBtn">
+                            <small>Export</small>
+                            <i class="fa-solid fa-file-excel ms-2"></i>
+                        </button>
                         <button class="btn btn-primary fw-bold d-flex align-items-center" onclick="printTable()">
                             <small>Print Table</small>
                             <i class="fa-solid fa-print ms-2"></i>
@@ -492,7 +562,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                 <?php if (!empty($value)): // Only show the span if the value is not empty ?>
                     <?php
 
-                    if ($key === 'order' || $key === 'view') {
+                    if ($key === 'order' || $key === 'view' || $key === 'maxAge') {
                         continue;
                     }
 
@@ -742,6 +812,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                                                         </a>
                                                                     </span>
                         <?php
+                    } else if (isset($urlParams['minAge']) && isset($urlParams['maxAge']) && $key === 'minAge') {
+                        ?>
+                                                                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                                            <strong><span class="text-warning">Age:</span>
+                                <?php echo htmlspecialchars($urlParams['minAge']) . " to " . htmlspecialchars($urlParams['maxAge']); ?></strong>
+                                                                            <a href="?<?php
+                                                                            // Remove both minAge and maxAge from URL
+                                                                            $filteredParams = $_GET;
+                                                                            unset($filteredParams['minAge'], $filteredParams['maxAge']);
+                                                                            echo http_build_query($filteredParams);
+                                                                            ?>" class="text-white ms-1">
+                                                                                <i class="fa-solid fa-times"></i>
+                                                                            </a>
+                                                                        </span>
+                        <?php
                     } else {
                         // Display other filters
                         if (is_array($value)) {
@@ -782,10 +867,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                 $isActive = $employee['is_active'];
                 $lastDate = $employee['last_date'];
                 $payrollType = $employee['payroll_type'];
+                $departmentName = $employee['department_name'];
+                $visaRestrictions = $employee['visa_restrictions'];
 
                 // Check if the role is not "admin" and the payroll type is "Salary"
-                if ($role !== 'full control' && $payrollType == 'salary') {
+                if (($role !== 'full control' && $role !== 'modify 1' && $payrollType == 'salary')) {
                     continue; // Skip this employee
+                }
+
+                if ($role === "modify 1") {
+                 
+                    if ($position_name === 'Engineering Manager' && $departmentName != 'Engineering') {
+                        continue;
+                    } 
+                }
+
+                if ($role === "modify 2") {
+                    if (($position_name === 'Sheet Metal Manager' && $departmentName != 'Sheet Metal') || ($position_name === 'Sheet Metal Production Supervisor' && $departmentName != 'Sheet Metal')) {
+                        continue; // Show only Sheet Metal department employees
+                    } else if ($position_name === 'Operations Support Manager' && $departmentName != 'Operations Support') {
+                        continue;
+                    } else if ($position_name === 'Engineering Manager' && $departmentName != 'Engineering') {
+                        continue;
+                    } else if ($position_name === 'Electrical Manager' && $departmentName != 'Electrical') {
+                        continue;
+                    }
                 }
                 ?>
                 <div class="col-12 col-md-6 col-lg-4 col-xl-3">
@@ -864,8 +970,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                         ?>
                                     <?php } ?>
                                 </h5>
-                                <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h6 class="card-subtitle mb-2 text-muted">Employee ID: <?php echo $employeeId; ?></h6>
+                                    <div class="d-flex justify-content-start mb-2">
+                                        <?php if ($visaRestrictions == "1") {
+                                            echo "<span class='badge rounded-pill text-bg-warning text-white'><small>Restricted</small></span>";
+                                        } ?>
+                                    </div>
+                                </div>
                                 <p class="d-none nickname"><?php echo $nickname ?></p>
+
                                 <a
                                     href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/profile-page.php?employee_id=<?php echo $employeeId ?>">
                                     <button class="btn btn-dark btn-sm"><small>Profile <i
@@ -888,8 +1002,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             </th>
                             <th class="py-3 align-middle text-center fullNameColumn">Name</th>
                             <th class="py-3 align-middle text-center nicknameColumn">Nickname</th>
+                            <th class="py-3 align-middle text-center positionColumn">Position</th>
+                            <th class="py-3 align-middle text-center genderColumn">Gender</th>
                             <th class="py-3 align-middle text-center statusColumn">Status</th>
                             <th class="py-3 align-middle text-center departmentColumn">Department</th>
+                            <th class="py-3 align-middle text-center employmentTypeColumn">Employment Type</th>
+                            <th class="py-3 align-middle text-center ageColumn">Age</th>
                             <th class="py-3 align-middle text-center dietaryRestrictionsColumn">Dietary Restrictions
                             </th>
                             <th class="py-3 align-middle text-center payrollTypeColumn">Payroll Type</th>
@@ -913,8 +1031,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             $firstName = $employee['first_name'];
                             $lastName = $employee['last_name'];
                             $nickname = $employee['nickname'];
+                            $position = $employee['position_name'];
+                            $gender = $employee['gender'];
                             $departmentId = $employee['department_id'];
                             $departmentName = $employee['department_name'];
+                            $employmentType = $employee['employment_type'];
+                            $dob = $employee['dob'];
                             $dietaryRestrictions = $employee['dietary_restrictions'];
                             $payrollType = $employee['payroll_type'];
                             $startDate = $employee['start_date'];
@@ -927,6 +1049,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             $workShift = $employee['work_shift'];
                             $lockerNumber = $employee['locker_number'];
                             $payrollType = $employee['payroll_type'];
+                            $visaRestrictions = $employee['visa_restrictions'];
 
                             // Check if the role is not "admin" and the payroll type is "Salary"
                             if ($role !== 'full control' && $payrollType == 'salary') {
@@ -954,6 +1077,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                     <?php if (!$nickname)
                                         echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
                                     <?php echo $nickname ? $nickname : "N/A" ?>
+                                </td>
+                                <td class="align-middle text-center positionColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    <?php if (!$position)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
+                                    <?php echo $position ? $position : "N/A" ?>
+                                </td>
+                                <td class="align-middle text-center genderColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    <?php if (!$gender)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
+                                    <?php echo $gender ? $gender : "N/A" ?>
                                 </td>
                                 <td class="align-middle text-center statusColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
                                     ondblclick="editStatus(this)">
@@ -1020,6 +1153,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                     </form>
                                     <span><?php echo $departmentName ?></span>
                                 </td>
+                                <td class="align-middle text-center employmentTypeColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
+                                    <?php if (!$employmentType)
+                                        echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
+                                    <?php echo $employmentType ? $employmentType : "N/A" ?>
+                                </td>
+                                <td
+                                    class="align-middle text-center ageColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>">
+                                    <?php
+                                    if (!empty($dob)) {
+                                        $dob = new DateTime($dob);
+                                        $today = new DateTime();
+                                        $age = $today->diff($dob)->y;
+                                        echo $age;
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
+
+
                                 <td class="align-middle text-center dietaryRestrictionsColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
                                     <?php if (!$dietaryRestrictions)
                                         echo 'style="background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;"'; ?>>
@@ -1322,7 +1475,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                 <div class="modal-body">
                     <form method="GET">
                         <input type="hidden" id="viewInput" name="view">
-
+                        <?php
+                        // Preserve current search param
+                        if (!empty($searchTerm)) {
+                            echo '<input type="hidden" name="search" value="' . htmlspecialchars($searchTerm) . '">';
+                        }
+                        ?>
                         <div class="row">
                             <div class="col-12  <?php echo ($role === "full control") ? "col-lg-3" : "col-lg-4"; ?>">
                                 <h5 class="signature-color fw-bold">Department</h5>
@@ -1358,6 +1516,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                                 echo 'checked'; ?>>
                                         <label for="dietaryRestrictionsNo">No</label>
                                     </div>
+                                </div>
+
+                                <h5 class="signature-color fw-bold mt-4">Age</h5>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" name="minAge" class="form-control"
+                                        value="<?php echo isset($_GET['minAge']) ? htmlspecialchars($_GET['minAge']) : '18'; ?>">
+                                    <span class="mx-2">to</span>
+                                    <input type="text" name="maxAge" class="form-control"
+                                        value="<?php echo isset($_GET['maxAge']) ? htmlspecialchars($_GET['maxAge']) : '80'; ?>">
                                 </div>
                             </div>
                             <div
@@ -1523,6 +1690,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                         </label>
                     </div>
                     <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="positionColumn"
+                            data-column="positionColumn">
+                        <label class="form-check-label" for="positionColumn">
+                            Position
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="genderColumn"
+                            data-column="genderColumn">
+                        <label class="form-check-label" for="genderColumn">
+                            Gender
+                        </label>
+                    </div>
+                    <div class="form-check">
                         <input class="form-check-input column-check-input" type="checkbox" id="statusColumn"
                             data-column="statusColumn">
                         <label class="form-check-label" for="statusColumn">
@@ -1530,10 +1711,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                         </label>
                     </div>
                     <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="ageColumn"
+                            data-column="ageColumn">
+                        <label class="form-check-label" for="ageColumn">
+                            Age
+                        </label>
+                    </div>
+                    <div class="form-check">
                         <input class="form-check-input column-check-input" type="checkbox" id="departmentColumn"
                             data-column="departmentColumn">
                         <label class="form-check-label" for="departmentColumn">
                             Department
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input column-check-input" type="checkbox" id="employmentTypeColumn"
+                            data-column="employmentTypeColumn">
+                        <label class="form-check-label" for="employmentTypeColumn">
+                            Employment Type
                         </label>
                     </div>
                     <div class="form-check">
@@ -1696,18 +1891,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
         const employeeCardList = document.getElementById("employeeCardList");
         const employeeTableList = document.getElementById("employeeTableList");
         const viewInput = document.getElementById("viewInput");
-        const toggleViewBtn = document.getElementById("toggleButton")
+        const toggleViewBtn = document.getElementById("toggleButton");
         const filterColumnBtn = document.getElementById("filterColumnBtn");
+        const exportToExcelBtn = document.getElementById("exportToExcelBtn");
 
         // Check the URL for a view preference
         const urlParams = new URLSearchParams(window.location.search);
         let viewPreference = urlParams.get("view") || "card"; // Default to "card"
 
         updateDisplay(viewPreference);
-        viewInput.value = viewPreference; // Update the hidden input value
+        viewInput.value = viewPreference;
 
-
-        document.getElementById("toggleButton").addEventListener("click", function () {
+        toggleViewBtn.addEventListener("click", function () {
             viewPreference = viewPreference === "card" ? "table" : "card";
             updateDisplay(viewPreference);
 
@@ -1715,30 +1910,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
             urlParams.set("view", viewPreference);
             window.history.replaceState(null, "", "?" + urlParams.toString());
 
-            // Update the hidden input field
             viewInput.value = viewPreference;
         });
 
         function updateDisplay(view) {
             document.getElementById("viewInput").value = view;
             document.getElementById("viewInput2").value = view;
-            toggleViewBtn.innerHTML =
-                (viewPreference === "table"
-                    ? "<small> Card </small> <i class='fa-solid fa-address-card ms-1'></i>"
-                    : "<small> Table </small> <i class='fa-solid fa-table ms-1'></i>");
 
+            // Update toggle button icon/text
+            toggleViewBtn.innerHTML =
+                view === "table"
+                    ? "<small> Card </small> <i class='fa-solid fa-address-card ms-1'></i>"
+                    : "<small> Table </small> <i class='fa-solid fa-table ms-1'></i>";
+
+            // Show/hide views
             if (view === "card") {
                 employeeCardList.style.display = "flex";
                 employeeTableList.style.display = "none";
-                filterColumnBtn.style.display = "none";
+
+                // Hide buttons in card view
+                filterColumnBtn.classList.add("d-none");
+                exportToExcelBtn.classList.add("d-none");
             } else {
                 employeeCardList.style.display = "none";
                 employeeTableList.style.display = "flex";
-                filterColumnBtn.style.display = "flex";
+
+                // Show buttons in table view
+                filterColumnBtn.classList.remove("d-none");
+                exportToExcelBtn.classList.remove("d-none");
             }
         }
     });
 </script>
+
+
 <script>
     const STORAGE_EXPIRATION_TIME = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
@@ -2101,4 +2306,92 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
         printWindow.document.close();
     }
 </script>
+
+<script>
+    document.getElementById('exportToExcelBtn').addEventListener('click', exportToExcel);
+
+    function exportToExcel() {
+        if (typeof XLSX === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            script.onload = () => generateExcel();
+            document.head.appendChild(script);
+        } else {
+            generateExcel();
+        }
+    }
+
+    function generateExcel() {
+        const wb = XLSX.utils.book_new();
+        const table = document.getElementById('employeeTable');
+        const tableData = [];
+
+        // --- Columns to export ---
+        const columnIndexes = {
+            'Employee ID': 1,
+            'Name': 2,
+            'Position': 4,
+            'Gender': 5,
+            'Department': 7,
+            'Employment Type': 8,
+            'Start Date': 13,
+            'Visa': 16,
+            'Visa Expiry Date': 17
+        };
+        const exportIndexes = Object.values(columnIndexes);
+
+        // --- Headers ---
+        tableData.push(Object.keys(columnIndexes));
+
+        // --- Rows ---
+        for (let i = 1; i < table.rows.length; i++) {
+            const row = table.rows[i];
+            if (row.offsetParent === null) continue;
+
+            const rowData = [];
+
+            exportIndexes.forEach(j => {
+                const cell = row.cells[j];
+                if (!cell) {
+                    rowData.push('');
+                    return;
+                }
+
+                let cellValue;
+                if (j === columnIndexes['Name']) {
+                    const link = cell.querySelector('a');
+                    cellValue = link ? link.innerText : cell.innerText;
+                } else {
+                    cellValue = cell.innerText;
+                }
+
+                cellValue = cellValue.replace(/\s+/g, ' ').trim();
+                cellValue = cellValue.replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+                // --- Convert date if matches pattern ---
+                if (/^\d{1,2} [A-Za-z]+ \d{4}$/.test(cellValue)) {
+                    const dateObj = new Date(cellValue);
+                    if (!isNaN(dateObj.getTime())) {
+                        rowData.push({ v: dateObj, t: 'd', z: 'dd mmmm yyyy' });
+                    } else {
+                        rowData.push(cellValue);
+                    }
+                } else {
+                    rowData.push(cellValue);
+                }
+            });
+
+            tableData.push(rowData);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(tableData);
+        ws['!rows'] = tableData.map(() => ({ hpt: 20 }));
+        XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+
+        const date = new Date();
+        const dateString = date.toISOString().split('T')[0];
+        XLSX.writeFile(wb, `Employee_Details_${dateString}.xlsx`);
+    }
+</script>
+
 </body>

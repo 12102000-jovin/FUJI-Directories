@@ -71,25 +71,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
     $department = $_POST["departmentToEdit"];
     $assetName = $_POST["assetNameToEdit"];
     $status = $_POST["statusToEdit"];
+    $disposalDate = !empty($_POST["disposalDateToEdit"]) ? $_POST["disposalDateToEdit"] : null;
     $serialNumber = !empty($_POST["serialNumberToEdit"]) ? $_POST["serialNumberToEdit"] : null;
+    $cost = !empty($_POST["costToEdit"]) ? $_POST["costToEdit"] : null;
     $purchaseDate = !empty($_POST["purchaseDateToEdit"]) ? $_POST["purchaseDateToEdit"] : null;
     $accountsAsset = $_POST["accountsAssetToEdit"];
     $whsAsset = $_POST["whsAssetToEdit"];
+    $ictAsset = $_POST["ictAssetToEdit"];
+    $notes = !empty($_POST["notesToEdit"]) ? $_POST["notesToEdit"] : null;
+    $allocatedTo = !empty($_POST["allocatedToToEdit"]) ? $_POST["allocatedToToEdit"] : null;
+    $depreciationTimeframe = !empty($_POST["depreciationTimeframeToEdit"]) ? $_POST["depreciationTimeframeToEdit"] : null;
+    $depreciationPercentage = !empty($_POST["depreciationPercentageToEdit"]) ? $_POST["depreciationPercentageToEdit"] : null;
 
     $edit_asset_sql = "UPDATE assets SET 
         asset_no = ?, 
         department_id = ?, 
         asset_name = ?, 
         `status` = ?, 
+        disposal_date = ?,
         serial_number = ?, 
         location_id = ?,
         purchase_date = ?, 
+        cost = ?,
+        notes = ?,
+        allocated_to = ?,
+        depreciation_timeframe = ?,
+        depreciation_percentage = ?,
         accounts_asset = ?, 
-        whs_asset = ?
+        whs_asset = ?,
+        ict_asset = ?
     WHERE asset_id = ?";
 
     $edit_asset_result = $conn->prepare($edit_asset_sql);
-    $edit_asset_result->bind_param("sisssisiii", $assetNo, $department, $assetName, $status, $serialNumber, $location, $purchaseDate, $accountsAsset, $whsAsset, $assetId);
+    $edit_asset_result->bind_param("sissssisissiiiiii", $assetNo, $department, $assetName, $status, $disposalDate, $serialNumber, $location, $purchaseDate, $cost, $notes, $allocatedTo, $depreciationTimeframe, $depreciationPercentage, $accountsAsset, $whsAsset, $ictAsset, $assetId);
 
     // Execute the prepared statement
     if ($edit_asset_result->execute()) {
@@ -174,6 +188,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
                 Please provide the status.
             </div>
         </div>
+        <div class="form-group col-md-6 mt-3 d-none" id="disposalDateToEditInput">
+            <label for="disposalDateToEdit" class="fw-bold">Disposal Date</label>
+            <input type="date" name="disposalDateToEdit" class="form-control" id="disposalDateToEdit">
+            <div class="invalid-feedback">
+                Please provide the disposal date.
+            </div>
+        </div>
         <div class="form-group col-md-6 mt-3">
             <label for="serialNumberToEdit" class="fw-bold">Serial Number</label>
             <input type="text" name="serialNumberToEdit" id="serialNumberToEdit" class="form-control">
@@ -181,6 +202,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
         <div class="form-group col-md-6 mt-3">
             <label for="purchaseDateToEdit" class="fw-bold">Purchase Date</label>
             <input type="date" name="purchaseDateToEdit" id="purchaseDateToEdit" class="form-control">
+        </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="costToEdit" class="fw-bold">Cost</label>
+            <input type="number" step="any" name="costToEdit" id="costToEdit" class="form-control">
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="locationToEdit" class="fw-bold">Location</label>
@@ -204,9 +229,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
                 Please provide the other location.
             </div>
         </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="notesToEdit" class="fw-bold">Notes</label>
+            <textarea name="notesToEdit" class="form-control" rows="1" id="notesToEdit"></textarea>
+        </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="allocatedToToEdit" class="fw-bold">Allocated to</label>
+            <select name="allocatedToToEdit" class="form-select" id="allocatedToToEdit">
+                <option disabled selected hidden></option>
+                <option value="">Not Assigned</option>
+                <?php
+                foreach ($employees as $row) {
+                    echo '<option value="' . htmlspecialchars($row['employee_id']) . '" > ' . ' [' .
+                        htmlspecialchars($row['employee_id']) . '] ' .
+                        htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']);
+                        if (!empty($row['nickname'])) {
+                            echo ' (' . $row['nickname'] . ')';
+                        }
+                        '</option>';
+                }
+                ?>
+            </select>
+        </div>
     </div>
     <div class="row">
-        <div class="form-group col-md-6 mt-3">
+        <div class="form-group col-md-4 mt-3">
             <div class="d-flex flex-column">
                 <label for="accountsAssetToEdit" class="fw-bold">Account Asset</label>
                 <div class="btn-group col-3 col-md-4" role="group">
@@ -223,7 +270,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
             </div>
         </div>
 
-        <div class="form-group col-md-6 mt-3">
+        <div class="form-group col-md-4 mt-3">
             <div class="d-flex flex-column">
                 <label for="whsAssetToEdit" class="fw-bold">WHS Asset</label>
                 <div class="btn-group col-3 col-md-4" role="group">
@@ -239,6 +286,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
                 </div>
             </div>
         </div>
+
+        <div class="form-group col-md-4 mt-3">
+            <div class="d-flex flex-column">
+                <label for="ictAssetToEdit" class="fw-bold">ICT Asset</label>
+                <div class="btn-group col-3 col-md-4" role="group">
+                    <input type="radio" class="btn-check btn-custom" name="ictAssetToEdit" id="ictAssetToEditYes"
+                        value="1" autocomplete="off" required>
+                    <label class="btn btn-sm btn-custom" for="ictAssetToEditYes"
+                        style="color:#043f9d; border: 1px solid #043f9d">Yes</label>
+
+                    <input type="radio" class="btn-check btn-custom" name="ictAssetToEdit" id="ictAssetToEditNo"
+                        value="0" autocomplete="off" checked required>
+                    <label class="btn btn-sm btn-custom" for="ictAssetToEditNo"
+                        style="color:#043f9d; border: 1px solid #043f9d">No</label>
+                </div>
+            </div>
+        </div>
+
+        <?php if ($role === "full control") { ?>
+            <div class="container">
+                <hr class="mt-4">
+            </div>
+
+            <div class="form-group col-md-6 mt-3">
+                <div class="d-flex flex-column">
+                    <label for="depreciationTimeframeToEdit" class="fw-bold">Depreciation Timeframe</label>
+                    <div class="input-group">
+                        <input type="number" min="0" class="form-control" id="depreciationTimeframeToEdit"
+                            name="depreciationTimeframeToEdit">
+                        <span class="input-group-text">Months</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-md-6 mt-3">
+                <div class="d-flex flex-column">
+                    <label for="depreciationPercentageToEdit" class="fw-bold">Depreciation Percentage</label>
+                    <div class="input-group">
+                        <input type="number" min="0" class="form-control" id="depreciationPercentageToEdit"
+                            name="depreciationPercentageToEdit">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
     </div>
 
     <div class="d-flex justify-content-center mt-5 mb-3">
@@ -301,8 +392,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assetNoToEdit'])) {
             return checkDuplicateDocument().then(isDuplicateValid => {
                 return isDuplicateValid;
             });
-        } 
-        
+        }
+
         // Event listener for editing WHS document
         editAssetForm.addEventListener('submit', function (event) {
             // Prevent default form submission

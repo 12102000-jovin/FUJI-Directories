@@ -69,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
 
     if ($add_pdc_project_result = $conn->prepare($add_pdc_project_sql)) {
         $add_pdc_project_result->bind_param(
-            "ssssssssssssisssisissssi",
+            "ssssssssssssssssisissssi",
             $projectNo,
             $fbn,
             $siteType,
@@ -189,13 +189,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                 <div class="row">
                     <div class="form-group col-md-6">
                         <label for="version" class="fw-bold">Version</label>
-                        <select name="version" id="version" class="form-select" required>
+                        <select name="version" id="version" class="form-select">
                             <option disabled selected hidden></option>
                             <option value="V1.0 630A TF Single Door (IEC)">V1.0 630A TF Single Door (IEC)</option>
                             <option value="V1.0 630A TF Double Door (IEC)">V1.0 630A TF Double Door (IEC)</option>
                             <option value="V1.0 630A TF Double Door (AUS)">V1.0 630A TF Double Door (AUS)</option>
                             <option value="V2.0 630A TF Double Door (IEC)">V2.0 630A TF Double Door (IEC)</option>
-                            <option value="V2.0 630A BF Double Door (IEC)">V2.0 630A BF Double Door (IEC)</option>
                             <option value="V2.0 250A TF Double Door (IEC)">V2.0 250A TF Double Door (IEC)</option>
                             <option value="V2.0 250A BF Double Door (IEC)">V2.0 250A BF Double Door (IEC)</option>
                             <option value="V3.0. 1000A TF (IEC)">V3.0. 1000A TF (IEC)</option>
@@ -375,7 +374,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
             }
 
             // Check for hyphen-based format
-            if (fbnValue.includes('-')) {
+            if (fbnValue.includes('R1')) {
                 siteType.value = "RETRO";
             } else {
                 // Match 4 consecutive uppercase letters

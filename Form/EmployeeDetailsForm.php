@@ -261,6 +261,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     }
 
     $dietaryRestrictions = isset(($_POST['dietaryRestrictions'])) ? $_POST['dietaryRestrictions'] : null;
+
+    if (!isset($_POST["visaRestrictions"]) || $_POST["visaRestrictions"] === '') {
+        $errors['visaRestrictions'] = "Visa Work restrictions is required";
+    } else {
+        $visaRestrictions = $_POST["visaRestrictions"];
+    }
+
     $lockerNumber = isset($_POST["lockerNumber"]) ? $_POST["lockerNumber"] : null;
     $payRate = isset($_POST["payRate"]) ? $_POST["payRate"] : null;
     $annualSalary = isset($_POST["annualSalary"]) ? $_POST["annualSalary"] : null;
@@ -370,10 +377,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     } else if (empty($errors)) {
         // If there are no errors, proceed with database insertion
         // Prepare and execute SQL statement to insert data into 'employees' table
-        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift, dietary_restrictions) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift, dietary_restrictions, visa_restrictions) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssssssissssssssssiississ", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift, $dietaryRestrictions);
+        $stmt->bind_param("ssssssssssssssssssissssssssssiississi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift, $dietaryRestrictions, $visaRestrictions);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -671,6 +678,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                         </div>
 
                         <div class="form-group col-md-6 mt-3">
+                            <label for="visaRestrictionsSelection" class="fw-bold"><small>Visa Work
+                                    Restrictions?</small></label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="visaRestrictions" value="1"
+                                        id="visaRestrictionsSelectionYes" required>
+                                    <label class="form-check-label" for="visaRestrictionsSelectionYes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="visaRestrictions" value="0"
+                                        id="visaRestrictionsSelectionNo" required>
+                                    <label class="form-check-label" for="visaRestrictionsSelectionNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-6 mt-3">
                             <label for="dietaryRestrictionsSelection" class="fw-bold"><small>Dietary
                                     Restrictions?</small></label>
                             <div class="d-flex gap-3">
@@ -686,6 +710,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                                 </div>
                             </div>
                         </div>
+
 
                         <div class="form-group col-md-6 mt-3 d-none" id="dietaryRestrictionsInput">
                             <label for="dietaryRestrictions" class="fw-bold"><small>Dietary Restrictions</small></label>

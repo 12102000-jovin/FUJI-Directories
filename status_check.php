@@ -7,6 +7,8 @@ $projectName = $config['project_name'];
 
 // Check if the user is not logged in, then redirect to the login page
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+
     header("Location: http://$serverAddress/$projectName/Login.php");
     exit();
 }

@@ -195,6 +195,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="QA Officer">QA Officer</option>
+                <option value="Quality Control Manager">Quality Control Manager</option>
                 <option value="QA Officer">HR Officer</option>
                 <option value="WHS Committee">WHS Committee</option>
                 <option value="Risk Assessment Committee">Risk Assessment Committee</option>
@@ -232,6 +233,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
                 <option value="Sheet Metal Manager">Sheet Metal Manager
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
+                <option value="QA Officer">QA Officer</option>
+                <option value="Quality Control Manager">Quality Control Manager</option>
+                <option value="QA Officer">HR Officer</option>
+                <option value="WHS Committee">WHS Committee</option>
+                <option value="Risk Assessment Committee">Risk Assessment Committee</option>
                 <option value="N/A">N/A</option>
             </select>
             <div class="invalid-feedback">

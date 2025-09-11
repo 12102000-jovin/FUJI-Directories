@@ -34,7 +34,7 @@ $offset = ($page - 1) * $records_per_page;
 $searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
 
 // Base WHERE condition
-$whereClause = "(project_no LIKE '%$searchTerm%' OR quote_no LIKE '%$searchTerm%' OR project_name LIKE '%$searchTerm%')";
+$whereClause = "(project_no LIKE '%$searchTerm%' OR quote_no LIKE '%$searchTerm%' OR project_name LIKE '%$searchTerm%' OR customer LIKE '%$searchTerm%')";
 
 // Arrays to hold selected filter values
 $selected_status = [];
@@ -63,13 +63,44 @@ if (isset($_GET['apply_filters'])) {
         $whereClause .= " AND payment_terms IN ($payment_terms_placeholders)";
         $filterApplied = true;
     }
+
+    if (isset($_GET['invoiceFilter']) && is_array($_GET['invoiceFilter'])) {
+        $invoiceFilter = $_GET['invoiceFilter'];
+    
+        if (in_array('invoiced', $invoiceFilter) && !in_array('not_invoiced', $invoiceFilter)) {
+            $whereClause .= " AND projects.project_id IN (
+                SELECT project_id FROM project_details 
+                GROUP BY project_id 
+                HAVING MIN(COALESCE(invoiced, 0)) = 1 AND MAX(COALESCE(invoiced, 0)) = 1
+            )"; 
+            $filterApplied = true;
+        }
+    
+        if (in_array('not_invoiced', $invoiceFilter) && !in_array('invoiced', $invoiceFilter)) {
+            $whereClause .= " AND projects.project_id IN (
+                SELECT project_id FROM project_details 
+                GROUP BY project_id 
+                HAVING MAX(COALESCE(invoiced, 0)) = 0
+            )";
+            $filterApplied = true;
+        }
+        $filterApplied = true;
+    }
 }
 
 $project_sql = "
 SELECT 
     projects.*, 
-    MIN(project_details.date) AS earliest_estimated_date,
-    MAX(project_details.date) AS latest_estimated_date 
+    -- Earliest effective date: use revised if exists, otherwise estimated
+    MIN(CASE 
+            WHEN project_details.revised_delivery_date IS NOT NULL THEN project_details.revised_delivery_date
+            ELSE project_details.date
+        END) AS earliest_effective_date,
+    MAX(project_details.date) AS latest_estimated_date,
+    MIN(project_details.revised_delivery_date) AS earliest_revised_delivery_date,
+    MAX(project_details.revised_delivery_date) AS latest_revised_delivery_date,
+    MIN(CASE WHEN project_details.invoiced IS NOT NULL THEN project_details.invoiced ELSE 0 END) AS min_invoiced,
+    MAX(project_details.invoiced) AS max_invoiced
 FROM 
     projects
 LEFT JOIN 
@@ -98,6 +129,26 @@ if ($project_result->num_rows > 0) {
     $projects = [];
 }
 
+// Separate query just for the Gantt chart (no LIMIT or pagination)
+$gantt_sql = "
+SELECT 
+    projects.*, 
+    MIN(project_details.date) AS earliest_estimated_date,
+    MAX(project_details.date) AS latest_estimated_date
+FROM 
+    projects
+LEFT JOIN 
+    project_details ON projects.project_id = project_details.project_id
+GROUP BY 
+    projects.project_id
+";
+
+// Fetch and build $ganttProjects array
+$gantt_result = $conn->query($gantt_sql);
+$ganttProjects = [];
+while ($row = $gantt_result->fetch_assoc()) {
+    $ganttProjects[] = $row;
+}
 
 // Get total number of records
 $total_records_sql = "SELECT COUNT(*) AS total FROM projects WHERE $whereClause";
@@ -225,16 +276,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     </a>
                 </li>
                 <li class="nav-item me-4" role="presentation">
-                    <a href="<?= ($employee_id === '007' || $employee_id === '202') 
+                    <a href="<?= ($role === 'full control' || $role === 'modify 2') 
                                 ? "http://$serverAddress/$projectName/Pages/pdc-table.php" 
                                 : '#' ?>"
                     class="nav-link border-0 border-bottom
-                        <?= ($employee_id !== '007' && $employee_id !== '202') ? 'disabled' : '' ?>"
-                    <?= ($employee_id !== '007' && $employee_id !== '202') ? 'tabindex="-1" aria-disabled="true"' : '' ?>>
+                        <?= ($role !== 'full control' && $role !== 'modify 2') ? 'disabled' : '' ?>"
+                    <?= ($role !== 'full control') && $role !== 'modify 2'? 'tabindex="-1" aria-disabled="true"' : '' ?>>
                         PDC Projects
                     </a>
                 </li>
-
             </ul>
 
             <!-- <nav aria-label="breadcrumb">
@@ -266,6 +316,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 <!-- Left Section: Search Form and Filter Button -->
                 <div class="col-12 col-sm-8 col-lg-5 d-flex justify-content-between align-items-center mb-3 mb-sm-0">
                     <form method="GET" id="searchForm" class="d-flex align-items-center w-100">
+                        <?php
+                        foreach ($urlParams as $key => $value) {
+                            if ($key === 'search') continue; // skip search because it has its own input
+                            // If the param is an array (e.g. filters with multiple values), add one hidden input per value
+                            if (is_array($value)) {
+                                foreach ($value as $v) {
+                                    echo '<input type="hidden" name="'.htmlspecialchars($key).'[]" value="'.htmlspecialchars($v).'">';
+                                }
+                            } else {
+                                echo '<input type="hidden" name="'.htmlspecialchars($key).'" value="'.htmlspecialchars($value).'">';
+                            }
+                        }
+                        ?>
                         <div class="d-flex align-items-center w-100">
                             <!-- Search Input Group -->
                             <div class="input-group me-2 flex-grow-1">
@@ -283,6 +346,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             </button>
                         </div>
                     </form>
+
                     <!-- Filter Modal Trigger Button -->
                     <button class="btn text-white ms-2 bg-dark" data-bs-toggle="modal" data-bs-target="#filterProjectModal">
                         <p class="text-nowrap mb-0 pb-0">Filter by <i class="fa-solid fa-filter py-1"></i></p>
@@ -292,7 +356,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 <!-- Right Section: Admin Action Buttons -->
                 <div class="col-12 col-sm-4 col-lg-7 d-flex justify-content-center justify-content-sm-end align-items-center">
                     <div class="d-flex align-items-center">
-                        <?php if ($role === "full control") { ?>
+                        <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                             <!-- Admin Buttons -->
                             <div class="btn-group me-2">
                                 <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-chart-line"></i> Reports </button>
@@ -382,7 +446,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 </span>
                             <?php
                         }
-                    } ?>
+                    } else if ($key === 'invoiceFilter' && is_array($value)) {
+                        foreach ($value as $invoiceFilter) {
+                            // Decide label
+                            $label = '';
+                            if ($invoiceFilter === 'invoiced') {
+                                $label = 'All Invoiced';
+                            } elseif ($invoiceFilter === 'not_invoiced') {
+                                $label = 'All Not Invoiced';
+                            }
+                            ?>
+                            <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                <strong>
+                                    <span class="text-warning">Invoice: </span><?php echo htmlspecialchars($label); ?>
+                                </strong>
+                                <a href="?<?php
+                                // Remove this specific invoiceFilter from the URL
+                                $filteredParams = $_GET;
+                                $filteredParams['invoiceFilter'] = array_diff($filteredParams['invoiceFilter'], [$invoiceFilter]);
+                                // If after removal it's empty, you can also unset it
+                                if (empty($filteredParams['invoiceFilter'])) {
+                                    unset($filteredParams['invoiceFilter']);
+                                }
+                                echo http_build_query($filteredParams);
+                                ?>" class="text-white ms-1">
+                                    <i class="fa-solid fa-times"></i>
+                                </a>
+                            </span>
+                            <?php
+                        }
+                    }?>
             <?php endif ?>
         <?php endforeach; ?>
 
@@ -462,6 +555,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 <tbody>
                 <?php if (!empty($projects)) { ?>
                     <?php foreach ($projects as $row) { 
+                         // Determine if all invoiced = 1
+                         $allInvoiced = (
+                            $row['min_invoiced'] !== null &&
+                            $row['max_invoiced'] !== null &&
+                            (int)$row['min_invoiced'] == 1 &&
+                            (int)$row['max_invoiced'] == 1
+                        );
+                        
+
+                        // Add class bg-success if all invoiced
+                        $rowClass = $allInvoiced ? 'bg-success bg-opacity-25' : '';
+
                             // Fetch the project engineer's ID(s) for the project
                             $project_engineer_ids = $row["project_engineer"];
                             $engineer_names = [];
@@ -490,10 +595,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             }
                             ?>
                             <tr>
-
-                                <td class="align-middle">
+                                <td class="align-middle <?= $rowClass ?>">
                                     <div class="d-flex">
-                                        <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
                                                 data-bs-target="#editDocumentModal" data-project-id="<?= $row["project_id"] ?>"
                                                 data-project-no="<?= $row["project_no"] ?>" data-quote-no="<?= $row["quote_no"] ?>"
@@ -521,10 +625,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                                 class="fa-solid fa-file-pen text-warning text-opacity-50"></i></button>
                                     </div>
                                 </td>
-                                <td class="py-3 align-middle text-center projectNoColumn"><a
+                                <td class="py-3 align-middle text-center projectNoColumn <?= $rowClass ?>"><a
                                         href="../open-project-folder.php?folder=<?= $row["project_no"] ?>"
                                         target="_blank"><?= $row['project_no'] ?></a></td>
-                                <td class="py-3 align-middle text-center quoteNoColumn" <?= isset($row["quote_no"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-3 align-middle text-center quoteNoColumn <?= $rowClass ?>" <?= isset($row["quote_no"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['quote_no']) ? $row['quote_no'] : "N/A" ?>
                                 </td>
                                 <td class="py-3 align-middle text-center text-white 
@@ -540,21 +644,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                         echo "bg-danger";
                                     }
                                     ?> currentColumn"><?= $row["current"] ?></td>
-                                <td class="py-3 align-middle text-center projectNameColumn"><?= $row["project_name"] ?></td>
-                                <td class="py-3 align-middle text-center projectTypeColumn"><?= $row["project_type"] ?></td>
-                                <td class="py-3 align-middle text-center earliestEstimatedTimeColumn"  <?= 
-                                    isset($row["earliest_estimated_date"]) && $row["earliest_estimated_date"] != 0
-                                        ? ""
-                                        : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
+                                <td class="py-3 align-middle text-center projectNameColumn <?= $rowClass ?>"><?= $row["project_name"] ?></td>
+                                <td class="py-3 align-middle text-center projectTypeColumn <?= $rowClass ?>"><?= $row["project_type"] ?></td>
+                                <td class="py-3 align-middle text-center earliestEstimatedTimeColumn <?= $rowClass ?>"  
+                                    <?= isset($row["earliest_effective_date"]) && $row["earliest_effective_date"] != 0
+                                            ? ""
+                                            : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
                                     ?>>
-                                    <?= 
-                                        isset($row["earliest_estimated_date"]) && $row["earliest_estimated_date"] != 0 
-                                            ? date("j F Y", strtotime($row["earliest_estimated_date"])) 
-                                            : "N/A" 
+                                    <?= isset($row["earliest_effective_date"]) && $row["earliest_effective_date"] != 0
+                                            ? date("j F Y", strtotime($row["earliest_effective_date"]))
+                                            : "N/A"
                                     ?>
                                 </td>
-                                <td class="py-3 align-middle text-center customerColumn"><?= $row["customer"] ?></td>
-                                <td class="py-3 align-middle text-center valueColumn" <?=
+                                <td class="py-3 align-middle text-center customerColumn <?= $rowClass ?>"><?= $row["customer"] ?></td>
+                                <td class="py-3 align-middle text-center valueColumn <?= $rowClass ?>" <?=
                                     isset($row["value"]) && $row["value"] != 0
                                     ? ""
                                     : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'"
@@ -565,13 +668,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                         : "N/A"
                                         ?>
                                 </td>
-                                <td class="py-3 align-middle text-center paymentTermsColumn <?= $row['payment_terms'] === 'COD' ? 'bg-warning fw-bold text-white' : '' ?>">
+                                <td class="py-3 align-middle text-center paymentTermsColumn 
+                                    <?= $row['payment_terms'] === 'COD' ? 'bg-warning fw-bold text-white' : $rowClass ?>">
                                     <?= $row["payment_terms"] ?>
                                 </td>
-                                <td class="py-3 align-middle text-center projectEngineerColumn" <?= isset($engineer_names_list) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                <td class="py-3 align-middle text-center projectEngineerColumn <?= $rowClass ?>" <?= isset($engineer_names_list) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($engineer_names_list) ? $engineer_names_list : "N/A" ?>
                                 </td>
-                                <td class="py-3 align-middle text-center customerAddressColumn"
+                                <td class="py-3 align-middle text-center customerAddressColumn <?= $rowClass ?>"
                                     <?= isset($row["customer_address"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row["customer_address"]) ? $row["customer_address"] : "N/A" ?>
                                 </td>
@@ -591,6 +695,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                         <option value="30" <?php echo $records_per_page == 30 ? 'selected' : ''; ?>>30</option>
                         <option value="40" <?php echo $records_per_page == 40 ? 'selected' : ''; ?>>40</option>
                         <option value="50" <?php echo $records_per_page == 50 ? 'selected' : ''; ?>>50</option>
+                        <option value="100" <?php echo $records_per_page == 100 ? 'selected' : ''; ?>>100</option>
                     </select>
                 </form>
 
@@ -862,7 +967,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
     <!-- ========================== F I L T E R  M O D A L ========================== -->
     <div class="modal fade" id="filterProjectModal" tabindex="1" aria-labelledby="filterProjectModal"
         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Filter Project</h5>
@@ -870,8 +975,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                 </div>
                 <div class="modal-body">
                     <form method="GET">
+                        <?php
+                            // Preserve current search param
+                            if (!empty($searchTerm)) {
+                                echo '<input type="hidden" name="search" value="'.htmlspecialchars($searchTerm).'">';
+                            }
+                            // Also preserve other params like sort/order/page if needed
+                            if (!empty($sort)) {
+                                echo '<input type="hidden" name="sort" value="'.htmlspecialchars($sort).'">';
+                            }
+                            if (!empty($order)) {
+                                echo '<input type="hidden" name="order" value="'.htmlspecialchars($order).'">';
+                            }
+                            if (!empty($page)) {
+                                echo '<input type="hidden" name="page" value="'.htmlspecialchars($page).'">';
+                            }
+                        ?>
                         <div class="row">
-                            <div class="col-12 col-lg-4">
+                            <div class="col-12 col-lg-3">
                                 <h5 class="signature-color fw-bold">Status</h5>
                                 <?php
                                 $statusFilters = ['Archived', 'By Others', 'In Progress', 'Completed', 'Cancelled'];
@@ -890,10 +1011,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 <?php } ?>
                             </div>
 
-                            <div class="col-12 col-lg-4 mt-3 mt-md-0">
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
                                 <h5 class="signature-color fw-bold">Project Type</h5>
                                 <?php 
-                                $projectTypeFilters = ['Local', 'Sitework', 'IOR & Commissioning', 'Export', 'R&D', 'Service'];
+                                $projectTypeFilters = ['Local', 'Sitework', 'IOR & Commissioning', 'Export', 'R&D', 'Service', 'PDC - International', 'PDC - Local'];
                                 $selected_project_type = isset(($_GET['projectType'])) ? (array) $_GET['projectType'] : [];
                                 foreach ($projectTypeFilters as $projectTypeFilter) {
                                     ?>
@@ -911,7 +1032,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 ?>
                             </div>
 
-                            <div class="col-12 col-lg-4 mt-3 mt-md-0">
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
                                 <h5 class="signature-color fw-bold">Project Terms</h5>
                                 <?php 
                                 $paymentTermsFilters = ['COD', '0 Days', '30 Days', '60 Days'];
@@ -930,6 +1051,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     <?php 
                                 }
                                 ?>
+                            </div>
+
+                            <div class="col-12 col-lg-3 mt-3 mt-md-0">
+                                <h5 class="signature-color fw-bold">Invoice</h5>
+                                <p class="mb-0 pb-0">
+                                    <input type="checkbox" class="form-check-input" id="allInvoiced"
+                                        name="invoiceFilter[]" value="invoiced"
+                                        <?php echo (isset($_GET['invoiceFilter']) && in_array('invoiced', $_GET['invoiceFilter'])) ? 'checked' : ''; ?>>
+                                    <label for="allInvoiced">All Invoiced</label>
+                                </p>
+
+                                <p class="mb-0 pb-0">
+                                    <input type="checkbox" class="form-check-input" id="allNotInvoiced"
+                                        name="invoiceFilter[]" value="not_invoiced"
+                                        <?php echo (isset($_GET['invoiceFilter']) && in_array('not_invoiced', $_GET['invoiceFilter'])) ? 'checked' : ''; ?>>
+                                    <label for="allNotInvoiced">All Not Invoiced</label>
+                                </p>
                             </div>
 
                             <div class="d-flex justify-content-center mt-4">

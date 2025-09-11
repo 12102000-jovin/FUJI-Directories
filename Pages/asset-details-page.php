@@ -21,6 +21,16 @@ $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
+// ========================= Get the employees =========================
+$employees_sql = "SELECT employee_id, first_name, last_name, nickname, email FROM employees WHERE is_active = 1";
+$employees_result = $conn->query($employees_sql);
+
+// Fetch all results into an array
+$employees = [];
+while ($row = $employees_result->fetch_assoc()) {
+    $employees[] = $row;
+}
+
 $asset_details_sql = "SELECT assets.*, department.department_id, department.department_name, location.location_id, location.location_name FROM assets JOIN department ON assets.department_id = department.department_id JOIN `location` ON location.location_id = assets.location_id WHERE asset_no = '$asset_no'";
 $asset_details_result = $conn->query($asset_details_sql);
 
@@ -47,7 +57,6 @@ $asset_cable_sql = "
 
 
 $asset_cable_result = $conn->query($asset_cable_sql);
-
 
 $asset_maintenance_sql = "SELECT asset_details.*, assets.* FROM asset_details 
                             JOIN assets ON assets.asset_id = asset_details.asset_id WHERE assets.asset_no = '$asset_no' AND categories = 'Maintenance' ORDER BY performed_date DESC";
@@ -138,8 +147,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
         case 'Repair':
             $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/05 - Service and Repairs Certificates";
             break;
+        case 'Disposal':
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/06 - Disposal";
+            break;
+        case 'Others':
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/07 - Others"; // Default folder
+            break;
         default:
-            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/Other"; // Default folder
+            $folderPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/Unknown"; // Default folder
             break;
     }
 
@@ -163,7 +178,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assetIdToAdd'])) {
             $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
 
             // Base new file name
-            $baseFileName = $asset_no . '-' . $formattedDate;
+            $customNameProvided = isset($_POST['customFileName']) && !empty(trim($_POST['customFileName']));
+
+            if ($categories === "Others" && $customNameProvided) {
+                // Use user-provided custom name (sanitize it)
+                $sanitizedFileName = preg_replace("/[^a-zA-Z0-9_\-]/", "_", $_POST['customFileName']);
+                $baseFileName = $sanitizedFileName;
+            } else {
+                $baseFileName = $asset_no . '-' . $formattedDate;
+            }
 
             // Check if a file with the same name already exists
             $newFileName = $baseFileName . '.' . $fileExtension;
@@ -306,7 +329,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteManual'])) {
     }
 }
 
-
 // Add Risk Assessment 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['riskAssessmentDocument'])) {
     $assetNo = $_POST["assetNoRiskAssessment"];
@@ -345,6 +367,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteRiskAssessment'
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
         echo "<script>window.location.replace('" . $current_url . "');</script>";
+        exit();
+    } else {
+        echo "Error updating record: " . $conn->error;
+    }
+}
+
+// Add ICT details
+if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['assetIdToAddIct'])) {
+    $assetIdToAddIct = $_POST['assetIdToAddIct'];
+    $operatingSystemDetails = isset($_POST['operatingSystemDetails']) ? $_POST['operatingSystemDetails'] : '';
+    $softwareDetails = isset($_POST['softwareDetails']) ? $_POST['softwareDetails'] : '';
+    $hardwareDetails = isset($_POST['hardwareDetails']) ? $_POST['hardwareDetails'] : '';
+
+    $update_ict_details_sql = "UPDATE assets SET `operating_system` = ?,`software` = ?, `hardware` = ? WHERE asset_id = ?";
+    $update_ict_details_result = $conn->prepare($update_ict_details_sql);
+    $update_ict_details_result->bind_param("sssi", $operatingSystemDetails, $softwareDetails, $hardwareDetails, $assetIdToAddIct);
+
+    // Execute the prepared statement
+    if ($update_ict_details_result->execute()) {
+        $current_url = $_SERVER['PHP_SELF'];
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $current_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        echo "<script>window.location.replace('" . $current_url . "')</script>";
         exit();
     } else {
         echo "Error updating record: " . $conn->error;
@@ -479,7 +525,7 @@ if (isset($_GET['file'])) {
                 if (is_dir($image_dir)) {
                     $files = scandir($image_dir); // Get all files in the folder
                     foreach ($files as $file) {
-                        $file_path = $public_url_base . '/' . urlencode($file); // Construct public URL path
+                        $file_path = $public_url_base . '/' . rawurlencode($file); // Construct public URL path
                         $file_extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
                         // Check if the file is an image
@@ -525,15 +571,19 @@ if (isset($_GET['file'])) {
         <?php if ($asset_details_result->num_rows > 0) { ?>
             <?php while ($row = $asset_details_result->fetch_assoc()) { ?>
                 <div class="position-relative">
-                    <a class="position-absolute top-0 end-0 m-2" type="button" data-bs-toggle="modal"
-                        data-bs-target="#editAssetModal" data-asset-id="<?= $row["asset_id"] ?>"
-                        data-asset-no="<?= $row["asset_no"] ?>" data-department-id="<?= $row["department_id"] ?>"
-                        data-asset-name="<?= $row["asset_name"] ?>" data-status="<?= $row["status"] ?>"
-                        data-serial-number="<?= $row["serial_number"] ?>" data-location="<?= $row["location_id"] ?>"
-                        data-accounts-asset="<?= $row["accounts_asset"] ?>" data-whs-asset="<?= $row["whs_asset"] ?>"
-                        data-purchase-date="<?= $row["purchase_date"] ?>">
-                        <i class="signature-color fa-solid fa-pen-to-square"></i>
-                    </a>
+                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                        <a class="position-absolute top-0 end-0 m-2" type="button" data-bs-toggle="modal"
+                            data-bs-target="#editAssetModal" data-asset-id="<?= $row["asset_id"] ?>"
+                            data-asset-no="<?= $row["asset_no"] ?>" data-department-id="<?= $row["department_id"] ?>"
+                            data-asset-name="<?= $row["asset_name"] ?>" data-status="<?= $row["status"] ?>"
+                            data-serial-number="<?= $row["serial_number"] ?>" data-location="<?= $row["location_id"] ?>"
+                            data-accounts-asset="<?= $row["accounts_asset"] ?>" data-whs-asset="<?= $row["whs_asset"] ?>"
+                            data-purchase-date="<?= $row["purchase_date"] ?>" data-allocated-to="<?= $row["allocated_to"] ?>"
+                            data-cost="<?= $row["cost"] ?>" data-notes="<?= $row["notes"] ?>"
+                            data-ict-asset="<?= $row["ict_asset"] ?>">
+                            <i class="signature-color fa-solid fa-pen-to-square"></i>
+                        </a>
+                    <?php } ?>
                     <div class="d-flex align-items-center p-3 bg-white shadow-lg rounded-3 mt-4">
 
                         <div class="row w-100">
@@ -595,14 +645,151 @@ if (isset($_GET['file'])) {
                                     <?= !empty($row['status']) ? htmlspecialchars($row['status']) : "N/A" ?>
                                 </h4>
                             </div>
+
+                            <?php
+                            $employee_id = $row['allocated_to'];
+                            $employee_name = "N/A"; // Default value
+                    
+                            if (isset($employee_id)) {
+                                // Prepare and execute the query to fetch employee name
+                                $stmt = $conn->prepare("SELECT first_name, last_name, nickname FROM employees WHERE employee_id = ?");
+                                $stmt->bind_param("i", $employee_id);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+
+                                // Fetch the employee name
+                                if ($rowEmployee = $result->fetch_assoc()) {
+                                    $employee_first_name = $rowEmployee['first_name'];
+                                    $employee_last_name = $rowEmployee['last_name'];
+                                    $employee_nickname = $rowEmployee['nickname'];
+
+                                    // Combine with nickname if it exists
+                                    if (!empty($employee_nickname)) {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                    } else {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name;
+                                    }
+                                }// Fetch the employee name
+                                if ($rowEmployee = $result->fetch_assoc()) {
+                                    $employee_first_name = $rowEmployee['first_name'];
+                                    $employee_last_name = $rowEmployee['last_name'];
+                                    $employee_nickname = $rowEmployee['nickname'];
+
+                                    // Combine with nickname if it exists
+                                    if (!empty($employee_nickname)) {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                    } else {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name;
+                                    }
+                                }
+                            }
+                            ?>
+                            <div class="col-md-2 mt-0 mt-md-3">
+                                <small>Allocated to</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($employee_name) ? htmlspecialchars($employee_name) : "N/A" ?>
+                                </h4>
+                            </div>
+                            <div class="col-md-2 mt-0 mt-md-3">
+                                <small>Cost</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= isset($row['cost']) ? '$' . number_format($row['cost'], 2) : "N/A" ?>
+                                </h4>
+                            </div>
+                            <div class="col-md-8 mt-0 mt-md-3">
+                                <small>Notes</small>
+                                <h4 class="fw-bold signature-color">
+                                    <?= !empty($row['notes']) ? htmlspecialchars($row['notes']) : "N/A" ?>
+                                </h4>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <?php if ($row['ict_asset'] === "1") { ?>
+                    <div class="col-md-12">
+                        <div class="p-3 shadow-lg rounded-3 mt-4 signature-bg-color text-white">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mt-1 mb-1 pb-0 accordion-header" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#ictCollapse" aria-expanded="true" aria-controls="ictCollapse">
+                                    ICT <i class="ml-1 fa-solid fa-chevron-down" id="ictChevron"></i>
+                                </h5>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#addICTModal"
+                                        data-asset-id="<?php echo htmlspecialchars($row["asset_id"]) ?>"
+                                        data-operating-system="<?php echo $row['operating_system'] ?>"
+                                        data-software="<?php echo $row['software'] ?>" data-hardware="<?php echo $row['hardware'] ?>">
+                                        <i class="fa-solid fa-pen-to-square fa-sm"></i>
+                                    </button>
+                                <?php } ?>
+                            </div>
+                            <div class="accordion-collapse collapse" id="ictCollapse">
+                                <div class="d-flex flex-column rounded-3 bg-white mt-4 p-3">
+                                    <!-- Operating System Section -->
+                                    <div class="text-dark d-flex flex-column">
+                                        <h5 class="fw-bold">Operating System</h5>
+                                        <?php
+                                        $operatingSystemText = $row['operating_system'] ?? '';
+                                        $operatingSystemItems = array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $operatingSystemText))));
+
+                                        if (!empty($operatingSystemItems)) {
+                                            echo "<div class='row'>";
+                                            foreach ($operatingSystemItems as $index => $item) {
+                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                            }
+                                            echo "</div>";
+                                        } else {
+                                            echo "<i class='text-muted'>No operating system details available</i>";
+                                        }
+                                        ?>
+                                    </div>
+
+                                    <!-- Software Section -->
+                                    <div class="mt-3 text-dark d-flex flex-column">
+                                        <h5 class="fw-bold">Software</h5>
+                                        <?php
+                                        $softwareText = $row['software'] ?? '';
+                                        $softwareItems = array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $softwareText))));
+
+                                        if (!empty($softwareItems)) {
+                                            echo "<div class='row'>";
+                                            foreach ($softwareItems as $index => $item) {
+                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                            }
+                                            echo "</div>";
+                                        } else {
+                                            echo "<i class='text-muted'>No software details available</i>";
+                                        }
+                                        ?>
+                                    </div>
+
+                                    <!-- Hardware Section -->
+                                    <div class="mt-3 text-dark d-flex flex-column">
+                                        <h5 class="fw-bold">Hardware</h5>
+                                        <?php
+                                        $hardwareText = $row['hardware'] ?? '';
+                                        $hardwareItems = array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $hardwareText))));
+
+                                        if (!empty($hardwareItems)) {
+                                            echo "<div class='row'>";
+                                            foreach ($hardwareItems as $index => $item) {
+                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                            }
+                                            echo "</div>";
+                                        } else {
+                                            echo "<i class='text-muted'>No hardware details available</i>";
+                                        }
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php } ?>
                 <div class="row g-3"> <!-- Use g-3 for gap between columns -->
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 pb-0">Maintenance</h5>
+                                <h5 class="fw-bold mb-0 pb-0">Maintenance / Service</h5>
                                 <div>
                                     <button class="btn btn-sm btn-info">
                                         <?php
@@ -619,10 +806,12 @@ if (isset($_GET['file'])) {
                                         data-bs-target="#assetDetailsHistoryModal" data-details-type="Maintenance"
                                         data-asset-id="<?php echo $row["asset_id"] ?>"><i
                                             class="fa-solid fa-clock-rotate-left fa-sm"></i></button>
-                                    <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
-                                        data-bs-toggle="modal" data-details-type="Maintenance"
-                                        data-asset-id="<?php echo $row["asset_id"] ?>"><i
-                                            class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
+                                            data-bs-toggle="modal" data-details-type="Maintenance"
+                                            data-asset-id="<?php echo $row["asset_id"] ?>"><i
+                                                class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php } ?>
                                 </div>
                             </div>
                             <?php if ($asset_maintenance_result->num_rows > 0) { ?>
@@ -634,7 +823,7 @@ if (isset($_GET['file'])) {
                                     <li class="list-group-item">
                                         <strong>Maintenance Date:</strong>
                                         <?php
-                                        // Format the performed_date
+                                        // requireat the performed_date
                                         $performed_date = $maintenance_row['performed_date'];
                                         if (!empty($performed_date)) {
                                             $date = DateTime::createFromFormat('Y-m-d', $performed_date);
@@ -682,10 +871,12 @@ if (isset($_GET['file'])) {
                                         data-bs-target="#assetDetailsHistoryModal" data-details-type="Repair"
                                         data-asset-id="<?php echo $row["asset_id"] ?>"><i
                                             class="fa-solid fa-clock-rotate-left fa-sm"></i></button>
-                                    <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
-                                        data-bs-toggle="modal" data-details-type="Repair"
-                                        data-asset-id="<?php echo $row["asset_id"] ?>"><i
-                                            class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
+                                            data-bs-toggle="modal" data-details-type="Repair"
+                                            data-asset-id="<?php echo $row["asset_id"] ?>"><i
+                                                class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php } ?>
                                 </div>
                             </div>
                             <?php if ($asset_repair_result->num_rows > 0) { ?>
@@ -729,7 +920,7 @@ if (isset($_GET['file'])) {
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 pb-0">Calibration</h5>
+                                <h5 class="fw-bold mb-0 pb-0">Calibration / Certificates</h5>
                                 <div>
                                     <button class="btn btn-sm btn-info">
                                         <?php
@@ -745,10 +936,12 @@ if (isset($_GET['file'])) {
                                         data-bs-target="#assetDetailsHistoryModal" data-details-type="Calibration"
                                         data-asset-id="<?php echo $row["asset_id"] ?>"><i
                                             class="fa-solid fa-clock-rotate-left fa-sm"></i></button>
-                                    <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
-                                        data-bs-toggle="modal" data-details-type="Calibration"
-                                        data-asset-id="<?php echo $row["asset_id"] ?>"><i
-                                            class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-sm btn-dark" data-bs-target="#addAssetDetailsModal"
+                                            data-bs-toggle="modal" data-details-type="Calibration"
+                                            data-asset-id="<?php echo $row["asset_id"] ?>"><i
+                                                class="fa-solid fa-plus fa-sm"></i></button>
+                                    <?php } ?>
                                 </div>
                             </div>
                             <?php if ($asset_calibration_result->num_rows > 0) { ?>
@@ -792,12 +985,14 @@ if (isset($_GET['file'])) {
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 pb-0">Warranty</h5>
-                                <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
-                                    data-bs-target="#addAssetDetailsModal" data-details-type="Warranty"
-                                    data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
-                                    <i class="fa-solid fa-plus fa-sm"></i>
-                                </button>
+                                <h5 class="fw-bold mb-0 pb-0">Warranty / Purchase / Invoice</h5>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                        data-bs-target="#addAssetDetailsModal" data-details-type="Warranty"
+                                        data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
+                                        <i class="fa-solid fa-plus fa-sm"></i>
+                                    </button>
+                                <?php } ?>
                             </div>
 
                             <?php
@@ -850,10 +1045,12 @@ if (isset($_GET['file'])) {
                                         <i class="fa-solid fa-link fa-sm text-white" data-bs-toggle="modal"
                                             data-bs-target="#linkManualToAssetModal"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
-                                        data-bs-target="#manualWorkInstructionModal">
-                                        <i class="fa-solid fa-plus fa-sm"></i>
-                                    </button>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                            data-bs-target="#manualWorkInstructionModal">
+                                            <i class="fa-solid fa-plus fa-sm"></i>
+                                        </button>
+                                    <?php } ?>
                                 </div>
                             </div>
                             <?php if ($asset_details_result->num_rows > 0): ?>
@@ -892,18 +1089,18 @@ if (isset($_GET['file'])) {
                                 <?php endif; ?>
 
                             <?php endif; ?>
-
-
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mt-1 mb-1 pb-0">Risk Assessment</h5>
-                                <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
-                                    data-bs-target="#riskAssessmentModal">
-                                    <i class="fa-solid fa-plus fa-sm"></i>
-                                </button>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                        data-bs-target="#riskAssessmentModal">
+                                        <i class="fa-solid fa-plus fa-sm"></i>
+                                    </button>
+                                <?php } ?>
                             </div>
                             <?php if ($asset_details_result->num_rows > 0 && $row['risk_assessment'] !== null) { ?>
                                 <div class="bg-white p-3 rounded-3 mt-4 d-flex justify-content-between align-items-center">
@@ -921,6 +1118,113 @@ if (isset($_GET['file'])) {
                             } ?>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mt-1 mb-1 pb-0">Disposal</h5>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                        data-bs-target="#addAssetDetailsModal" data-details-type="Disposal"
+                                        data-asset-id="<?php echo htmlspecialchars($row["asset_id"]); ?>">
+                                        <i class="fa-solid fa-plus fa-sm"></i>
+                                    </button>
+                                <?php } ?>
+                            </div>
+
+                            <?php
+                            $directoryPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/06 - Disposal";
+
+                            // Check if the directory exists
+                            if (is_dir($directoryPath)) {
+                                $files = scandir($directoryPath); // Get all files and directories in the specified folder
+                                $files = array_diff($files, ['.', '..']); // Remove '.' and '..' entries
+                    
+                                if (count(value: $files) > 0) {
+                                    // Display the list of files 
+                                    echo '<div class="bg-white p-3 rounded-3 mt-4">';
+                                    foreach ($files as $file) {
+                                        $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+                                        // Determine the icon based on based on file extension
+                                        if ($fileExtension === 'pdf') {
+                                            $icon = 'fa-file-pdf text-danger';
+                                        } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                                            $icon = 'fa-file-word text-primary';
+                                        } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                            $icon = 'fa-file-image text-success';
+                                        } else {
+                                            $icon = 'fa-file';
+                                        }
+
+                                        // Output the file name with the icon
+                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=06 - Disposal&file=' . urlencode($file) . '">';
+                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
+                                    }
+                                } else {
+                                    // If no files exist
+                                    echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0"role="alert">No disposal records available.</div>';
+                                }
+                            } else {
+                                // If directory does not exist
+                                echo '<div class="alert alert-danger mt-3 mt-md-4 mb-0" role="alert">The disposal directory does not exist.</div>';
+                            }
+                            ?>
+                        </div>
+                    </div>
+                    <!-- <div class="col-md-4">
+                        <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mt-1 mb-1 pb-0">Others</h5>
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal"
+                                        data-bs-target="#addAssetDetailsModal" data-details-type="Others"
+                                        data-asset-id="<?php echo htmlspecialchars($row["asset_id"]) ?>">
+                                        <i class="fa-solid fa-plus fa-sm"></i>
+                                    </button>
+                                <?php } ?>
+                            </div>
+
+                            <?php
+                            $directoryPath = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/07 - Others";
+
+                            // Check if the directory exists
+                            if (is_dir($directoryPath)) {
+                                $files = scandir($directoryPath);
+                                $files = array_diff($files, ['.', '..']); // Remove '.' and '..' entries
+                    
+                                if (count($files) > 0) {
+                                    // Display the list of files
+                                    echo '<div class="bg-white p-3 rounded-3 mt-4">';
+                                    foreach ($files as $file) {
+                                        $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+                                        // Determine the icon based on based on file extension
+                                        if ($fileExtension === 'pdf') {
+                                            $icon = 'fa-file-pdf text-danger';
+                                        } elseif ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                                            $icon = 'fa-file-word text-primary';
+                                        } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                            $icon = 'fa-file-image text-success';
+                                        } else {
+                                            $icon = 'fa-file';
+                                        }
+
+                                        // Output the file name with the icon
+                                        echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=07 - Others&file=' . urlencode($file) . '">';
+                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
+                                    }
+                                    echo '</div>';
+                                } else {
+                                    // If no files exist
+                                    echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0"role="alert">No others records available.</div>';
+                                }
+                            } else {
+                                // If directory does not exist
+                                echo '<div class="alert alert-danger mt-3 mt-md-4 mb-0" role="alert">The others directory does not exist.</div>';
+                            }
+                            ?>
+                        </div>
+                    </div> -->
                     <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
@@ -967,12 +1271,12 @@ if (isset($_GET['file'])) {
                                     No test & tag records found for this asset.
                                 </div>
                             <?php } ?>
-
                         </div>
                     </div>
                 </div>
-            <?php } ?>
+            </div>
         <?php } ?>
+    <?php } ?>
     </div>
 
     <!-- ======================== A D D  P H O T O  M O D A L ======================== -->
@@ -1052,6 +1356,12 @@ if (isset($_GET['file'])) {
                                 <label for="description" class="fw-bold">Description</label>
                                 <textarea name="description" class="form-control" rows="1"></textarea>
                             </div>
+                            <div class="form-group col-md-12 mt-3" id="customFileNameField" style="display: none;">
+                                <label for="customFileName" class="fw-bold">Custom File Name</label>
+                                <input type="text" name="customFileName" id="customFileName" class="form-control"
+                                    placeholder="Enter desired file name without extension">
+                            </div>
+
                             <div class="form-group col-md-6 mt-3">
                                 <label for="assetDetailsFiles" class="fw-bold">Choose Files</label>
                                 <input type="file" class="form-control" id="assetDetailsFiles"
@@ -1066,6 +1376,7 @@ if (isset($_GET['file'])) {
             </div>
         </div>
     </div>
+
     <!-- ======================== A S S E T S  D E T A I L S  H I S T O R Y  M O D A L ======================== -->
     <div class="modal fade" id="assetDetailsHistoryModal" tabindex="-1" aria-labelledby="assetDetailsHistoryModal"
         aria-hidden="true">
@@ -1108,6 +1419,41 @@ if (isset($_GET['file'])) {
                 </div>
                 <div class="modal-body">
                     <?php require_once("../Form/EditAssetForm.php") ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== A D D  I C T  D E T A I L S ======================== -->
+    <div class="modal fade" id="addICTModal" tabindex="-1" aria-labelledby="addICTModal" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add ICT Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        <input type="hidden" name="assetIdToAddIct" id="assetIdToAddIct">
+                        <div class="form-group">
+                            <label for="operatingSystemDetails" class="fw-bold">Operating System</label>
+                            <textarea class="form-control" name="operatingSystemDetails" rows="1"
+                                id="operatingSystemDetails"></textarea>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="softwareDetails" class="fw-bold">Software</label>
+                            <textarea class="form-control" name="softwareDetails" rows="4" id="softwareDetails"
+                                value=""></textarea>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="hardwareDetails" class="fw-bold">Hardware</label>
+                            <textarea class="form-control" name="hardwareDetails" rows="4"
+                                id="hardwareDetails"></textarea>
+                        </div>
+                        <div class="d-flex mt-3 justify-content-center">
+                            <button class="btn btn-dark" type="submit">Add</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1316,7 +1662,7 @@ if (isset($_GET['file'])) {
                 modalCategoriesToAdd.value = detailsTypeText;
 
                 // Handle "Warranty" specific conditions
-                if (detailsTypeText === "Warranty" || detailsTypeText === "Manual") {
+                if (detailsTypeText === "Warranty" || detailsTypeText === "Manual" || detailsTypeText === "Disposal" || detailsTypeText === "Others") {
                     // Hide all elements except the Choose Files field
                     var fieldsToHide = myModalEl.querySelectorAll('.form-group');
                     fieldsToHide.forEach(function (field) {
@@ -1335,9 +1681,17 @@ if (isset($_GET['file'])) {
                     var dueDateInput = myModalEl.querySelector('[name="dueDate"]');
                     dueDateInput.removeAttribute('required'); // Remove required from Due Date
 
+                    if (detailsTypeText === "Others") {
+                        document.getElementById("customFileNameField").style.display = 'block';
+                    } else {
+                        document.getElementById("customFileNameField").style.display = 'none';
+                        document.getElementById("customFileName").value = ''; // Reset field
+                    }
+
                     // Make the "Choose Files" field full width (col-md-12)
                     var chooseFilesField = myModalEl.querySelector('[id="assetDetailsFiles"]').closest('.form-group');
                     chooseFilesField.classList.add('col-md-12'); // Add col-md-12 class for full width
+
                 } else if (detailsTypeText === "Repair") {
                     // Handle "Repair" specific conditions
                     // Hide Due Date field
@@ -1352,6 +1706,14 @@ if (isset($_GET['file'])) {
                     var sourceField = myModalEl.querySelector('[name="source"]').closest('.form-group');
                     sourceField.classList.add('mt-3');  // Remove mt-3
                     sourceField.classList.remove('mt-md-0', 'mt-3'); // Add mt-md-0 and mt-3
+
+                    if (detailsTypeText === "Others") {
+                        document.getElementById("customFileNameField").style.display = 'block';
+                    } else {
+                        document.getElementById("customFileNameField").style.display = 'none';
+                        document.getElementById("customFileName").value = ''; // Reset field
+                    }
+
                 } else {
                     // For other details types (not Warranty or Repair), show everything
                     var fieldsToShow = myModalEl.querySelectorAll('.form-group');
@@ -1374,10 +1736,16 @@ if (isset($_GET['file'])) {
                     chooseFilesField.classList.remove('col-md-12'); // Remove col-md-12 class
                     chooseFilesField.classList.add('col-md-6'); // Set back to default col-md-6
 
+                    if (detailsTypeText === "Others") {
+                        document.getElementById("customFileNameField").style.display = 'block';
+                    } else {
+                        document.getElementById("customFileNameField").style.display = 'none';
+                        document.getElementById("customFileName").value = ''; // Reset field
+                    }
+
                 }
             });
         });
-
     </script>
 
     <script>
@@ -1574,7 +1942,10 @@ if (isset($_GET['file'])) {
                 var location = button.getAttribute('data-location');
                 var accountsAsset = button.getAttribute('data-accounts-asset');
                 var whsAsset = button.getAttribute('data-whs-asset');
-
+                var allocatedTo = button.getAttribute('data-allocated-to');
+                var cost = button.getAttribute('data-cost');
+                var notes = button.getAttribute('data-notes');
+                var ictAsset = button.getAttribute('data-ict-asset');
 
                 // Update the modal's content with the extracted info
                 var modalAssetId = myModalEl.querySelector('#assetIdToEdit');
@@ -1585,6 +1956,10 @@ if (isset($_GET['file'])) {
                 var modalSerialNumber = myModalEl.querySelector('#serialNumberToEdit');
                 var modalPurchaseDate = myModalEl.querySelector('#purchaseDateToEdit');
                 var modalLocation = myModalEl.querySelector('#locationToEdit');
+                var modalAllocatedTo = myModalEl.querySelector('#allocatedToToEdit');
+                var modalCost = myModalEl.querySelector('#costToEdit');
+                var modalNotes = myModalEl.querySelector('#notesToEdit');
+
 
                 modalAssetId.value = assetId
                 modalAssetNo.value = assetNo.startsWith("FE") ? assetNo.substring(2) : assetNo;
@@ -1594,6 +1969,9 @@ if (isset($_GET['file'])) {
                 modalSerialNumber.value = serialNumber;
                 modalPurchaseDate.value = purchaseDate;
                 modalLocation.value = location;
+                modalAllocatedTo.value = allocatedTo;
+                modalCost.value = cost;
+                modalNotes.value = notes;
 
                 if (accountsAsset === "1") {
                     document.getElementById("accountsAssetToEditYes").checked = true;
@@ -1606,10 +1984,53 @@ if (isset($_GET['file'])) {
                 } else if (whsAsset === "0") {
                     document.getElementById("whsAssetToEditNo").checked = true;
                 }
+
+                if (ictAsset === "1") {
+                    document.getElementById("ictAssetToEditYes").checked = true;
+                } else if (ictAsset === "0") {
+                    document.getElementById("ictAssetToEditNo").checked = true;
+                }
             });
         })
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModalEl = document.getElementById('addICTModal');
+            myModalEl.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var assetId = button.getAttribute('data-asset-id');
+                var operatingSystemDetails = button.getAttribute('data-operating-system');
+                var softwareDetails = button.getAttribute('data-software');
+                var hardwareDetails = button.getAttribute('data-hardware');
+
+                var modalAssetId = myModalEl.querySelector('#assetIdToAddIct');
+                var modalOperatingSystemDetails = myModalEl.querySelector('#operatingSystemDetails');
+                var modalSoftwareDetails = myModalEl.querySelector('#softwareDetails');
+                var modalHardwareDetails = myModalEl.querySelector('#hardwareDetails');
+
+                modalAssetId.value = assetId;
+                modalOperatingSystemDetails.value = operatingSystemDetails;
+                modalSoftwareDetails.value = softwareDetails;
+                modalHardwareDetails.value = hardwareDetails;
+            })
+        })
+    </script>
+
+    <script>
+        const ictCollapse = document.getElementById('ictCollapse');
+        const ictChevron = document.getElementById('ictChevron');
+
+        ictCollapse.addEventListener('show.bs.collapse', function () {
+            ictChevron.classList.remove('fa-chevron-down');
+            ictChevron.classList.add('fa-chevron-up');
+        });
+
+        ictCollapse.addEventListener('hide.bs.collapse', function () {
+            ictChevron.classList.remove('fa-chevron-up');
+            ictChevron.classList.add('fa-chevron-down');
+        });
     </script>
 </body>
 
 </html>
-

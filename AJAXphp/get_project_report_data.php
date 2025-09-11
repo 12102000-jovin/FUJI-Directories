@@ -32,24 +32,33 @@ $startDateCondition = "";
 $endDateCondition = "";
 
 if ($startDate) {
-    $startDateCondition = " AND date >= '$startDate'"; // Add start date filter
+    $startDateCondition = " AND COALESCE(pd.revised_delivery_date, pd.date) >= '$startDate'";
 }
-
 if ($endDate) {
-    $endDateCondition = " AND date <= '$endDate'"; // Add end date filter
+    $endDateCondition = " AND COALESCE(pd.revised_delivery_date, pd.date) <= '$endDate'";
 }
 
 // Query to get project details, including invoiced and non-invoiced projects, within the date range
-$pj_details_sql = "SELECT pd.*, p.*, e.first_name, e.last_name
+$pj_details_sql = "SELECT pd.*, 
+                          p.*, 
+                          e.first_name AS approved_first_name, 
+                          e.last_name  AS approved_last_name,
+                          pe_list.engineers
                    FROM project_details pd
                    JOIN projects p ON pd.project_id = p.project_id
                    LEFT JOIN employees e ON pd.approved_by = e.employee_id
+                   LEFT JOIN (
+                       SELECT pe_map.project_id, GROUP_CONCAT(pe.first_name, ' ', pe.last_name SEPARATOR ', ') AS engineers
+                       FROM employees pe
+                       JOIN projects pe_map ON FIND_IN_SET(pe.employee_id, pe_map.project_engineer)
+                       GROUP BY pe_map.project_id
+                   ) AS pe_list ON pe_list.project_id = pd.project_id
                    WHERE 1=1 
                    $startDateCondition
                    $endDateCondition
                    $projectTypeCondition
                    $paymentTermsCondition
-                   ORDER BY pd.date";
+                   ORDER BY COALESCE(pd.revised_delivery_date, pd.date)";
 
 // Execute the query to fetch project details
 $pj_details_result = $conn->query($pj_details_sql);
@@ -76,34 +85,36 @@ if ($pj_details_result->num_rows > 0) {
 
 // Query to sum sub_total for invoiced projects, grouped by month and year
 $pj_invoiced_sql = "SELECT 
-                        MONTH(pd.date) AS month, 
-                        YEAR(pd.date) AS year, 
-                        SUM(pd.sub_total) AS total_invoiced_sub_total
-                    FROM project_details pd
-                    JOIN projects p ON pd.project_id = p.project_id
-                    WHERE pd.invoiced = '1' 
-                    $startDateCondition
-                    $endDateCondition
-                    $projectTypeCondition
-                    $paymentTermsCondition
-                    GROUP BY YEAR(pd.date), MONTH(pd.date)
-                    ORDER BY YEAR(pd.date), MONTH(pd.date)";
+    MONTH(COALESCE(pd.revised_delivery_date, pd.date)) AS month, 
+    YEAR(COALESCE(pd.revised_delivery_date, pd.date)) AS year, 
+    SUM(pd.sub_total) AS total_invoiced_sub_total
+FROM project_details pd
+JOIN projects p ON pd.project_id = p.project_id
+WHERE pd.invoiced = '1' 
+$startDateCondition
+$endDateCondition
+$projectTypeCondition
+$paymentTermsCondition
+GROUP BY YEAR(COALESCE(pd.revised_delivery_date, pd.date)), MONTH(COALESCE(pd.revised_delivery_date, pd.date))
+ORDER BY YEAR(COALESCE(pd.revised_delivery_date, pd.date)), MONTH(COALESCE(pd.revised_delivery_date, pd.date))";
+
 
 // Query to sum sub_total for non-invoiced projects, grouped by month and year
 // Query to sum sub_total for non-invoiced projects (invoiced = 0 or NULL), grouped by month and year
 $pj_non_invoiced_sql = "SELECT 
-                            MONTH(pd.date) AS month, 
-                            YEAR(pd.date) AS year, 
-                            SUM(pd.sub_total) AS total_non_invoiced_sub_total
-                        FROM project_details pd
-                        JOIN projects p ON pd.project_id = p.project_id
-                        WHERE (pd.invoiced = 0 OR pd.invoiced IS NULL)
-                        $startDateCondition
-                        $endDateCondition
-                        $projectTypeCondition
-                        $paymentTermsCondition
-                        GROUP BY YEAR(pd.date), MONTH(pd.date)
-                        ORDER BY YEAR(pd.date), MONTH(pd.date)";
+    MONTH(COALESCE(pd.revised_delivery_date, pd.date)) AS month, 
+    YEAR(COALESCE(pd.revised_delivery_date, pd.date)) AS year, 
+    SUM(pd.sub_total) AS total_non_invoiced_sub_total
+FROM project_details pd
+JOIN projects p ON pd.project_id = p.project_id
+WHERE (pd.invoiced = 0 OR pd.invoiced IS NULL)
+$startDateCondition
+$endDateCondition
+$projectTypeCondition
+$paymentTermsCondition
+GROUP BY YEAR(COALESCE(pd.revised_delivery_date, pd.date)), MONTH(COALESCE(pd.revised_delivery_date, pd.date))
+ORDER BY YEAR(COALESCE(pd.revised_delivery_date, pd.date)), MONTH(COALESCE(pd.revised_delivery_date, pd.date))";
+
 
 // Initialize empty arrays for data points
 $dataPoints8 = array();  // Invoiced projects data points

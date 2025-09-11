@@ -108,6 +108,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToEdit"])) {
                 <option value="Export">Export</option>
                 <option value="R&D">R&D</option>
                 <option value="Service">Service</option>
+                <option value="PDC - International">PDC - International</option>
+                <option value="PDC - Local">PDC - Local</option>
             </select>
             <div class="invalid-feedback">
                 Please provide the Project Type.

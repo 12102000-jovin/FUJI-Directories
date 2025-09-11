@@ -152,8 +152,181 @@ foreach ($salariesData as $row) {
     $salariesDataPoints[] = array("y" => floatval($row['amount']), "label" => date("j F Y", strtotime($row['date'])));
 }
 
+//  ========================= E M P L O Y E E S ( A L L O W A N C E S ) [ S A L A R Y ]  =========================
+$salary_allowance_sql = "SELECT * FROM salary_allowances WHERE employee_id = $employeeId ORDER BY date ASC";
+$salary_allowance_result = $conn->query($salary_allowance_sql);
+$salaryAllowanceData = array();
+
+if ($salary_allowance_result->num_rows > 0) {
+    while ($row = $salary_allowance_result->fetch_assoc()) {
+        $salaryAllowanceData[] = $row;
+    }
+}
+
+$salaryAllowancesDataPoints = array();
+
+foreach ($salaryAllowanceData as $row) {
+    $salaryAllowancesDataPoints[] = array("y" => floatval($row['amount']), "label" => date("j F Y", strtotime($row['date'])));
+}
+
+// Build salary data points
+$salariesDataPoints = [];
+foreach ($salariesData as $row) {
+    $salariesDataPoints[] = [
+        "x" => date("Y-m-d", strtotime($row['date'])),
+        "y" => floatval($row['amount'])
+    ];
+}
+
+// Build allowance data points
+$salaryAllowancesDataPoints = [];
+foreach ($salaryAllowanceData as $row) {
+    $salaryAllowancesDataPoints[] = [
+        "x" => date("Y-m-d", strtotime($row['date'])),
+        "y" => floatval($row['amount'])
+    ];
+}
+
+$latestSalaryDate = null;
+$latestSalaryValue = null;
+
+if (!empty($salariesDataPoints)) {
+    $latestSalaryDate = end($salariesDataPoints)['x'];
+    $latestSalaryValue = end($salariesDataPoints)['y'];
+} else {
+    $latestSalaryDate = null;
+    $latestSalaryValue = null;
+}
+
+if (!empty($salaryAllowancesDataPoints)) {
+    $latestAllowanceDate = end($salaryAllowancesDataPoints)['x'];
+    $latestAllowanceValue = end($salaryAllowancesDataPoints)['y'];
+} else {
+    // No allowance data, set defaults
+    $latestAllowanceDate = null;
+    $latestAllowanceValue = null;
+}
+
+
+// Extend salary to match allowance date (if needed)
+if ($latestSalaryDate < $latestAllowanceDate) {
+    $salariesDataPoints[] = [
+        "x" => $latestAllowanceDate,
+        "y" => $latestSalaryValue
+    ];
+}
+
+// Extend allowance to match salary date (if needed)
+if ($latestAllowanceDate < $latestSalaryDate) {
+    $salaryAllowancesDataPoints[] = [
+        "x" => $latestSalaryDate,
+        "y" => $latestAllowanceValue
+    ];
+}
+
+// Step 1: Combine salary and allowance entries
+$events = [];
+
+// Add salary events
+foreach ($salariesData as $row) {
+    $date = $row['date'];
+    $events[$date]['salary'] = floatval($row['amount']);
+    // Ensure allowance key exists even if not set yet
+    if (!isset($events[$date]['allowance'])) {
+        $events[$date]['allowance'] = null;
+    }
+}
+
+// Add allowance events
+foreach ($salaryAllowanceData as $row) {
+    $date = $row['date'];
+    if (!isset($events[$date])) {
+        $events[$date] = [
+            'salary' => null,
+            'allowance' => floatval($row['amount'])
+        ];
+    } else {
+        // If there is already allowance recorded, sum it up
+        $events[$date]['allowance'] = isset($events[$date]['allowance'])
+            ? $events[$date]['allowance'] + floatval($row['amount'])
+            : floatval($row['amount']);
+    }
+}
+
+// Sort by date
+uksort($events, function ($a, $b) {
+    return strtotime($a) <=> strtotime($b);
+});
+
 // Get current date in the desired format
 $currentDate = date("Y-m-d");
+
+//  ========================= L E A V E S =========================
+$leaves_sql = "
+SELECT l1.leave_type, l1.hours, l1.updated_date
+FROM leaves l1
+INNER JOIN (
+    SELECT leave_type, employee_id, MAX(updated_date) AS latest_date
+    FROM leaves
+    WHERE employee_id = $employeeId
+    GROUP BY leave_type, employee_id
+) l2 
+ON l1.leave_type = l2.leave_type 
+   AND l1.employee_id = l2.employee_id 
+   AND l1.updated_date = l2.latest_date
+WHERE l1.employee_id = $employeeId
+";
+$leaves_result = $conn->query($leaves_sql);
+
+
+//  ========================= L E A V E S  H I S T O R Y =========================
+$leave_history_sql = "
+SELECT leave_type, hours, updated_date
+FROM leaves
+WHERE employee_id = $employeeId
+  AND updated_date >= DATE_SUB(CURDATE(), INTERVAL 4 WEEK)
+ORDER BY updated_date ASC
+";
+$leave_history_result = $conn->query($leave_history_sql);
+
+$historyData = [];
+$allDates = [];
+$allTypes = [];
+
+while ($row = $leave_history_result->fetch_assoc()) {
+    $type = $row['leave_type'];
+    $hours = $row['hours'];
+    $date = date('d M Y', strtotime($row['updated_date']));
+
+    $historyData[$date][$type] = $hours;
+    $allDates[$date] = true;
+    $allTypes[$type] = true;
+}
+
+$allDates = array_keys($allDates);
+$allTypes = array_keys($allTypes);
+
+// prepare datasets
+$datasets = [];
+$colors = [
+    'Annual Lve' => 'rgba(0, 82, 204, 0.7)',       // deep blue
+    'Sick/Personal' => 'rgba(204, 0, 0, 0.7)',         // dark red
+    'LS Leave' => 'rgba(255, 153, 0, 0.7)', // muted orange
+    'Other' => 'rgba(0, 153, 102, 0.7)'       // teal/green
+];
+
+foreach ($allTypes as $type) {
+    $data = [];
+    foreach ($allDates as $date) {
+        $data[] = isset($historyData[$date][$type]) ? (float) $historyData[$date][$type] : 0;
+    }
+    $datasets[] = [
+        'label' => $type,
+        'data' => $data,
+        'backgroundColor' => $colors[$type] ?? 'rgba(128, 128, 128, 0.7)' // fallback gray
+    ];
+
+}
 
 //  ========================= E M P L O Y E E S ( A L L O W A N C E S ) [ T O O L ]  =========================
 // SQL to get the allowances data
@@ -180,7 +353,6 @@ if ($employee_first_aid_allowance_result->num_rows > 0) {
         $firstAidAllowanceData[] = $row;
     }
 }
-
 
 // ========================= A D D   N E W   W A G E =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newWage'])) {
@@ -319,6 +491,71 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['salaryIdToDelete'])) 
     $delete_salary_stmt->close();
 }
 
+// ========================= D E L E T E   S A L A R Y  A L L O W A N C E =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['deleteSalaryAllowance'])) {
+    $salaryAllowanceId = $_POST['salaryAllowanceId'];
+
+    $delete_salary_allowance_sql = "DELETE FROM salary_allowances WHERE salary_allowance_id = ?";
+    $delete_salary_allowance_stmt = $conn->prepare($delete_salary_allowance_sql);
+    $delete_salary_allowance_stmt->bind_param("i", $salaryAllowanceId);
+
+    // Execute the prepared statement
+    if ($delete_salary_allowance_stmt->execute()) {
+        echo "Salary Deleted";
+        header("Location: " . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId);
+        exit();
+    } else {
+        echo "Error: " . $delete_salary_allowance_sql . "<br>" . $conn->error;
+    }
+
+    // Close Statement
+    $delete_salary_allowance_stmt->close();
+}
+
+// ========================= A D D  N E W  S A L A R Y  A L L O W A N C E  =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newSalaryAllowance'])) {
+    $newSalaryAllowance = $_POST["newSalaryAllowance"];
+    $newSalaryAllowanceDescription = $_POST["newSalaryAllowanceDescription"];
+    $newSalaryAllowanceDate = $_POST["newSalaryAllowanceDate"];
+
+    $add_salary_allowance_sql = "INSERT INTO salary_allowances (amount, `date`, `description`, employee_id) VALUES (?, ?, ?, ?)";
+    $add_salary_allowance_stmt = $conn->prepare($add_salary_allowance_sql);
+    $add_salary_allowance_stmt->bind_param("ssss", $newSalaryAllowance, $newSalaryAllowanceDate, $newSalaryAllowanceDescription, $employeeId);
+
+    // Execute the prepared statement
+    if ($add_salary_allowance_stmt->execute()) {
+        header("Location: " . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId);
+        exit();
+    } else {
+        echo "Error: " . $add_salary_stmt . "<br>" . $conn->error;
+    }
+    // Close statemet
+    $add_salary_allowance_stmt->close();
+}
+
+// ========================= E D I T  S A L A R Y  A L L O W A N C E  =========================
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editSalaryAllowanceDate']) && isset($_POST['editSalaryAllowanceDescription']) && isset($_POST['editSalaryAllowanceAmount'])) {
+    $editSalaryAllowanceDate = $_POST['editSalaryAllowanceDate'];
+    $editSalaryAllowanceDescription = $_POST['editSalaryAllowanceDescription'];
+    $editSalaryAllowanceAmount = $_POST['editSalaryAllowanceAmount'];
+    $salaryAllowanceId = $_POST['salaryAllowanceId'];
+
+    $edit_salary_allowance_sql = "UPDATE salary_allowances SET amount = ?, `date` = ?, `description` = ? WHERE salary_allowance_id = ?";
+    $edit_salary_allowance_stmt = $conn->prepare($edit_salary_allowance_sql);
+    $edit_salary_allowance_stmt->bind_param("sssi", $editSalaryAllowanceAmount, $editSalaryAllowanceDate, $editSalaryAllowanceDescription, $salaryAllowanceId);
+
+    // Execute the prepared statement
+    if ($edit_salary_allowance_stmt->execute()) {
+        header("Location: " . $_SERVER['PHP_SELF'] . '?employee_id=' . $employeeId);
+        exit();
+    } else {
+        echo "Error: " . $edit_salary_stmt . "<br>" . $conn->error;
+    }
+
+    // Close Statement
+    $edit_salary_allowance_stmt->close();
+}
+
 // ========================= D E L E T E / C H A N G E  P R O F I L E  I M A G E =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (isset($_POST['deleteProfileImage'])) {
@@ -342,11 +579,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $profileImage = $_FILES['profileImageToEdit'];
 
         // Fetch first name and last name from the database
-        $empQuery = "SELECT first_name, last_name FROM employees WHERE employee_id = ?";
+        $empQuery = "SELECT first_name, last_name, payroll_type FROM employees WHERE employee_id = ?";
         $empStmt = $conn->prepare($empQuery);
         $empStmt->bind_param("i", $profileImageToDeleteEmpId);
         $empStmt->execute();
-        $empStmt->bind_result($firstName, $lastName);
+        $empStmt->bind_result($firstName, $lastName, $payrollType);
         $empStmt->fetch();
         $empStmt->close();
 
@@ -354,10 +591,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $firstName = $firstName ?? 'Unknown';
         $lastName = $lastName ?? 'Unknown';
 
+
+
         // Process the uploaded file
         $imageExtension = pathinfo($profileImage["name"], PATHINFO_EXTENSION);
         $newFileName = "01 - Employee Photo (" . $profileImageToDeleteEmpId . " " . $firstName . " " . $lastName . ")." . $imageExtension;
-        $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
+
+        if ($payrollType === "wage") {
+            $imagePath = "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
+        } else if ($payrollType === "salary") {
+            $imagePath = "D:\\FSMBEH-Data\\09 - HR\\05 - Salary Staff\\" . $employeeId . "\\02 - Resume, ID and Qualifications\\" . $newFileName;
+        }
 
         if (move_uploaded_file($profileImage["tmp_name"], $imagePath)) {
             // Encode the image before insertion
@@ -781,7 +1025,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
     }
 }
 
-
 ?>
 
 <!DOCTYPE html>
@@ -886,6 +1129,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 margin-top: 20px;
             }
 
+            .display-print {
+                display: block !important;
+            }
+
             .print-2col-wrapper {
                 display: flex;
                 flex-direction: row;
@@ -912,9 +1159,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 font-size: 0.6rem !important;
             }
 
+            .startTopPage {
+                page-break-before: always;
+                /* Forces a page break before the chart */
+                page-break-inside: avoid;
+                /* Prevents splitting of the chart */
+                margin: 0px !important;
+                padding: 0px !important;
+                width: 95% !important;
+            }
+
+            .marginTop {
+                margin-top: 20px !important;
+            }
+
             #chartContainer,
             #chartContainer2 {
-                page-break-before: always;
                 /* Forces a page break before the chart */
                 page-break-inside: avoid;
                 /* Prevents splitting of the chart */
@@ -961,7 +1221,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         titleFontColor: "#555",
                         labelFontFamily: "Avenir",
                         labelFontSize: 12,
-                        labelFontColor: "#555"
+                        labelFontColor: "#555",
+                        labelAngle: -45
                     },
                     data: [{
                         type: "line",
@@ -976,28 +1237,145 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     }]
                 });
 
-                var chart2 = new CanvasJS.Chart("chartContainer2", {
+                // Convert PHP arrays to JS arrays
+                const salaryData = <?php echo json_encode($salariesDataPoints, JSON_NUMERIC_CHECK); ?>;
+                const allowanceData = <?php echo json_encode($salaryAllowancesDataPoints, JSON_NUMERIC_CHECK); ?>;
+
+                salaryData.forEach(dp => dp.x = new Date(dp.x));
+                allowanceData.forEach(dp => dp.x = new Date(dp.x));
+
+                // Helper: find latest data point <= date in a sorted array
+                function findLatestBefore(dataPoints, date) {
+                    let latest = null;
+                    for (let i = 0; i < dataPoints.length; i++) {
+                        if (dataPoints[i].x <= date) {
+                            latest = dataPoints[i];
+                        } else {
+                            break;
+                        }
+                    }
+                    return latest;
+                }
+
+                // Build totalData points
+                let totalData = [];
+
+                const allDatesSet = new Set([
+                    ...salaryData.map(dp => dp.x.getTime()),
+                    ...allowanceData.map(dp => dp.x.getTime())
+                ]);
+
+                const allDates = Array.from(allDatesSet).sort();
+
+                allDates.forEach(timestamp => {
+                    const date = new Date(timestamp);
+                    const salaryPoint = findLatestBefore(salaryData, date);
+                    const allowancePoint = findLatestBefore(allowanceData, date);
+                    const salary = salaryPoint ? salaryPoint.y : 0;
+                    const allowance = allowancePoint ? allowancePoint.y : 0;
+
+                    totalData.push({ x: date, y: salary + allowance });
+                });
+
+
+                const chart2 = new CanvasJS.Chart("chartContainer2", {
                     animationEnabled: true,
+                    theme: "light2",
                     axisX: {
+                        valueFormatString: "DD MMM YYYY",
                         titleFontFamily: "Avenir",
-                        titleFontSize: 14,
-                        titleFontWeight: "bold",
-                        titleFontColor: "#555",
                         labelFontFamily: "Avenir",
+                        labelFontColor: "#555",
                         labelFontSize: 12,
-                        labelFontColor: "#555"
+                        labelAngle: -45
                     },
-                    data: [{
-                        type: "line",
-                        color: "#043f9d",
-                        markerColor: "#043f9d",
-                        markerSize: 8,
-                        indexLabelFontSize: 12, // Font size for labels
-                        indexLabelFontColor: "#555", // Label color
-                        indexLabelPlacement: "outside", // Place label outside marker
-                        indexLabel: "${y}", // Show Y values as labels
-                        dataPoints: <?php echo json_encode($salariesDataPoints, JSON_NUMERIC_CHECK); ?>
-                    }]
+                    axisY: {
+                        titleFontFamily: "Avenir",
+                        labelFontFamily: "Avenir",
+                        labelFontColor: "#555",
+                        labelFontSize: 12
+                    },
+                    toolTip: {
+                        shared: false,  // custom tooltip per point
+                        contentFormatter: function (e) {
+                            const hoveredPoint = e.entries[0].dataPoint;
+                            const hoveredSeriesName = e.entries[0].dataSeries.name;
+                            const hoveredDate = hoveredPoint.x;
+
+                            // Find the latest salary and allowance values at hoveredDate
+                            const salaryPoint = findLatestBefore(salaryData, hoveredDate);
+                            const allowancePoint = findLatestBefore(allowanceData, hoveredDate);
+
+                            const salaryValue = salaryPoint ? salaryPoint.y : 0;
+                            const allowanceValue = allowancePoint ? allowancePoint.y : 0;
+                            const totalValue = salaryValue + allowanceValue;
+
+                            return `
+            <div style="font-weight:bold; margin-bottom:5px;">
+                ${hoveredDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+            <div>Salary: $${salaryValue.toLocaleString()}</div>
+            <div>Allowance: $${allowanceValue.toLocaleString()}</div>
+            <div style="margin-top:5px; font-weight:bold;">Total: $${totalValue.toLocaleString()}</div>
+        `;
+                        }
+                    },
+
+                    legend: {
+                        cursor: "pointer",
+                        fontSize: 12,
+                        itemclick: function (e) {
+                            e.dataSeries.visible = !(typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible);
+                            chart2.render();
+                        }
+                    },
+                    data: [
+                        {
+                            type: "line",
+                            name: "Salary",
+                            showInLegend: true,
+                            markerSize: 6,
+                            color: "#043f9d",
+                            yValueFormatString: "$#,##0",
+                            indexLabelFontColor: "#043f9d",
+                            indexLabelPlacement: "outside",
+                            indexLabelFontSize: 12,
+                            dataPoints: salaryData.map(dp => ({
+                                ...dp,
+                                indexLabel: `$${Number(dp.y).toLocaleString()}`
+                            }))
+                        },
+                        {
+                            type: "line",
+                            name: "Allowance",
+                            showInLegend: true,
+                            markerSize: 6,
+                            color: "#f39c12",
+                            yValueFormatString: "$#,##0",
+                            indexLabelFontColor: "#f39c12",
+                            indexLabelPlacement: "outside",
+                            indexLabelFontSize: 12,
+                            dataPoints: allowanceData.map(dp => ({
+                                ...dp,
+                                indexLabel: `$${Number(dp.y).toLocaleString()}`
+                            }))
+                        },
+                        {
+                            type: "line",
+                            name: "Total (Salary + Allowance)",
+                            showInLegend: true,
+                            markerSize: 6,
+                            color: "#28a745", // green
+                            yValueFormatString: "$#,##0",
+                            indexLabelFontColor: "#28a745",
+                            indexLabelPlacement: "outside",
+                            indexLabelFontSize: 12,
+                            dataPoints: totalData.map(dp => ({
+                                ...dp,
+                                indexLabel: `$${Number(dp.y).toLocaleString()}`
+                            }))
+                        }
+                    ]
                 });
 
                 chart.render();
@@ -1028,7 +1406,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
             }
         }
     </script>
-
 </head>
 
 <body class="background-color">
@@ -1066,6 +1443,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $visaName = $row['visa_name'];
                         $visaExpiryDate = $row['visa_expiry_date'];
                         $dietaryRestrictions = $row['dietary_restrictions'];
+                        $visaRestrictions = $row['visa_restrictions'];
                         $lastDate = $row['last_date'];
                         $workShift = $row['work_shift'];
                         $lockerNumber = $row['locker_number'];
@@ -1185,7 +1563,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <i class="fa-solid fa-print"></i>
                                     </button>
 
-                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <?php if ($role === "full control") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
                                             id="editProfileBtn">
                                             Edit Profile <i class="fa-regular fa-pen-to-square"></i>
@@ -1229,6 +1607,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <div class="col-lg-6 col-xl-3 d-flex flex-column long-text">
                                             <small>Visa Status</small>
                                             <h5 class="fw-bold"><?php echo isset($visaName) ? $visaName : "N/A"; ?>
+                                                <?php if ($visaRestrictions === "1") {
+                                                    echo "<span class='badge rounded-pill text-bg-warning text-white'><small>Restricted</small></span>";
+                                                } ?>
                                             </h5>
                                         </div>
 
@@ -1874,10 +2255,58 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     <?php } ?>
+
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                        <div class="p-3 hide-print">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer"
+                                    data-bs-toggle="collapse" data-bs-target="#leaveDetails">Leaves <i
+                                        class="fas fa-chevron-down hide-print"></i></p>
+                                <!-- <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#Modal"><i
+                                            class="fa-solid fa-plus me-1"></i>Add</button> -->
+                            </div>
+                            <div id="leaveDetails" class="collapse">
+                                <canvas id="leaveHistoryChart"></canvas>
+                                <table class='table table-bordered mt-4'>
+                                    <thead>
+                                        <tr>
+                                            <th>Leave Type</th>
+                                            <th>Hours</th>
+                                            <th>Updated Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if ($leaves_result->num_rows > 0) { ?>
+                                            <?php while ($row = $leaves_result->fetch_assoc()) {
+                                                $leave_type = $row['leave_type'];
+                                                if ($leave_type === 'Annual Lve') {
+                                                    $leave_type = 'Annual';
+                                                } else if ($leave_type === 'Sick/Personal') {
+                                                    $leave_type = 'Personal';
+                                                } else if ($leave_type === 'LS Leave') {
+                                                    $leave_type = 'Long Service';
+                                                }
+                                                $leave_hours = $row['hours'];
+                                                $updated_date = $row['updated_date'];
+                                                ?>
+                                                <tr>
+                                                    <td><?php echo $leave_type ?></td>
+                                                    <td><?php echo $leave_hours ?></td>
+                                                    <td><?php echo date('d F Y', strtotime($updated_date)); ?></td>
+                                                </tr> <?php } ?>
+                                        <?php } else { ?>
+                                            <tr>
+                                                <td colspan="3">Leaves data not available.</td>
+                                            </tr>
+                                        <?php } ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- ================= Pay Raise History Chart (Wage) ================= -->
                     <?php if ($role === "full control" || $role === "modify 1") { ?>
@@ -1900,12 +2329,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </p>
 
                                         <?php if ($role === "full control" || $role === "modify 1") { ?>
-                                            <i id="payRaiseEditIconWage" role="button"
-                                                class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                                data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                            <div class="d-flex align-items-center">
+                                                <i id="payRaiseEditIconWage" role="button"
+                                                    class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                                    data-bs-toggle="modal" data-bs-target="#wagePayRaiseHistoryModal"></i>
+                                                <i role="button" class="mt-1 ms-2 text-warning" data-bs-toggle="modal"
+                                                    data-bs-target="#wagesChartModal">
+                                                    <i class="fa-solid fa-expand"></i>
+                                                </i>
+                                            </div>
                                         <?php } ?>
                                     </div>
                                 </div>
+                                <p style="display:none" class="display-print startTopPage fw-bold signature-color">Wage</p>
                                 <div class="px-4 py-2">
                                     <div id="chartContainer" style="height: 300px; width: 100%;" class="d-block"></div>
                                 </div>
@@ -1934,12 +2370,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </p>
 
                                         <?php if ($role === "full control") { ?>
-                                            <i id="payRaiseEditIconSalary" role="button"
-                                                class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
-                                                data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                            <div class="d-flex align-items-center">
+                                                <i id="payRaiseEditIconSalary" role="button"
+                                                    class="fa-regular fa-pen-to-square signature-color hideWageSalaryEdit"
+                                                    data-bs-toggle="modal" data-bs-target="#salaryPayRaiseHistoryModal"></i>
+                                                <i role="button" class="mt-1 ms-2 text-warning" data-bs-toggle="modal"
+                                                    data-bs-target="#salaryChartModal">
+                                                    <i class="fa-solid fa-expand"></i>
+                                                </i>
+                                            </div>
                                         <?php } ?>
                                     </div>
                                 </div>
+                                <p style="display:none" class="display-print startTopPage fw-bold signature-color">Salary</p>
                                 <div class="px-4 py-2">
                                     <div id="chartContainer2" style="height: 300px; width: 100%;" class="d-block"></div>
                                 </div>
@@ -1952,13 +2395,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             <table class="table table-hover table-bordered"
                                 style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; border-top:none;">
                                 <tr class="text-center">
-                                    <td class="bg-dark text-white fw-bold col-5"
+                                    <td class="bg-dark signature-color fw-bold col-5"
                                         style="border-width:2px; border-style:solid; border-top:none;">
-                                        Current Wage
+                                        <p class="signature-color mb-0">Current Wage</p>
                                     </td>
-                                    <td class="bg-dark text-white fw-bold col-5"
+                                    <td class="bg-dark signature-color fw-bold col-5"
                                         style="border-width:2px; border-style:solid; border-top:none;">
-                                        $<?php echo number_format($latestWage, 2); ?>
+                                        <p class="signature-color mb-0">
+                                            $<?php echo number_format($latestWage, 2); ?></p>
                                     </td>
                                 </tr>
                             </table>
@@ -1968,11 +2412,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 <table class="table table-hover table-bordered"
                                     style="border-left:1px solid black; border-right:1px solid black; border-bottom:1px solid black; border-top:none;">
                                     <tr class="text-center">
-                                        <td class="bg-dark text-white fw-bold col-5"
-                                            style="border-width:2px; border-style:solid; border-top:none;">Current Salary</td>
-                                        <td class="bg-dark text-white fw-bold col-5"
+                                        <td class="bg-dark signature-color fw-bold col-5"
                                             style="border-width:2px; border-style:solid; border-top:none;">
-                                            $<?php echo number_format($latestSalary, 2); ?>
+                                            <p class="signature-color mb-0">Current Salary</p>
+                                        </td>
+                                        <td class="bg-dark signature-color fw-bold col-5"
+                                            style="border-width:2px; border-style:solid; border-top:none;">
+                                            <p class="signature-color mb-0">$<?php echo number_format($latestSalary, 2); ?></p>
                                         </td>
                                     </tr>
                                 </table>
@@ -1980,13 +2426,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php } ?>
                     <!-- ======================================= A L L O W A N C E  T A B L E ( P R I N T) ======================================= -->
                     <?php if ($payrollType === "wage") { ?>
-                        <div style="display: none">
-                            <table class="table table-hover table-bordered mb-0 pb-0">
+                        <div style="display: none" class="print-table ">
+                            <table class="table table-hover border border-2 border-dark table-bordered mb-0 pb-0">
                                 <p class="fw-bold signature-color">Allowances</p>
-                                <thead class="table-primary">
+                                <thead class="table-primary border border-2 border-dark">
                                     <tr class="text-center">
-                                        <th class="py-3">Allowances</th>
-                                        <th class="py-3">Amount</th>
+                                        <th class="py-3">
+                                            <p class="signature-color mb-0">Allowances</p>
+                                        </th>
+                                        <th class="py-3">
+                                            <p class="signature-color mb-0">Amount</p>
+                                        </th>
                                     </tr>
                                 </thead>
 
@@ -2064,12 +2514,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         <td class="col-5"><?php echo '$' . number_format($machineMaintenanceAmount, 2); ?></td>
                                     </tr>
                                     <tr class="text-center">
-                                        <td class="bg-dark text-white fw-bold">Total Allowances</td>
-                                        <td class="bg-dark text-white fw-bold col-5">
-                                            <?php echo '$' . number_format($totalAllowances, 2); ?>
+                                        <td class="bg-dark signature-color fw-bold">
+                                            <p class="signature-color mb-0">Total Allowances</p>
+                                        </td>
+                                        <td class="bg-dark signature-color fw-bold col-5">
+                                            <p class="signature-color mb-0">
+                                                <?php echo '$' . number_format($totalAllowances, 2); ?>
+                                            </p>
                                         </td>
                                     </tr>
                                 </tbody>
+                            </table>
+                            <table class="table border border-2 border-dark table-bordered mb-0 pb-0 mt-3">
+                                <tbody>
+                                    <tr class="text-center">
+                                        <td class="py-3" style="background-color: #f0f0f0;">
+                                            <p class="signature-color mb-0 fw-bold">Base Annual Salary</p>
+                                        </td>
+                                        <td class="py-3 col-6">
+                                            <p class="signature-color mb-0 fw-bold">
+                                                $<?php echo number_format($latestWage * 52 * 38, 2); ?>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="text-center">
+                                        <td class="py-3" style="background-color: #f0f0f0;">
+                                            <p class="signature-color mb-0 fw-bold">Total Annual Income (Including
+                                                Allowances)</p>
+                                        </td>
+                                        <td class="py-3 col-6">
+                                            <p class="signature-color mb-0 fw-bold">
+                                                $<?php echo number_format((($latestWage * 38) + $totalAllowances) * 52, 2); ?>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+
                             </table>
                         </div>
                     <?php } ?>
@@ -2391,10 +2871,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     </div>
 
                     <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                        <div class="p-3 hide-print">
+                            <p class="fw-bold signature-color">Assets</p>
+                            <?php
+                            $employees_asset_sql = "SELECT asset_no, asset_name FROM assets WHERE allocated_to = $employeeId";
+                            $employees_asset_result = $conn->query($employees_asset_sql);
+
+                            if ($employees_asset_result->num_rows > 0) {
+                                echo '<table class="table table-bordered border border-1">';
+                                echo '<thead><th>FE No</th><th>Asset Name</th></tr></thead>';
+                                echo '<tbody>';
+                                while ($row = $employees_asset_result->fetch_assoc()) {
+                                    echo '<tr>';
+                                    echo '<td class="py-2 align-middle">
+                                        <a target="_blank" href="http://' . $serverAddress . '/' . $projectName . '/Pages/asset-details-page.php?asset_no=' . $row['asset_no'] . '">' . htmlspecialchars($row['asset_no']) . '</a>
+                                    </td>';
+                                    echo '<td class="py-2 align-middle">' . htmlspecialchars($row["asset_name"]) . '</td>';
+                                    echo '</tr>';
+                                }
+                                echo '</tbody>';
+                                echo '</table>';
+                            } else {
+                                echo '<p>No assets allocated.</p>';
+                            }
+                            ?>
+                        </div>
+                    </div>
+
+                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
                         <div class="p-3 table-padding">
                             <!-- Dropdown Toggle -->
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer;"
+                            <div class="d-flex justify-content-between align-items-center mb-2 startTopPage">
+                                <p class="fw-bold signature-color mb-0 pb-0 marginTop" style="cursor: pointer;"
                                     data-bs-toggle="collapse" data-bs-target="#machineCompetencyContent"
                                     aria-expanded="false">
                                     Machine Competency
@@ -2487,7 +2995,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                                     </td>
                                                                     <td class="align-middle col-md-3">
                                                                         <span
-                                                                            class="view-mode">$<?php echo $row['amount']; ?></span>
+                                                                            class="view-mode">$<?php echo number_format($row['amount'], 2); ?></span>
                                                                         <input type="text"
                                                                             class="form-control edit-mode d-none mx-auto"
                                                                             name="editWage" value="<?php echo $row['amount']; ?>">
@@ -2975,115 +3483,317 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body p-5">
-                                    <div class="table-responsive border rounded-3">
-                                        <table class="table table-hover mb-0 pb-0">
-                                            <thead class="table-primary">
-                                                <tr class="text-center">
-                                                    <th class="py-3">Date</th>
-                                                    <th class="py-3">Amount</th>
-                                                    <th class="py-3">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php if (!empty($salariesData)) { ?>
-                                                    <?php foreach ($salariesData as $row) { ?>
-                                                        <tr class="text-center align-middle">
-                                                            <form method="POST">
-                                                                <!-- Hidden input for salary_id -->
-                                                                <input type="hidden" name="salary_id"
-                                                                    value="<?php echo $row['salary_id']; ?>">
-                                                                <td class="align-middle col-md-6">
-                                                                    <span
-                                                                        class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
-                                                                    <input type="date" max="9999-12-31"
-                                                                        class="form-control edit-mode d-none mx-auto"
-                                                                        name="editSalaryDate"
-                                                                        value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
-                                                                        style="width: 80%">
-                                                                </td>
-                                                                <td class="align-middle col-md-3">
-                                                                    <span class="view-mode">$<?php echo $row['amount']; ?></span>
-                                                                    <input type="text" class="form-control edit-mode d-none mx-auto"
-                                                                        name="editSalary" value="<?php echo $row['amount']; ?>">
-                                                                </td>
-                                                                <td class="align-middle">
-                                                                    <!-- Edit form -->
-                                                                    <div class="view-mode">
-                                                                        <button type="button" class="btn btn-sm edit-btn p-0"><i
-                                                                                class="fa-regular fa-pen-to-square signature-color m-1"></i></button>
-                                                                        <div class="btn" id="#openDeleteConfirmation"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#deleteConfirmationModalSalary"
-                                                                            data-salaryamount="<?php echo $row['amount']; ?>"
-                                                                            data-salarydate="<?php echo date("j F Y", strtotime($row['date'])); ?>"
-                                                                            data-salary-id="<?php echo $row['salary_id']; ?>">
-                                                                            <i class="fa-solid fa-trash-can text-danger m-1"></i>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="edit-mode d-none d-flex justify-content-center">
-                                                                        <button type="submit"
-                                                                            class="btn btn-sm px-2 btn-success mx-1">
-                                                                            <div class="d-flex justify-content-center"><i
-                                                                                    role="button"
-                                                                                    class="fa-solid fa-check text-white m-1"></i>
-                                                                                Save </div>
-                                                                        </button>
-                                                                        <button type="button"
-                                                                            class="btn btn-sm px-2 btn-danger mx-1 edit-btn">
-                                                                            <div class="d-flex justify-content-center"> <i
-                                                                                    role="button"
-                                                                                    class="fa-solid fa-xmark text-white m-1"></i>Cancel
-                                                                            </div>
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                            </form>
+                                    <ul class="nav nav-tabs" id="payTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link active" id="salary-tab" data-bs-toggle="tab" href="#salary"
+                                                role="tab" aria-controls="salary" aria-selected="true">Salary</a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" id="allowance-tab" data-bs-toggle="tab"
+                                                href="#salaryAllowance" role="tab" aria-controls="salaryAllowance"
+                                                aria-selected="false">Allowance</a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" id="bonus-tab" data-bs-toggle="tab" href="#bonus" role="tab"
+                                                aria-controls="bonus" aria-selected="false">Bonus</a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" id="overview-tab" data-bs-toggle="tab" href="#overview"
+                                                role="tab" aria-controls="overview" aria-selected="false">Overview</a>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content" id="payTabsContent">
+                                        <div class="tab-pane fade show active" id="salary" role="tabpanel"
+                                            aria-labelledby="salary-tab">
+                                            <div class="table-responsive border rounded-3 mt-4">
+                                                <table class="table table-hover mb-0 pb-0">
+                                                    <thead class="table-primary">
+                                                        <tr class="text-center">
+                                                            <th class="py-3">Date</th>
+                                                            <th class="py-3">Amount</th>
+                                                            <th class="py-3">Action</th>
                                                         </tr>
-                                                    <?php } ?>
-                                                <?php } else { ?>
-                                                    <tr class=" text-center align-middle">
-                                                        <td colspan="3">No records found</td>
-                                                    </tr>
-                                                <?php } ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="d-flex flex-grow-1 mt-4">
-                                        <form method="POST" class="col-md-12" id="addNewSalaryForm" novalidate>
-                                            <div class="row g-3">
-                                                <!-- New Salary Input -->
-                                                <div class="col-6">
-                                                    <label for="newSalary" class="form-label fw-bold">New Salary</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
-                                                        <input type="number" min="0" step="any"
-                                                            class="form-control rounded-end" id="newSalary" name="newSalary"
-                                                            placeholder="Enter new salary" required>
-                                                        <div class="invalid-feedback">
-                                                            Please provide new salary amount.
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php if (!empty($salariesData)) { ?>
+                                                            <?php foreach ($salariesData as $row) { ?>
+                                                                <tr class="text-center align-middle">
+                                                                    <form method="POST">
+                                                                        <!-- Hidden input for salary_id -->
+                                                                        <input type="hidden" name="salary_id"
+                                                                            value="<?php echo $row['salary_id']; ?>">
+                                                                        <td class="align-middle col-md-6">
+                                                                            <span
+                                                                                class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
+                                                                            <input type="date" max="9999-12-31"
+                                                                                class="form-control edit-mode d-none mx-auto"
+                                                                                name="editSalaryDate"
+                                                                                value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
+                                                                                style="width: 80%">
+                                                                        </td>
+                                                                        <td class="align-middle col-md-3">
+                                                                            <span
+                                                                                class="view-mode">$<?php echo number_format($row['amount'], 2); ?></span>
+                                                                            <input type="number" step="any"
+                                                                                class="form-control edit-mode d-none mx-auto"
+                                                                                name="editSalary"
+                                                                                value="<?php echo $row['amount']; ?>">
+                                                                        </td>
+                                                                        <td class="align-middle">
+                                                                            <!-- Edit form -->
+                                                                            <div class="view-mode">
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm edit-btn p-0"><i
+                                                                                        class="fa-regular fa-pen-to-square signature-color m-1"></i></button>
+                                                                                <div class="btn" id="#openDeleteConfirmation"
+                                                                                    data-bs-toggle="modal"
+                                                                                    data-bs-target="#deleteConfirmationModalSalary"
+                                                                                    data-salaryamount="<?php echo $row['amount']; ?>"
+                                                                                    data-salarydate="<?php echo date("j F Y", strtotime($row['date'])); ?>"
+                                                                                    data-salary-id="<?php echo $row['salary_id']; ?>">
+                                                                                    <i
+                                                                                        class="fa-solid fa-trash-can text-danger m-1"></i>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div
+                                                                                class="edit-mode d-none d-flex justify-content-center">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-sm px-2 btn-success mx-1">
+                                                                                    <div class="d-flex justify-content-center"><i
+                                                                                            role="button"
+                                                                                            class="fa-solid fa-check text-white m-1"></i>
+                                                                                        Save </div>
+                                                                                </button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm px-2 btn-danger mx-1 edit-btn">
+                                                                                    <div class="d-flex justify-content-center"> <i
+                                                                                            role="button"
+                                                                                            class="fa-solid fa-xmark text-white m-1"></i>Cancel
+                                                                                    </div>
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </form>
+                                                                </tr>
+                                                            <?php } ?>
+                                                        <?php } else { ?>
+                                                            <tr class=" text-center align-middle">
+                                                                <td colspan="3">No records found</td>
+                                                            </tr>
+                                                        <?php } ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="d-flex flex-grow-1 mt-4">
+                                                <form method="POST" class="col-md-12" id="addNewSalaryForm" novalidate>
+                                                    <div class="row g-3">
+                                                        <!-- New Salary Input -->
+                                                        <div class="col-6">
+                                                            <label for="newSalary" class="form-label fw-bold">New
+                                                                Salary</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input type="number" min="0" step="any"
+                                                                    class="form-control rounded-end" id="newSalary"
+                                                                    name="newSalary" placeholder="Enter new salary"
+                                                                    required>
+                                                                <div class="invalid-feedback">
+                                                                    Please provide new salary amount.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Update Date Input -->
+                                                        <div class="col-6">
+                                                            <label for="updateSalaryDate" class="form-label fw-bold">
+                                                                Date</label>
+                                                            <input type="date" max="9999-12-31" class="form-control"
+                                                                id="updateSalaryDate" name="updateSalaryDate"
+                                                                value="<?php echo date('Y-m-d'); ?>" required>
+                                                            <div class="invalid-feedback">
+                                                                Please provide the date of the salary update.
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Submit Button -->
+                                                        <div class="col-12 text-center">
+                                                            <button type="submit" class="btn btn-dark rounded">Add
+                                                                Salary</button>
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                <!-- Update Date Input -->
-                                                <div class="col-6">
-                                                    <label for="updateSalaryDate" class="form-label fw-bold">
-                                                        Date</label>
-                                                    <input type="date" max="9999-12-31" class="form-control"
-                                                        id="updateSalaryDate" name="updateSalaryDate"
-                                                        value="<?php echo date('Y-m-d'); ?>" required>
-                                                    <div class="invalid-feedback">
-                                                        Please provide the date of the salary update.
-                                                    </div>
-                                                </div>
-
-                                                <!-- Submit Button -->
-                                                <div class="col-12 text-center">
-                                                    <button type="submit" class="btn btn-dark rounded">Add
-                                                        Salary</button>
-                                                </div>
+                                                </form>
                                             </div>
-                                        </form>
+                                        </div>
+                                        <div class="tab-pane fade" id="salaryAllowance" role="tabpanel"
+                                            aria-labelledby="allowance-tab">
+                                            <div class="table-responsive border rounded-3 mt-4">
+                                                <table class="table table-hover mb-0 pb-0">
+                                                    <thead class="table-primary">
+                                                        <tr class="text-center">
+                                                            <th class="py-3">Date</th>
+                                                            <th class="py-3">Description</th>
+                                                            <th class="py-3">Amount</th>
+                                                            <th class="py-3">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php if (!empty($salaryAllowanceData)) { ?>
+                                                            <?php foreach ($salaryAllowanceData as $row) { ?>
+                                                                <tr class="text-center align-middle">
+                                                                    <form method="POST">
+                                                                        <!-- Hidden input for salary_allowance_id  -->
+                                                                        <input type="hidden" name="salaryAllowanceId"
+                                                                            value="<?php echo $row['salary_allowance_id'] ?>">
+                                                                        <td class="align-middle">
+                                                                            <span
+                                                                                class="view-mode"><?php echo date("j F Y", strtotime($row['date'])); ?></span>
+                                                                            <input type="date" max="9999-12-31"
+                                                                                class="form-control edit-mode d-none mx-auto"
+                                                                                name="editSalaryAllowanceDate"
+                                                                                value="<?php echo date("Y-m-d", strtotime($row['date'])); ?>"
+                                                                                style="width: 80%">
+                                                                        </td>
+                                                                        <td class="align-middle">
+                                                                            <span
+                                                                                class="view-mode"><?php echo $row['description']; ?></span>
+                                                                            <input type="text"
+                                                                                class="form-control edit-mode d-none mx-auto"
+                                                                                name="editSalaryAllowanceDescription"
+                                                                                value="<?php echo $row['description']; ?>">
+                                                                        </td>
+                                                                        <td class="align-middle">
+                                                                            <span
+                                                                                class="view-mode">$<?php echo number_format($row['amount'], 2); ?></span>
+                                                                            <input type="number" step="any"
+                                                                                class="form-control edit-mode d-none mx-auto"
+                                                                                name="editSalaryAllowanceAmount" step="any"
+                                                                                value="<?php echo $row['amount']; ?>">
+                                                                        </td>
+                                                                        <td class="align-middle">
+                                                                            <!-- Edit form -->
+                                                                            <div class="view-mode">
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm edit-btn p-0"><i
+                                                                                        class="fa-regular fa-pen-to-square signature-color m-1"></i></button>
+                                                                                <button type="submit" name="deleteSalaryAllowance"
+                                                                                    value="1"
+                                                                                    class="btn btn-sm p-0 bg-transparent border-0">
+                                                                                    <i
+                                                                                        class="fa-solid fa-trash-can text-danger m-1"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                            <div
+                                                                                class="edit-mode d-none d-flex justify-content-center">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-sm px-2 btn-success mx-1">
+                                                                                    <div class="d-flex justify-content-center"><i
+                                                                                            role="button"
+                                                                                            class="fa-solid fa-check text-white m-1"></i>
+                                                                                        Save </div>
+                                                                                </button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm px-2 btn-danger mx-1 edit-btn">
+                                                                                    <div class="d-flex justify-content-center"> <i
+                                                                                            role="button"
+                                                                                            class="fa-solid fa-xmark text-white m-1"></i>Cancel
+                                                                                    </div>
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </form>
+                                                                </tr>
+                                                            <?php } ?>
+                                                        <?php } else { ?>
+                                                            <tr class=" text-center align-middle">
+                                                                <td colspan="3">No records found</td>
+                                                            </tr>
+                                                        <?php } ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="d-flex flex-grow-1 mt-4">
+                                                <form method="POST" class="col-md-12" id="addNewSalaryAllowanceForm">
+                                                    <div class="row g-3">
+                                                        <div class="col-4">
+                                                            <!-- New Salary Allowance Input -->
+                                                            <label for="newSalaryAllowance" class="form-label fw-bold">New
+                                                                Allowance</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input type="number" min="0" step="any"
+                                                                    class="form-control rounded-end" id="newSalaryAllowance"
+                                                                    name="newSalaryAllowance"
+                                                                    placeholder="Enter new allowance" required>
+                                                                <div class="invalid-feedback">
+                                                                    Please provide new allowance amount.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <label for="newSalaryAllowanceDescription"
+                                                                class="form-label fw-bold">Description</label>
+                                                            <input class="form-control" type="text"
+                                                                name="newSalaryAllowanceDescription"
+                                                                placeholder="Enter description" required>
+                                                            <div class="invalid-feedback">
+                                                                Please provide the description.
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <label for="newSalaryAllowanceDate"
+                                                                class="form-label fw-bold">Date</label>
+                                                            <input type="date" max="9999-12-31" class="form-control"
+                                                                id="newSalaryAllowanceDate" name="newSalaryAllowanceDate"
+                                                                value="<?php echo date('Y-m-d'); ?>" required>
+                                                            <div class="invalid-feedback">
+                                                                Please provide the date.
+                                                            </div>
+                                                        </div>
+                                                        <!-- Submit Button -->
+                                                        <div class="col-12 text-center">
+                                                            <button type="submit" class="btn btn-dark rounded">Add
+                                                                Allowance</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="bonus" role="tabpanel" aria-labelledby="bonus-tab">
+
+                                        </div>
+                                        <div class="tab-pane fade" id="overview" role="tabpanel"
+                                            aria-labelledby="overview-tab">
+                                            <div class="table-responsive border rounded-3 mt-4">
+                                                <table class="table mb-0 pb-0">
+                                                    <thead>
+                                                        <tr class="text-center">
+                                                            <th class="py-3">Date</th>
+                                                            <th class="py-3">Salary</th>
+                                                            <th class="py-3">Allowance</th>
+                                                            <th class="py-3">Bonus</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="text-center">
+                                                        <?php
+                                                        foreach ($events as $date => $values) {
+                                                            $salaryText = $values['salary'] !== null ? '$' . number_format($values['salary'], 0) : 'N/A';
+                                                            $allowanceText = $values['allowance'] !== null ? '$' . number_format($values['allowance'], 0) : 'N/A';
+                                                            ?>
+                                                            <tr>
+                                                                <td><?php echo date('d M Y', strtotime($date)); ?></td>
+                                                                <td><?php echo $salaryText; ?></td>
+                                                                <td><?php echo $allowanceText; ?></td>
+                                                                <td><!-- Bonus data goes here later -->N/A</td>
+                                                            </tr>
+                                                            <?php
+                                                        }
+                                                        ?>
+                                                    </tbody>
+                                                </table>
+
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3789,8 +4499,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 }
                 ?>
 
+            <!-- Fullscreen Wages Chart Modal -->
+            <div class="modal fade" id="wagesChartModal" tabindex="-1" aria-labelledby="wagesChartModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="wagesChartModalLabel">Wages Chart</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Fullscreen Chart Container -->
+                            <div id="wagesChartFull" style="height: 80vh; width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fullscreen Salary Chart Modal -->
+            <div class="modal fade" id="salaryChartModal" tabindex="-1" aria-labelledby="salaryChartModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="salaryChartModalLabel">Salary Chart</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="salaryChartFull" style="height: 80vh; width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
             <script>
                 // Reload the page when wagePayRaiseHistoryModal is hidden
@@ -4534,7 +5278,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 });
             </script>
 
-
             <!-- Tool Allowance -->
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
@@ -4967,6 +5710,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 });
             </script>
             <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    var toggleElement = document.querySelector("[data-bs-target='#leaveDetails']");
+                    var chevronIcon = toggleElement.querySelector("i");
+
+                    toggleElement.addEventListener("click", function () {
+                        setTimeout(() => {
+                            if (toggleElement.getAttribute("aria-expanded") === "true") {
+                                chevronIcon.classList.remove("fa-chevron-down");
+                                chevronIcon.classList.add("fa-chevron-up");
+                            } else {
+                                chevronIcon.classList.remove("fa-chevron-up");
+                                chevronIcon.classList.add("fa-chevron-down");
+                            }
+                        }, 200); // Small delay to allow Bootstrap collapse to update `aria-expanded`
+                    });
+                });
+            </script>
+            <script>
                 // Function to update the policyFileName
                 function updatePolicyFileName() {
                     let EmpId = document.getElementById("empIdToAddPolicy").value;
@@ -5039,6 +5800,246 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 // Add event listeners to update on change
                 document.getElementById("selectedLeaveTypeToAdd").addEventListener("change", updateLeaveFileName);
                 document.getElementById("addLeaveDate").addEventListener("input", updateLeaveFileName);
+            </script>
+
+            <script>
+                // Optional: Make sure it runs after Bootstrap has loaded
+                document.addEventListener('DOMContentLoaded', function () {
+                    const wagesModal = document.getElementById('wagesChartModal');
+
+                    wagesModal.addEventListener('shown.bs.modal', function () {
+                        // Render chart when modal is fully visible
+                        var modalChart = new CanvasJS.Chart("wagesChartFull", {
+                            animationEnabled: true,
+                            axisX: {
+                                titleFontFamily: "Avenir",
+                                labelFontFamily: "Avenir",
+                                labelFontColor: "#555",
+                                labelFontSize: 12,
+                                labelAngle: -45
+                            },
+                            axisY: {
+                                titleFontFamily: "Avenir",
+                                labelFontFamily: "Avenir",
+                                labelFontColor: "#555",
+                                labelFontSize: 12
+                            },
+                            data: [{
+                                type: "line",
+                                color: "#043f9d",
+                                markerColor: "#043f9d",
+                                markerSize: 8,
+                                indexLabelFontSize: 12,
+                                indexLabelFontColor: "#555",
+                                indexLabelPlacement: "outside",
+                                indexLabel: "${y}",
+                                dataPoints: <?php echo json_encode($wagesDataPoints, JSON_NUMERIC_CHECK); ?>
+                            }]
+                        });
+                        modalChart.render();
+                    });
+                });
+            </script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const salaryModal = document.getElementById('salaryChartModal');
+                    let chartFull = null;
+
+                    // Convert PHP arrays to JS arrays
+                    const salaryData = <?php echo json_encode($salariesDataPoints, JSON_NUMERIC_CHECK); ?>;
+                    const allowanceData = <?php echo json_encode($salaryAllowancesDataPoints, JSON_NUMERIC_CHECK); ?>;
+
+                    salaryData.forEach(dp => dp.x = new Date(dp.x));
+                    allowanceData.forEach(dp => dp.x = new Date(dp.x));
+
+                    // Helper: find latest data point <= date in a sorted array
+                    function findLatestBefore(dataPoints, date) {
+                        let latest = null;
+                        for (let i = 0; i < dataPoints.length; i++) {
+                            if (dataPoints[i].x <= date) {
+                                latest = dataPoints[i];
+                            } else {
+                                break;
+                            }
+                        }
+                        return latest;
+                    }
+
+                    // Build totalData points
+                    let totalData = [];
+
+                    const allDatesSet = new Set([
+                        ...salaryData.map(dp => dp.x.getTime()),
+                        ...allowanceData.map(dp => dp.x.getTime())
+                    ]);
+
+                    const allDates = Array.from(allDatesSet).sort();
+
+                    allDates.forEach(timestamp => {
+                        const date = new Date(timestamp);
+                        const salaryPoint = findLatestBefore(salaryData, date);
+                        const allowancePoint = findLatestBefore(allowanceData, date);
+                        const salary = salaryPoint ? salaryPoint.y : 0;
+                        const allowance = allowancePoint ? allowancePoint.y : 0;
+
+                        totalData.push({ x: date, y: salary + allowance });
+                    });
+
+
+                    salaryModal.addEventListener('shown.bs.modal', function () {
+                        console.log('Salary modal opened');
+
+                        // Clear previous chart if exists
+                        if (chartFull) {
+                            chartFull.destroy?.();  // if destroy method exists
+                            chartFull = null;
+                        }
+                        document.getElementById("salaryChartFull").innerHTML = "";
+
+                        chartFull = new CanvasJS.Chart("salaryChartFull", {
+                            animationEnabled: true,
+                            theme: "light2",
+                            axisX: {
+                                valueFormatString: "DD MMM YYYY",
+                                titleFontFamily: "Avenir",
+                                labelFontFamily: "Avenir",
+                                labelFontColor: "#555",
+                                labelFontSize: 12,
+                                labelAngle: -45
+                            },
+                            axisY: {
+                                titleFontFamily: "Avenir",
+                                labelFontFamily: "Avenir",
+                                labelFontColor: "#555",
+                                labelFontSize: 12
+                            },
+                            toolTip: {
+                                shared: false,  // custom tooltip per point
+                                contentFormatter: function (e) {
+                                    const hoveredPoint = e.entries[0].dataPoint;
+                                    const hoveredSeriesName = e.entries[0].dataSeries.name;
+                                    const hoveredDate = hoveredPoint.x;
+
+                                    // Find the latest salary and allowance values at hoveredDate
+                                    const salaryPoint = findLatestBefore(salaryData, hoveredDate);
+                                    const allowancePoint = findLatestBefore(allowanceData, hoveredDate);
+
+                                    const salaryValue = salaryPoint ? salaryPoint.y : 0;
+                                    const allowanceValue = allowancePoint ? allowancePoint.y : 0;
+                                    const totalValue = salaryValue + allowanceValue;
+
+                                    return `
+            <div style="font-weight:bold; margin-bottom:5px;">
+                ${hoveredDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+            <div>Salary: $${salaryValue.toLocaleString()}</div>
+            <div>Allowance: $${allowanceValue.toLocaleString()}</div>
+            <div style="margin-top:5px; font-weight:bold;">Total: $${totalValue.toLocaleString()}</div>
+        `;
+                                }
+                            },
+                            legend: {
+                                cursor: "pointer",
+                                fontSize: 12,
+                                itemclick: function (e) {
+                                    e.dataSeries.visible = !(typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible);
+                                    chartFull.render();
+                                }
+                            },
+                            data: [
+                                {
+                                    type: "line",
+                                    name: "Salary",
+                                    showInLegend: true,
+                                    markerSize: 6,
+                                    color: "#043f9d",
+                                    yValueFormatString: "$#,##0",
+                                    indexLabelFontColor: "#043f9d",
+                                    indexLabelPlacement: "outside",
+                                    indexLabelFontSize: 12,
+                                    dataPoints: salaryData.map(dp => ({
+                                        ...dp,
+                                        indexLabel: `$${Number(dp.y).toLocaleString()}`
+                                    }))
+                                },
+                                {
+                                    type: "line",
+                                    name: "Allowance",
+                                    showInLegend: true,
+                                    markerSize: 6,
+                                    color: "#f39c12",
+                                    yValueFormatString: "$#,##0",
+                                    indexLabelFontColor: "#f39c12",
+                                    indexLabelPlacement: "outside",
+                                    indexLabelFontSize: 12,
+                                    dataPoints: allowanceData.map(dp => ({
+                                        ...dp,
+                                        indexLabel: `$${Number(dp.y).toLocaleString()}`
+                                    }))
+                                },
+                                {
+                                    type: "line",
+                                    name: "Total (Salary + Allowance)",
+                                    showInLegend: true,
+                                    markerSize: 6,
+                                    color: "#28a745",
+                                    yValueFormatString: "$#,##0",
+                                    indexLabelFontColor: "#28a745",
+                                    indexLabelPlacement: "outside",
+                                    indexLabelFontSize: 12,
+                                    dataPoints: totalData.map(dp => ({
+                                        ...dp,
+                                        indexLabel: `$${Number(dp.y).toLocaleString()}`
+                                    }))
+                                }
+                            ]
+                        });
+
+                        chartFull.render();
+                    });
+                });
+
+            </script>
+            <script>
+                const datasets = <?php echo json_encode($datasets); ?>;
+
+                // Map dataset labels before passing to Chart.js
+                datasets.forEach(ds => {
+                    if (ds.label === 'Annual Lve') {
+                        ds.label = 'Annual Leave';
+                    } else if (ds.label === 'Sick/Personal') {
+                        ds.label = 'Personal Leave';
+                    } else if (ds.label === 'LS Leave') {
+                        ds.label = 'Long Service Leave';
+                    }
+                });
+
+                const ctxHistory = document.getElementById('leaveHistoryChart').getContext('2d');
+                new Chart(ctxHistory, {
+                    type: 'bar',
+                    data: {
+                        labels: <?php echo json_encode($allDates); ?>, // X-axis labels
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        let value = context.raw;
+                                        let label = context.dataset.label;
+                                        return label + ': ' + value.toFixed(4);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { stacked: false }, // <-- side by side
+                            y: { stacked: false }  // <-- side by side
+                        }
+                    }
+                });
             </script>
 </body>
 

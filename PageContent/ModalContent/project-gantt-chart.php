@@ -3,12 +3,12 @@ $labels = [];
 $startDates = [];
 $durations = [];
 
-if (!empty($projects)) {
+if (!empty($ganttProjects)) {
     $minDate = null;
     $maxDate = null;
 
     // Find min and max dates only for "In Progress" projects
-    foreach ($projects as $row) {
+    foreach ($ganttProjects as $row) {
         if (
             isset($row["earliest_estimated_date"], $row["latest_estimated_date"], $row["current"]) &&
             $row["current"] === "In Progress"
@@ -28,7 +28,7 @@ if (!empty($projects)) {
     }
 
     // Collect data for only "In Progress" projects
-    foreach ($projects as $row) {
+    foreach ($ganttProjects as $row) {
         if (
             isset($row["earliest_estimated_date"], $row["latest_estimated_date"], $row["current"]) &&
             $row["current"] === "In Progress"
@@ -45,7 +45,7 @@ if (!empty($projects)) {
     }
 }
 ?>
-<canvas id="ganttChart" height="100"></canvas>
+<canvas id="ganttChart"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -138,9 +138,11 @@ if (!empty($projects)) {
                 },
                 y: {
                     stacked: true,
-                    title: {
-                        display: true,
-                        text: 'Projects'
+                    ticks: {
+                        autoSkip: false, // Prevent skipping labels
+                        font: {
+                            size: 12 // You can adjust to make them smaller if needed
+                        }
                     }
                 }
             }

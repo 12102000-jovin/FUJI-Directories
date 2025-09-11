@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle updating individual row
         $project_details_id = $_POST['project_details_id'];
         $date = !empty($_POST["date"]) ? $_POST["date"] : null;
+        $revisedDeliveryDate = !empty($_POST["revisedDeliveryDate"]) ? $_POST["revisedDeliveryDate"] : null;
         $description = $_POST['description'];
         $unit_price = $_POST['unitprice'];
         $quantity = $_POST['quantity'];
@@ -38,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update the project details in the database
         $update_sql = "UPDATE project_details SET 
             `date` = ?, 
+            revised_delivery_date = ?,
             `description` = ?, 
             unit_price = ?, 
             quantity = ?, 
@@ -45,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE project_details_id = ?";
 
         $stmt = $conn->prepare($update_sql);
-        $stmt->bind_param("ssdidi", $date, $description, $unit_price, $quantity, $sub_total, $project_details_id);
+        $stmt->bind_param("sssdidi", $date, $revisedDeliveryDate, $description, $unit_price, $quantity, $sub_total, $project_details_id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);

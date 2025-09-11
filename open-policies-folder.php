@@ -72,7 +72,7 @@ if (is_dir($baseDirectory)) {
 
     echo '<div class="table-responsive">';
     echo '<table class="table table-bordered table-hover mb-0 pb-0" style="border: 2px solid black">';
-    echo '<thead><tr><th>Document Id</th><th>Document Name</th></tr></thead>';
+    echo '<thead><tr class="col-3"><th>Document Id</th><th class="col-9">Document Name</th></tr></thead>';
     echo '<tbody>';
 
     foreach ($sortedDocuments as $documentKey => $document) {

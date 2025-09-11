@@ -260,7 +260,7 @@ if ($total_estimating_employee_result) {
 
 // =============================== E L E C T R I C A L  ( E M P L O Y M E N T  T Y P E ) ===============================
 
-// Query to get the total number of electrical employees by employement type
+// Query to get the total number of electrical employees by employment type
 $total_electrical_employee_sql = "
     SELECT
         COUNT(*) AS total_electrical_employees_count,
@@ -287,6 +287,37 @@ if ($total_electrical_employee_result) {
     $total_electrical_full_time_employees_count = $row['total_electrical_full_time_employees_count'];
     $total_electrical_part_time_employees_count = $row['total_electrical_part_time_employees_count'];
     $total_electrical_casual_employees_count = $row['total_electrical_casual_employees_count'];
+}
+
+// =============================== Q U A L I T Y  C O N T R O L  ( E M P L O Y M E N T  T Y P E ) ===============================
+
+// Query to get the total number of quality control employees by employment type
+$total_quality_control_employee_sql = "
+    SELECT 
+        COUNT(*) AS total_quality_control_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Full-Time' THEN 1 END) AS total_quality_control_full_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Part-Time' THEN 1 END) AS total_quality_control_part_time_employees_count,
+        COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_quality_control_casual_employees_count
+    FROM employees
+    JOIN department ON department.department_id = employees.department
+    WHERE department.department_name = 'Quality Control' AND is_active = 1;
+";
+
+$total_quality_control_employee_result = $conn->query($total_quality_control_employee_sql);
+
+// Initialise variables to quality control by employment type
+$total_quality_control_employees_count = 0;
+$total_quality_control_full_time_employees_count = 0;
+$total_quality_control_part_time_employees_count = 0;
+$total_quality_control_casual_employees_count = 0;
+
+// Fetch the result
+if ($total_quality_control_employee_result) {
+    $row = $total_quality_control_employee_result->fetch_assoc();
+    $total_quality_control_employees_count = $row['total_quality_control_employees_count'];
+    $total_quality_control_full_time_employees_count = $row['total_quality_control_full_time_employees_count'];
+    $total_quality_control_part_time_employees_count = $row['total_quality_control_part_time_employees_count'];
+    $total_quality_control_casual_employees_count = $row['total_quality_control_casual_employees_count'];
 }
 
 // =============================== S H E E T  M E T A L  ( E M P L O Y M E N T  T Y P E ) ===============================
@@ -706,6 +737,7 @@ $folders_result->free();
                         <th scope="col" class="text-center">EN</th>
                         <th scope="col" class="text-center">ES</th>
                         <th scope="col" class="text-center">EL</th>
+                        <th scope="col" class="text-center">QC</th>
                         <th scope="col" class="text-center">SM</th>
                         <th scope="col" class="text-center">Site</th>
                         <th scope="col" class="text-center">R&D</th>
@@ -723,6 +755,7 @@ $folders_result->free();
                         <td class="text-center"><?php echo $total_engineering_full_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_estimating_full_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_electrical_full_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_quality_control_full_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_sheet_metal_full_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_site_full_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_rnd_full_time_employees_count ?></td>
@@ -742,6 +775,7 @@ $folders_result->free();
                         <td class="text-center"><?php echo $total_engineering_part_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_estimating_part_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_electrical_part_time_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_quality_control_part_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_sheet_metal_part_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_site_part_time_employees_count ?></td>
                         <td class="text-center"><?php echo $total_rnd_part_time_employees_count ?></td>
@@ -756,6 +790,7 @@ $folders_result->free();
                         <td class="text-center"><?php echo $total_engineering_casual_employees_count ?></td>
                         <td class="text-center"><?php echo $total_estimating_casual_employees_count ?></td>
                         <td class="text-center"><?php echo $total_electrical_casual_employees_count ?></td>
+                        <td class="text-center"><?php echo $total_quality_control_casual_employees_count ?></td>
                         <td class="text-center"><?php echo $total_sheet_metal_casual_employees_count ?></td>
                         <td class="text-center"><?php echo $total_site_casual_employees_count ?></td>
                         <td class="text-center"><?php echo $total_rnd_casual_employees_count ?></td>
@@ -797,6 +832,15 @@ $folders_result->free();
                             <?php
                             if ($total_electrical_employees_count > 0) {
                                 echo round(($total_electrical_full_time_employees_count / $total_electrical_employees_count) * 100, 2) . "%";
+                            } else {
+                                echo "0%"; // Prevent division by zero
+                            }
+                            ?>
+                        </td>
+                        <td class="text-center">
+                            <?php
+                            if ($total_quality_control_employees_count > 0) {
+                                echo round(($total_quality_control_full_time_employees_count / $total_quality_control_employees_count) * 100, 2) . "%";
                             } else {
                                 echo "0%"; // Prevent division by zero
                             }
@@ -858,8 +902,8 @@ $folders_result->free();
                         </td>
                         <td class="text-center">
                             <?php
-                            if ($total_active_count > 0) {
-                                echo round(($permanent_count / $total_active_count) * 100, 2) . "%";
+                            if ($total_employees_count > 0) {
+                                echo round(($permanent_count / $total_employees_count) * 100, 2) . "%";
                             } else {
                                 echo "0%"; // Prevent division by zero
                             }

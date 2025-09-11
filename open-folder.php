@@ -1,6 +1,6 @@
 <?php
 
-require_once ("./db_connect.php");
+require_once("./db_connect.php");
 require_once("./status_check.php");
 
 $employeeId = isset($_GET['employee_id']) ? basename($_GET['employee_id']) : '';
@@ -32,7 +32,7 @@ if ($payrollType === 'wage') {
     <?php
     // Build the directory path
     $directory = $baseDirectory . $employeeId . "/" . $folder;
-    $currentDir = isset($_GET['dir']) ? basename($_GET['dir']) : '';
+    $currentDir = isset($_GET['dir']) ? $_GET['dir'] : '';
     $fullDirectory = $directory . ($currentDir ? '/' . $currentDir : '');
 
     // Ensure the directory exists
@@ -83,7 +83,11 @@ if ($payrollType === 'wage') {
                 continue;
 
             $itemPath = $fullDirectory . '/' . $item;
-            $itemUrl = '?employee_id=' . urlencode($employeeId) . '&folder=' . urlencode($folder) . '&dir=' . urlencode($currentDir . '/' . $item) . '&search=' . urlencode($searchQuery) . '&payrollType=' . urlencode($payrollType);
+            $itemUrl = '?employee_id=' . urlencode($employeeId)
+                . '&folder=' . urlencode($folder)
+                . '&dir=' . urlencode(($currentDir ? $currentDir . '/' : '') . $item)
+                . '&search=' . urlencode($searchQuery)
+                . '&payrollType=' . urlencode($payrollType);
             $itemName = htmlspecialchars($item);
             $fileExtension = strtolower(pathinfo($item, PATHINFO_EXTENSION));
 

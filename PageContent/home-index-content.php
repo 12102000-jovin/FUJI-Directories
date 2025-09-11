@@ -90,7 +90,7 @@ $folders_result = $conn->query($folders_sql);
                     } else if ($folderName === 'quality assurances') {
                         $href = "http://$serverAddress/$projectName/Pages/qa-table.php";
                     } else if ($folderName === 'human resources') {
-                        $href = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                        $href = "http://$serverAddress/$projectName/Pages/employee-list-index.php?status%5B%5D=1&apply_filters=";
                     } else if ($folderName === 'project') {
                         $href = "http://$serverAddress/$projectName/Pages/project-table.php";
                     } else if ($folderName === 'work health and safety') {

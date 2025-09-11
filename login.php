@@ -58,13 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $employee_id['user_id'];
             }
 
-            header("Location: http://$serverAddress/$projectName/Pages/index.php");
-            exit();
-        } else if ($user['is_active'] == 0) {
-            // User is not active
-            $access_error = "Access to your account has been disabled.";
-            header("Location: login.php?error=" . urlencode($access_error));
-            exit();
+            // Check for redirect url after login:
+            if (isset($_SESSION['redirect_after_login'])) {
+                $redirectUrl = $_SESSION['redirect_after_login'];
+                unset($_SESSION['redirect_after_login']);
+                header("Location: http://$serverAddress" . $redirectUrl);
+                exit();
+            } else {
+                header("Location: http://$serverAddress/$projectName/Pages/index.php");
+                exit();
+            }
         }
     } else {
         // Redirect back to the form page with an error message
@@ -103,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <img class="img-fluid" src="./Images/PowerFusionWordLogo.png" alt="PowerFusionLogo"
                                 style="width: 20rem;" sizes="(max-width: 576px) 10rem, 20rem">
                         </h2>
-
                     </div>
 
                     <div class="col-md-6 d-flex flex-column justify-content-center">

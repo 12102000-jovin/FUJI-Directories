@@ -35,8 +35,9 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 $testStatusFilter = isset($_GET['test_status']) ? $_GET['test_status'] : 'all'; // Default to 'all'
 
 // Initialize the WHERE clause with the search term condition
-$whereClause = "(cables.cable_no LIKE '%$searchTerm%' OR cable_tags.cable_tag_no LIKE '%$searchTerm%')";
+$whereClause = "(cables.cable_no LIKE '%$searchTerm%' OR cable_tags.cable_tag_no LIKE '%$searchTerm%' OR location.location_name LIKE '%$searchTerm%')";
 
+// Add additional filtering based on test status, unless 'all' is selected
 // Add additional filtering based on test status, unless 'all' is selected
 if ($testStatusFilter != 'all') {
     $currentDate = new DateTime(); // Get the current date
@@ -214,7 +215,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
             </div>
         </div>
 
-
         <div class="table-responsive rounded-3 shadow-lg bg-light mb-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
@@ -333,7 +333,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cableIdToDelete"])) {
                                     }
                                     ?>
                                 </td>
-
 
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['asset_no']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">

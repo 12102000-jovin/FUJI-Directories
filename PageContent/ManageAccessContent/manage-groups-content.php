@@ -240,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                                 <i class=" fa-regular fa-pen-to-square m-1 tooltips"
                                                     data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Group"></i>
                                             </button>
-                                            <button class="btn text-danger view-mode" id="deleteGroupBtn" type="button"
+                                            <button class="btn text-danger view-mode" id="deleteGroupBtn" type="buttossn"
                                                 data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
                                                 data-group-id="<?= $row['group_id'] ?>">
                                                 <i class="fa-solid fa-trash-can  m-1 tooltips" data-bs-toggle="tooltip"
@@ -344,11 +344,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
     $groups_result->data_seek(0);
     while ($group_row = $groups_result->fetch_assoc()) {
         $group_id = $group_row['group_id'];
-        $user_group_sql = "SELECT *
-                           FROM users_groups 
-                           JOIN users ON users_groups.user_id = users.user_id
-                           JOIN employees ON users.employee_id = employees.employee_id
-                           WHERE users_groups.group_id = $group_id";
+        $user_group_sql = "SELECT users_groups.user_group_id,
+            users_groups.role AS group_role,
+            users.user_id,
+            users.username,
+            employees.employee_id,
+            employees.first_name,
+            employees.last_name
+    FROM users_groups 
+    JOIN users ON users_groups.user_id = users.user_id
+    JOIN employees ON users.employee_id = employees.employee_id 
+    WHERE users_groups.group_id = $group_id
+    ";
         $user_group_result = $conn->query($user_group_sql);
         ?>
         <!-- Member Modal for each group -->
@@ -367,6 +374,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                     <tr>
                                         <th class="py-4 align-middle">Employee ID</th>
                                         <th class="py-4 align-middle">Name</th>
+                                        <th class="py-4 align-middle">Access Level</th>
                                         <th class="py-4 align-middle">Action</th>
                                     </tr>
                                 </thead>
@@ -377,6 +385,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                             <td class="py-4 align-middle text-center">
                                                 <?= $user_row['first_name'] . " " . $user_row['last_name'] ?>
                                             </td>
+                                            <td class="py-4 align-middle text-center">
+                                                <?php
+                                                $roleClass = match ($user_row['group_role']) {
+                                                    'full control' => 'text-bg-danger text-capitalize',
+                                                    'read' => 'text-bg-success text-capitalize',
+                                                    'modify 1' => 'bg-warning text-capitalize',
+                                                    'modify 2' => 'text-bg-primary text-capitalize',
+                                                    default => 'text-bg-secondary text-capitalize',
+                                                };
+                                                ?>
+                                                <span class="badge <?= $roleClass ?>">
+                                                    <?= htmlspecialchars($user_row['group_role']) ?>
+                                                </span>
+                                            </td>
+
                                             <td class="py-4 align-middle text-center">
                                                 <form method="POST">
                                                     <input type="hidden" name="userGroupIdToRemove"
@@ -470,7 +493,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                 <div class="d-flex justify-content-between">
                                     <p class="mb-1 signature-color fw-bold">Selected Users</p>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="role" name="role" value="full control">
+                                        <input class="form-check-input" type="checkbox" id="role" name="role"
+                                            value="full control">
                                         <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm"
                                             for="role"> Full Control </label>
                                     </div>
@@ -556,7 +580,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
     <!-- Add Group Modal-->
     <div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog" aria-labelledby="addGroupModalLabel"
         aria-hidden="true">
-
         <div class="modal-dialog modal-lg">
             <form method="POST">
                 <div class="modal-content">
@@ -573,7 +596,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                         </div>
                         <div class="mt-4">
                             <label for="searchUsersForNewGroup" class="form-label">Search Users</label>
-                            <div class="input-group mb-3 ">
+                            <div class="input-group mb-3">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="text" class="form-control" id="searchUsersForNewGroup"
                                     name="searchUsersForNewGroup" placeholder="Search Users">
@@ -599,7 +622,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                                         name="selectedUsersToNewGroup[]"
                                                         onchange="updateSelectedMembers(this)">
                                                 </td>
-                                                <td class=" py-4 align-middle text-center"><?= $user_row['employee_id'] ?>
+                                                <td class="py-4 align-middle text-center"><?= $user_row['employee_id'] ?>
                                                 </td>
                                                 <td class="py-4 align-middle text-center">
                                                     <?= $user_row['first_name'] . " " . $user_row['last_name'] ?>
@@ -624,7 +647,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                 </div>
             </form>
         </div>
-
     </div>
 
     <!-- Show Folder Access Modal -->

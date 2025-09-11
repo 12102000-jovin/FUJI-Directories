@@ -144,6 +144,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
                 </option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
                 <option value="QA Officer">QA Officer</option>
+                <option value="Quality Control Manager">Quality Control Manager</option>
                 <option value="QA Officer">HR Officer</option>
                 <option value="WHS Committee">WHS Committee</option>
                 <option value="Risk Assessment Committee">Risk Assessment Committee</option>
@@ -172,20 +173,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="approvedBy" class="fw-bold">Approved By</label>
-            <select class="form-select" aria-label="approvedBy" name="approvedBy" required>
-                <option disabled selected hidden></option>
-                <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
-                <option value="Electrical Manager">Electrical Manager</option>
-                <option value="Sheet Metal Manager">Sheet Metal Manager
-                </option>
-                <option value="Operations Support Manager">Operations Support Manager</option>
-                <option value="QA Officer">QA Officer</option>
-                <option value="QA Officer">HR Officer</option>
-                <option value="WHS Committee">WHS Committee</option>
-                <option value="Risk Assessment Committee">Risk Assessment Committee</option>
-                <option value="N/A">N/A</option>
-            </select>
+                <select class="form-select" aria-label="approvedBy" name="approvedBy" required>
+                    <option disabled selected hidden></option>
+                    <option value="General Manager">General Manager</option>
+                    <option value="Engineering Manager">Engineering Manager</option>
+                    <option value="Electrical Manager">Electrical Manager</option>
+                    <option value="Sheet Metal Manager">Sheet Metal Manager
+                    </option>
+                    <option value="Operations Support Manager">Operations Support Manager</option>
+                    <option value="QA Officer">QA Officer</option>
+                    <option value="Quality Control Manager">Quality Control Manager</option>
+                    <option value="QA Officer">HR Officer</option>
+                    <option value="WHS Committee">WHS Committee</option>
+                    <option value="Risk Assessment Committee">Risk Assessment Committee</option>
+                    <option value="N/A">N/A</option>
+                </select>
             <div class="invalid-feedback">
                 Please provide the approver.
             </div>

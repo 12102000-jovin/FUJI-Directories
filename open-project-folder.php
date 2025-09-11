@@ -71,7 +71,6 @@ Back</a>";
         echo "</div>";
         echo "</div>";
 
-
         echo "<div class='view-container list-view'>";
         echo "<div class='list-group rounded-3'>";
 
@@ -96,6 +95,8 @@ Back</a>";
                     'doc', 'docx' => 'fa-file-word text-primary',
                     'jpg', 'jpeg', 'png', 'gif' => 'fa-file-image text-success',
                     'dwg', => 'fa-solid fa-compass-drafting text-primary',
+                    'xls', => 'fa-solid fa-file-excel',
+                    'xlsx', => 'fa-solid fa-file-excel text-success',
                     default => 'fa-file',
                 };
 
@@ -120,8 +121,6 @@ Back</a>";
                 }
                 
                 echo "</div>";  // Close the div
-                
-                
             }
         }
 

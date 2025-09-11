@@ -428,7 +428,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                             <button id="editDocumentModalBtn" class="btn" data-bs-toggle="modal"
                                                 data-bs-target="#editDocumentModal" data-whs-id="<?= $row['whs_id'] ?>"
                                                 data-whs-document-id="<?= $row['whs_document_id'] ?>"
-                                                data-description="<?= $row['description'] ?>" data-status="<?= $row['status'] ?>"
+                                                data-description="<?= htmlspecialchars($row['description']) ?>" data-status="<?= $row['status'] ?>"
                                                 data-involved-person-name="<?= $row['involved_person_name'] ?>"
                                                 data-incident-date="<?= $row['incident_date'] ?>"
                                                 data-department="<?= $row['department'] ?>"
@@ -459,7 +459,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                         
                                 if (isset($employee_id)) {
                                     // Prepare and execute the query to fetch employee name
-                                    $stmt = $conn->prepare("SELECT first_name, last_name FROM employees WHERE employee_id = ?");
+                                    $stmt = $conn->prepare("SELECT first_name, last_name, nickname FROM employees WHERE employee_id = ?");
                                     $stmt->bind_param("i", $employee_id);
                                     $stmt->execute();
                                     $result = $stmt->get_result();
@@ -468,7 +468,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["whsIdToDelete"])) {
                                     if ($rowEmployee = $result->fetch_assoc()) {
                                         $employee_first_name = $rowEmployee['first_name'];
                                         $employee_last_name = $rowEmployee['last_name'];
-                                        $employee_name = $employee_first_name . ' ' . $employee_last_name; // Combine first and last name
+                                        $employee_nickname = $rowEmployee['nickname'];
+
+                                        // Combine with nickname if it exists
+                                        if (!empty($employee_nickname)) {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                        } else {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name;
+                                        }
                                     }
                                 }
                                 ?>

@@ -22,6 +22,16 @@ while ($row = $location_result->fetch_assoc()) {
     $locations[] = $row;
 }
 
+// ========================= Get the employees =========================
+$employees_sql = "SELECT employee_id, first_name, last_name, email, nickname FROM employees WHERE is_active = 1";
+$employees_result = $conn->query($employees_sql);
+
+// Fetch all results into an arrays
+$employees = [];
+while ($row = $employees_result->fetch_assoc()) {
+    $employees[] = $row;
+}
+
 // ========================= A D D  A S S E T  D O C U M E N T =========================
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
     $assetNo = $_POST["assetNo"];
@@ -75,15 +85,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
     $departmentId = !empty($_POST["department"]) ? $_POST["department"] : null;
     $assetName = !empty($_POST["assetName"]) ? $_POST["assetName"] : null;
     $status = !empty($_POST["status"]) ? $_POST["status"] : null;
+    $disposalDate = !empty($_POST["disposalDate"]) ? $_POST["disposalDate"] : null;
     $serialNumber = !empty($_POST["serialNumber"]) ? $_POST["serialNumber"] : null;
     $assetLocation = !empty($_POST["assetLocation"]) ? $_POST["assetLocation"] : null;
     $accountAsset = $_POST["accountAsset"];
     $whsAsset = $_POST["whsAsset"];
+    $ictAsset = $_POST["ictAsset"];
     $purchaseDate = !empty($_POST["purchaseDate"]) ? $_POST["purchaseDate"] : null;
+    $cost = !empty($_POST["cost"]) ? $_POST["cost"] : null;
+    $notes = !empty($_POST["notes"]) ? $_POST["notes"] : null;
+    $allocatedTo = !empty($_POST["allocatedTo"]) ? $_POST["allocatedTo"] : null;
+    $depreciationTimeframe = !empty($_POST["depreciationTimeframe"]) ? $_POST["depreciationTimeframe"] : null;
+    $depreciationPercentage = !empty($_POST["depreciationPercentage"]) ? $_POST["depreciationPercentage"] : null;
 
-    $add_asset_sql = "INSERT INTO assets (asset_no, asset_name, `status`, serial_number, location_id, accounts_asset, whs_asset, purchase_date, department_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $add_asset_sql = "INSERT INTO assets (asset_no, asset_name, `status`, disposal_date , serial_number, location_id, accounts_asset, whs_asset, ict_asset, purchase_date, cost, department_id, notes, allocated_to, depreciation_timeframe, depreciation_percentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $add_asset_result = $conn->prepare($add_asset_sql);
-    $add_asset_result->bind_param("ssssiiisi", $assetNo, $assetName, $status, $serialNumber, $location, $accountAsset, $whsAsset, $purchaseDate, $departmentId);
+    $add_asset_result->bind_param("sssssiiiisiissii", $assetNo, $assetName, $status, $disposalDate, $serialNumber, $location, $accountAsset, $whsAsset, $ictAsset, $purchaseDate, $cost, $departmentId, $notes, $allocatedTo, $depreciationTimeframe, $depreciationPercentage);
 
     // Execute the prepared statement
     if ($add_asset_result->execute()) {
@@ -98,7 +115,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
         echo "Error updating record: " . $conn->error;
     }
 }
-
 ?>
 
 <head>
@@ -128,8 +144,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
             <label for="assetNo" class="fw-bold">FE Number</label>
             <div class="input-group">
                 <span class="input-group-text rounded-start">FE</span>
-                <input type="text" min="0" step="any" class="form-control rounded-end" id="assetNoToAdd"
-                    name="assetNo" aria-describedby="assetNo" required>
+                <input type="text" min="0" step="any" class="form-control rounded-end" id="assetNoToAdd" name="assetNo"
+                    aria-describedby="assetNo" required>
                 <div class="invalid-feedback">
                     Please provide the FE Number.
                 </div>
@@ -158,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="status" class="fw-bold">Status</label>
-            <select name="status" class="form-select" required>
+            <select name="status" class="form-select" id="status" required>
                 <option disabled selected hidden></option>
                 <option value="Current">Current</option>
                 <option value="Obsolete">Obsolete</option>
@@ -169,6 +185,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
                 Please provide the status.
             </div>
         </div>
+        <div class="form-group col-md-6 mt-3 d-none" id="disposalDateInput">
+            <label for="disposalDate" class="fw-bold">Disposal Date</label>
+            <input type="date" name="disposalDate" class="form-control" id="disposalDate">
+            <div class="invalid-feedback">
+                Please provide the disposal date.
+            </div>
+        </div>
         <div class="form-group col-md-6 mt-3">
             <label for="serialNumber" class="fw-bold">Serial Number</label>
             <input type="text" name="serialNumber" class="form-control">
@@ -176,6 +199,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
         <div class="form-group col-md-6 mt-3">
             <label for="purchaseDate" class="fw-bold">Purchase Date</label>
             <input type="date" name="purchaseDate" class="form-control">
+        </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="cost" class="fw-bold">Cost</label>
+            <input type="number" step="any" name="cost" class="form-control">
         </div>
         <div class="form-group col-md-6 mt-3">
             <label for="location" class="fw-bold">Location</label>
@@ -199,9 +226,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
                 Please provide the other location.
             </div>
         </div>
+        <div class="form-group col-md-6 mt-3">
+            <label for="notes" class="fw-bold">Notes</label>
+            <textarea name="notes" class="form-control" rows="1"></textarea>
+        </div>
+        <div class="form-group col-md-6 mt-3 position-relative">
+            <label for="allocatedToDropdown" class="fw-bold">Allocated to</label>
+            <!-- Trigger Button -->
+            <div class="dropdown">
+                <button class="form-select text-start" type="button" id="allocatedToDropdown" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <span id="selectedPersonText">Select Employee</span>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <ul class="dropdown-menu w-100 shadow" aria-labelledby="allocatedToDropdown"
+                    style="max-height: 250px; overflow-y: auto;">
+                    <!-- Search box -->
+                    <li class="px-3 py-2">
+                        <input type="text" id="searchAllocatedTo" class="form-control" placeholder="Search..." />
+                    </li>
+                    <div id="personList">
+                        <?php
+                        foreach ($employees as $row) {
+                            $fullName = htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']);
+                            $nickname = htmlspecialchars($row["nickname"]);
+                            $empId = htmlspecialchars($row['employee_id']);
+                            echo '<li><a class="dropdown-item involved-option" href="#" data-id="' . $empId . '">[' . $empId . '] ' . $fullName;
+
+                            if (!empty($nickname)) {
+                                echo ' (' . $nickname . ')';
+                            }
+
+                            echo '</a></li>';
+                        }
+                        ?>
+                    </div>
+                </ul>
+            </div>
+
+            <!-- Hidden input to store selected value -->
+            <input type="hidden" name="allocatedTo" id="allocatedToHidden">
+        </div>
     </div>
     <div class="row">
-        <div class="form-group col-md-6 mt-3">
+        <div class="form-group col-md-4 mt-3">
             <div class="d-flex flex-column">
                 <label for="accountAsset" class="fw-bold">Account Asset</label>
                 <div class="btn-group col-3 col-md-4" role="group">
@@ -218,8 +287,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
             </div>
         </div>
 
-
-        <div class="form-group col-md-6 mt-3">
+        <div class="form-group col-md-4 mt-3">
             <div class="d-flex flex-column">
                 <label for="whsAsset" class="fw-bold">WHS Asset</label>
                 <div class="btn-group col-3 col-md-4" role="group">
@@ -235,6 +303,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
                 </div>
             </div>
         </div>
+
+        <div class="form-group col-md-4 mt-3">
+            <div class="d-flex flex-column">
+                <label for="ictAsset" class="fw-bold">ICT Asset</label>
+                <div class="btn-group col-3 col-md-4" role="group">
+                    <input type="radio" class="btn-check btn-custom" name="ictAsset" id="ictAssetYes" value="1"
+                        autocomplete="off" required>
+                    <label class="btn btn-sm btn-custom" for="ictAssetYes"
+                        style="color:#043f9d; border: 1px solid #043f9d">Yes</label>
+
+                    <input type="radio" class="btn-check btn-custom" name="ictAsset" id="ictAssetNo" value="0"
+                        autocomplete="off" checked required>
+                    <label class="btn btn-sm btn-custom" for="ictAssetNo"
+                        style="color:#043f9d; border: 1px solid #043f9d">No</label>
+                </div>
+            </div>
+        </div>
+        <?php if ($role === "full control") { ?>
+            <div class="container">
+                <hr class="mt-4">
+            </div>
+
+            <div class="form-group col-md-6 mt-3">
+                <div class="d-flex flex-column">
+                    <label for="depreciationTimeframe" class="fw-bold">Depreciation Timeframe</label>
+                    <div class="input-group">
+                        <input type="number" min="0" class="form-control" id="depreciationTimeframe"
+                            name="depreciationTimeframe">
+                        <span class="input-group-text">Months</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-md-6 mt-3">
+                <div class="d-flex flex-column">
+                    <label for="depreciationPercentage" class="fw-bold">Depreciation Percentage</label>
+                    <div class="input-group">
+                        <input type="number" min="0" class="form-control" id="depreciationPercentage"
+                            name="depreciationPercentage">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
     </div>
 
     <div class="d-flex justify-content-center mt-5 mb-3">
@@ -317,7 +428,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
             }
         })
     })
-
 </script>
 
 <script>
@@ -325,10 +435,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
         const locationSelect = document.getElementById("location");
         const otherLocationInput = document.querySelector("#otherLocationInput");
         const otherLocation = document.querySelector("#otherLocation");
-
-        console.log(locationSelect);
-        console.log(otherLocationInput);
-        console.log(otherLocation);
 
         function updateLocationFields() {
             const selectedOptionText = locationSelect.options[locationSelect.selectedIndex].text;
@@ -351,4 +457,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetNo"])) {
         //Initialize fields based on the currently selected option
         updateLocationFields();
     })
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const statusSelect = document.getElementById("status");
+        const disposalDateInput = document.querySelector("#disposalDateInput");
+        const disposalDate = document.querySelector("#disposalDate");
+
+        function updateDisposalDateFields() {
+            const selectedOptionText = statusSelect.options[statusSelect.selectedIndex].text;
+
+            if (selectedOptionText === "Disposed") {
+                disposalDate.required = true;
+                disposalDate.value = "";
+                disposalDateInput.classList.remove("d-none");
+                disposalDateInput.classList.add("d-block");
+            } else {
+                disposalDate.required = false;
+                disposalDate.value = "";
+                disposalDateInput.classList.add("d-none");
+                disposalDateInput.classList.remove("d-block");
+            }
+
+            // Attach change event listener
+            statusSelect.addEventListener('change', updateDisposalDateFields);
+        }
+        // Initialize fields based on the currently selected option
+        updateDisposalDateFields();
+    })
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("searchAllocatedTo");
+        const personItems = document.querySelectorAll(".involved-option");
+        const selectedText = document.getElementById("selectedPersonText");
+        const hiddenInput = document.getElementById("allocatedToHidden");
+
+        // Filter list based on search
+        searchInput.addEventListener("input", function () {
+            const searchTerm = searchInput.value.toLowerCase();
+            personItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.parentElement.style.display = text.includes(searchTerm) ? "" : "none";
+            });
+        });
+
+        // Set selected person
+        personItems.forEach(item => {
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+                const name = item.textContent;
+                const id = item.getAttribute("data-id");
+
+                selectedText.textContent = name;
+                hiddenInput.value = id;
+            });
+        });
+    });
 </script>

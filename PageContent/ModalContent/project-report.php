@@ -31,7 +31,6 @@ $projectName = $config['project_name'];
 </head>
 
 <body>
-
     <div class="d-flex justify-content-center align-items-center d-none mb-5 background-color shadow-lg py-4 rounded-3"
         id="filterProjectReportForm">
         <div class="row col-8">
@@ -53,6 +52,8 @@ $projectName = $config['project_name'];
                     <option value="Export">Export</option>
                     <option value="R&D">R&D</option>
                     <option value="Service">Service</option>
+                    <option value="PDC - International">PDC - International</option>
+                    <option value="PDC - Local">PDC - Local</option>
                 </select>
             </div>
             <div class="col-6 mt-3">
@@ -96,9 +97,9 @@ $projectName = $config['project_name'];
                     class="fa-regular fa-pen-to-square ms-1"></i></button>
             <button class="btn btn-success btn-sm fw-bold ms-2" id="refreshButton">Refresh <i
                     class="fa-solid fa-arrows-rotate ms-1"></i></button>
+            <button class="btn btn-primary btn-sm fw-bold ms-2" id="exportToExcelBtn">Export to Excel</button>
         </div>
     </div>
-
 
     <!-- Chart Container -->
     <div class="row d-flex justify-content-between">
@@ -279,8 +280,10 @@ $projectName = $config['project_name'];
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 400px">Project Name</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Payment Terms</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 300px">Project Type</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 300px">Project Engineer</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Description</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Estimated Delivery Date</th>
+        <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 200px">Revised Delivery Date</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Unit Price</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white; min-width: 100px">Qty</th>
         <th class="fw-bold py-2 text-center" style="background-color: #043f9d; color: white;">Sub Total</th>
@@ -302,14 +305,30 @@ $projectName = $config['project_name'];
             <td class="py-2 text-center">${project.project_name}</td>
             <td class="py-2 text-center">${project.payment_terms}</td>
             <td class="py-2 text-center">${project.project_type}</td>
+            <td class="py-2 text-center">
+  ${project.engineers ? project.engineers : 'N/A'}
+</td>
+
             <td class="py-2 text-center">${project.description}</td>
-            <td class="py-2 text-center">${new Date(project.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+            <td class="py-2 text-center">
+  ${project.date
+                        ? new Date(project.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' })
+                        : 'N/A'}
+</td>
+
+            <td class="py-2 text-center">
+  ${project.revised_delivery_date
+                        ? new Date(project.revised_delivery_date).toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' })
+                        : 'N/A'
+                    }
+</td>
+
             <td class="py-2 text-center">$${parseFloat(project.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="py-2 text-center">${project.quantity}</td>
             <td class="py-2 text-center">$${parseFloat(project.sub_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="py-2 text-center ${invoicedClass}">${invoicedText}</td>
             <td class="py-2 text-center">
-            ${project.first_name && project.last_name ? project.first_name + ' ' + project.last_name : 'N/A'}
+            ${project.approved_first_name && project.approved_last_name ? project.approved_first_name + ' ' + project.approved_last_name : 'N/A'}
             </td>
         `;
                 table.appendChild(row);
@@ -526,7 +545,7 @@ $projectName = $config['project_name'];
                 const cells = row.getElementsByTagName('td');
 
                 // Get the invoiced status from the 10th column (index 9)
-                const rowStatus = cells[9]?.textContent.trim().toLowerCase(); // Invoiced status is in the 9th column (index 8)
+                const rowStatus = cells[11]?.textContent.trim().toLowerCase(); // Invoiced status is in the 9th column (index 8)
 
                 // Check if the row matches the search query and invoice status filter
                 let match = false;
@@ -605,7 +624,104 @@ $projectName = $config['project_name'];
             });
         });
     </script>
+    <script>
+        document.getElementById('exportToExcelBtn').addEventListener('click', exportToExcel);
 
+        function exportToExcel() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            script.onload = function () {
+                const wb = XLSX.utils.book_new();
+
+                // Summary data
+                const totalInvoiced = document.getElementById('totalInvoiced').innerText;
+                const totalNonInvoiced = document.getElementById('totalNonInvoiced').innerText;
+                const grandTotal = document.getElementById('grandTotal').innerText;
+
+                const timeframe = document.getElementById('startDateText').innerText + ' to ' + document.getElementById('endDateText').innerText;
+                const projectType = document.getElementById('projectTypeFilterSelection').innerText;
+                const paymentTerms = document.getElementById('paymentTermsFilterSelection').innerText;
+
+                const summaryData = [
+                    ["Project Report Summary"],
+                    [""],
+                    ["Timeframe:", timeframe],
+                    ["Project Type:", projectType],
+                    ["Payment Terms:", paymentTerms],
+                    [""],
+                    ["Total Invoiced:", totalInvoiced],
+                    ["Total Non-Invoiced:", totalNonInvoiced],
+                    ["Grand Total:", grandTotal],
+                    [""],
+                ];
+
+                const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+                XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+                // Project table
+                const table = document.getElementById('projectDetailsTableTimeframe');
+                const tableData = [];
+
+                // Headers
+                const headers = [];
+                const headerCells = table.rows[0].cells;
+                for (let i = 0; i < headerCells.length; i++) {
+                    headers.push(headerCells[i].innerText);
+                }
+                tableData.push(headers);
+
+                // Rows
+                for (let i = 1; i < table.rows.length; i++) {
+                    const row = table.rows[i];
+                    if (row.style.display === 'none') continue;
+
+                    const rowData = [];
+                    const cells = row.cells;
+
+                    for (let j = 0; j < cells.length; j++) {
+                        let cellValue;
+
+                        if (j === 0) {
+                            const link = cells[j].querySelector('a');
+                            cellValue = link ? link.innerText : cells[j].innerText;
+                        } else {
+                            cellValue = cells[j].innerText.trim();
+                        }
+
+                        // Detect currency format like $1,234.56
+                        if (/^\$[\d,]+(\.\d{2})?$/.test(cellValue)) {
+                            const numValue = parseFloat(cellValue.replace(/[$,]/g, ""));
+                            rowData.push({ v: numValue, t: 'n', z: '$#,##0.00' });
+                        }
+                        // Detect date format like "12 August 2024"
+                        else if (/^\d{1,2} [A-Za-z]+ \d{4}$/.test(cellValue)) {
+                            const dateObj = new Date(cellValue);
+                            if (!isNaN(dateObj.getTime())) {
+                                rowData.push({ v: dateObj, t: 'd', z: 'dd mmmm yyyy' });
+                            } else {
+                                rowData.push(cellValue); // fallback to text
+                            }
+                        }
+                        else {
+                            rowData.push(cellValue);
+                        }
+                    }
+
+                    tableData.push(rowData);
+                }
+
+                // Create sheet with formatting preserved
+                const projectWs = XLSX.utils.aoa_to_sheet(tableData);
+                XLSX.utils.book_append_sheet(wb, projectWs, "Projects");
+
+                // Save file
+                const date = new Date();
+                const dateString = date.toISOString().split('T')[0];
+                XLSX.writeFile(wb, `Project_Report_${dateString}.xlsx`);
+            };
+            document.head.appendChild(script);
+        }
+    </script>
 </body>
 
 </html>

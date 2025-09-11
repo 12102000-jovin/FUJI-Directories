@@ -26,13 +26,14 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Search condition
-$whereClause = "(asset_no LIKE '%$searchTerm%' OR asset_name LIKE '%$searchTerm%')";
+$whereClause = "(asset_no LIKE '%$searchTerm%' OR asset_name LIKE '%$searchTerm%' OR serial_number LIKE '%$searchTerm%' OR operating_system LIKE '%$searchTerm%' )";
 
 // Arrays to hold selected filter values
 $selected_departments = [];
 $selected_status = [];
 $selected_account = [];
 $selected_whs = [];
+$selected_ict = [];
 $selected_due_date = [];
 
 $filterApplied = false; // Variable to check if any filter is applied
@@ -75,6 +76,14 @@ if (isset($_GET['apply_filters'])) {
         $filterApplied = true;
     }
 
+    // Capture the selected ICT
+    if (isset($_GET['ict']) && is_array($_GET['ict'])) {
+        $selected_ict = array_map('intval', $_GET['ict']); // ensure safe integers
+        $ict_placeholders = implode(',', $selected_ict);
+        $whereClause .= " AND assets.ict_asset IN ($ict_placeholders)";
+        $filterApplied = true;
+    }
+
     date_default_timezone_set('Australia/Sydney');
     $today = date('Y-m-d');
     $next_30_days = date('Y-m-d', strtotime('+30 days'));
@@ -85,8 +94,6 @@ if (isset($_GET['apply_filters'])) {
         $today = new DateTime("now", new DateTimeZone("Australia/Sydney"));
         $todayStr = $today->format('Y-m-d');
         $thirtyDaysLater = $today->modify('+30 days')->format('Y-m-d');
-
-        $due_date_conditions = [];
 
         $due_date_conditions = [];
 
@@ -139,7 +146,6 @@ $assets_sql = "SELECT
                 WHERE $whereClause 
                 ORDER BY $sort $order 
                 LIMIT $offset, $records_per_page";
-
 
 $assets_result = $conn->query($assets_sql);
 
@@ -289,6 +295,20 @@ $total_count = $count_row['total'];
             <div class="d-flex justify-content-between align-items-center">
                 <div class="col-8 col-lg-5">
                     <form method="GET" id="searchForm">
+                        <?php
+                        foreach ($urlParams as $key => $value) {
+                            if ($key === 'search')
+                                continue; // skip search because it has its own input
+                            // If the param is an array (e.g. filters with multiple values), add one hidden input per value
+                            if (is_array($value)) {
+                                foreach ($value as $v) {
+                                    echo '<input type="hidden" name="' . htmlspecialchars($key) . '[]" value="' . htmlspecialchars($v) . '">';
+                                }
+                            } else {
+                                echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
+                            }
+                        }
+                        ?>
                         <div class="d-flex align-items-center">
                             <div class="input-group me-2">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -310,12 +330,14 @@ $total_count = $count_row['total'];
                         </div>
                     </form>
                 </div>
-                <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
-                    <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
-                        data-bs-target="#assetDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
-                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addAssetModal"> <i
-                            class="fa-solid fa-plus"></i> Add Asset</button>
-                </div>
+                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                    <div class="d-flex justify-content-end align-items-center col-4 col-lg-7">
+                        <a class="btn btn-primary me-2" type="button" data-bs-toggle="modal"
+                            data-bs-target="#assetDashboardModal"> <i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addAssetModal"> <i
+                                class="fa-solid fa-plus"></i> Add Asset</button>
+                    </div>
+                <?php } ?>
             </div>
         </div>
 
@@ -433,21 +455,42 @@ $total_count = $count_row['total'];
                                             </span>
                             <?php
                         }
-                    } else if ($key === 'due_dates' && is_array($value)) {
-                        foreach ($value as $due_dates) {
+                    } else if ($key === 'ict' && is_array($value)) {
+                        foreach ($value as $ict) {
                             ?>
                                                 <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
-                                                    <strong><span class="text-warning">Due:
-                                                        </span><?php echo htmlspecialchars($due_dates) ?></strong>
+                                                    <strong><span class="text-warning">ICT:
+                                                        </span><?php if ($ict == "1") {
+                                                            echo "Yes";
+                                                        } else if ($ict === "0") {
+                                                            echo "No";
+                                                        } ?> </strong>
                                                     <a href="?<?php
-                                                    // Remove this specific due date filter from URL
+                                                    // Remove this specific ict filter from URL
                                                     $filteredParams = $_GET;
-                                                    $filteredParams['due_dates'] = array_diff($filteredParams['due_dates'], [$due_dates]);
+                                                    $filteredParams['ict'] = array_diff($filteredParams['ict'], [$ict]);
                                                     echo http_build_query($filteredParams);
                                                     ?>" class="text-white ms-1">
                                                         <i class="fa-solid fa-times fa-"></i>
                                                     </a>
                                                 </span>
+                            <?php
+                        }
+                    } else if ($key === 'due_dates' && is_array($value)) {
+                        foreach ($value as $due_dates) {
+                            ?>
+                                                    <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                                                        <strong><span class="text-warning">Due:
+                                                            </span><?php echo htmlspecialchars($due_dates) ?></strong>
+                                                        <a href="?<?php
+                                                        // Remove this specific due date filter from URL
+                                                        $filteredParams = $_GET;
+                                                        $filteredParams['due_dates'] = array_diff($filteredParams['due_dates'], [$due_dates]);
+                                                        echo http_build_query($filteredParams);
+                                                        ?>" class="text-white ms-1">
+                                                            <i class="fa-solid fa-times fa-"></i>
+                                                        </a>
+                                                    </span>
                             <?php
                         }
                     }
@@ -473,7 +516,7 @@ $total_count = $count_row['total'];
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
-                        <th style="max-width: 50px;"></th>
+                        <th style="min-width: 150px;"></th>
                         <th class="py-4 align-middle text-center"> <a
                                 onclick="updateSort('department_name', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Department <i
@@ -490,6 +533,10 @@ $total_count = $count_row['total'];
                                 onclick="updateSort('status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Status <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"> <a
+                                onclick="updateSort('allocated_to', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Allocated to <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('serial_number', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Serial Number <i
@@ -501,15 +548,28 @@ $total_count = $count_row['total'];
                         <th class="py-4 align-middle text-center">
                             <as onclick="updateSort('accounts_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor: pointer">Accounts <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></as>
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a>
+                        </th>
+                        <th class="py-4 align-middle text-center">
+                            <as onclick="updateSort('cost', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor: pointer">Cost <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a>
                         </th>
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('whs_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="curdor: pointer">WHS <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                         <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('ict_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="curdor: pointer">ICT <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('purchase_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Purchase Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('disposal_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Disposal Date <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('latest_calibration', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
@@ -519,6 +579,26 @@ $total_count = $count_row['total'];
                                 onclick="updateSort('latest_maintenance', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Next Maintenance Due <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center">
+                            Manual/Work Instruction
+                        </th>
+                        <th class="py-4 align-middle text-center">
+                            Risk Assessment
+                        </th>
+                        <th class="py-4 align-middle text-center">
+                            Notes
+                        </th>
+                        <?php if ($role === "full control") { ?>
+                            <th class="py-4 align-middle text-center">
+                                Depreciation Timeframe
+                            </th>
+                            <th class="py-4 align-middle text-center">
+                                Depreciation Percentages
+                            </th>
+                            <th class="py-4 align-middle text-center">
+                                Est. Current Value
+                            </th>
+                        <?php } ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -526,22 +606,28 @@ $total_count = $count_row['total'];
                         <?php while ($row = $assets_result->fetch_assoc()) { ?>
                             <tr>
                                 <td class="align-middle text-center">
-                                    <button class="btn text-danger" data-bs-toggle="modal"
-                                        data-bs-target="#deleteConfirmationModal" data-asset-id="<?= $row["asset_id"] ?>"
-                                        data-asset-no="<?= $row["asset_no"] ?>">
-                                        <i class="fa-regular fa-trash-can text-danger"></i>
-                                    </button>
-                                    <button class="btn" data-bs-toggle="modal" data-bs-target="#editAssetModal"
-                                        data-asset-id="<?= $row["asset_id"] ?>" data-asset-no="<?= $row["asset_no"] ?>"
-                                        data-department-id="<?= $row["department_id"] ?>"
-                                        data-asset-name="<?= $row["asset_name"] ?>" data-status="<?= $row["status"] ?>"
-                                        data-serial-number="<?= $row["serial_number"] ?>"
-                                        data-location="<?= $row["location_id"] ?>"
-                                        data-accounts-asset="<?= $row["accounts_asset"] ?>"
-                                        data-whs-asset="<?= $row["whs_asset"] ?>"
-                                        data-purchase-date="<?= $row["purchase_date"] ?>">
-                                        <i class="fa-regular fa-pen-to-square"></i>
-                                    </button>
+                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                        <button class="btn text-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteConfirmationModal" data-asset-id="<?= $row["asset_id"] ?>"
+                                            data-asset-no="<?= $row["asset_no"] ?>">
+                                            <i class="fa-regular fa-trash-can text-danger"></i>
+                                        </button>
+                                        <button class="btn" data-bs-toggle="modal" data-bs-target="#editAssetModal"
+                                            data-asset-id="<?= $row["asset_id"] ?>" data-asset-no="<?= $row["asset_no"] ?>"
+                                            data-department-id="<?= $row["department_id"] ?>"
+                                            data-asset-name="<?= $row["asset_name"] ?>" data-status="<?= $row["status"] ?>"
+                                            data-disposal-date="<?= $row["disposal_date"] ?>"
+                                            data-serial-number="<?= $row["serial_number"] ?>" data-cost="<?= $row["cost"] ?>"
+                                            data-location="<?= $row["location_id"] ?>"
+                                            data-accounts-asset="<?= $row["accounts_asset"] ?>"
+                                            data-whs-asset="<?= $row["whs_asset"] ?>" data-ict-asset="<?= $row["ict_asset"] ?>"
+                                            data-purchase-date="<?= $row["purchase_date"] ?>" data-notes="<?= $row["notes"] ?>"
+                                            data-allocated-to="<?= $row["allocated_to"] ?>"
+                                            data-depreciation-timeframe="<?= $row["depreciation_timeframe"] ?>"
+                                            data-depreciation-percentage="<?= $row["depreciation_percentage"] ?>">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    <?php } ?>
                                     <a class="btn text-warning" href="asset-details-page.php?asset_no=<?= $row['asset_no'] ?>">
                                         <i class="fa-solid fa-up-right-from-square"></i>
                                     </a>
@@ -562,16 +648,67 @@ $total_count = $count_row['total'];
                                     }
                                     ?>
                                 "><?= $row['status'] ?></td>
+                                <?php
+                                $employee_id = $row['allocated_to'];
+                                $employee_name = "N/A"; // Default value
+                        
+                                if (isset($employee_id)) {
+                                    // Prepare and execute the query to fetch employee name
+                                    $stmt = $conn->prepare("SELECT first_name, last_name, nickname FROM employees WHERE employee_id = ?");
+                                    $stmt->bind_param("i", $employee_id);
+                                    $stmt->execute();
+                                    $result = $stmt->get_result();
+
+                                    // Fetch the employee name
+                                    if ($rowEmployee = $result->fetch_assoc()) {
+                                        $employee_first_name = $rowEmployee['first_name'];
+                                        $employee_last_name = $rowEmployee['last_name'];
+                                        $employee_nickname = $rowEmployee['nickname'];
+
+                                        // Combine with nickname if it exists
+                                        if (!empty($employee_nickname)) {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                        } else {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name;
+                                        }
+                                    }// Fetch the employee name
+                                    if ($rowEmployee = $result->fetch_assoc()) {
+                                        $employee_first_name = $rowEmployee['first_name'];
+                                        $employee_last_name = $rowEmployee['last_name'];
+                                        $employee_nickname = $rowEmployee['nickname'];
+
+                                        // Combine with nickname if it exists
+                                        if (!empty($employee_nickname)) {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                        } else {
+                                            $employee_name = $employee_first_name . ' ' . $employee_last_name;
+                                        }
+                                    }
+                                }
+                                ?>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= ($employee_name !== 'N/A') ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= ($employee_name !== 'N/A') ? htmlspecialchars($employee_name) : 'N/A' ?>
+                                </td>
+
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['serial_number']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['serial_number']) ? htmlspecialchars($row['serial_number']) : 'N/A' ?>
                                 </td>
                                 <td class="py-3 align-middle text-center"><?= $row['location_name'] ?></td>
                                 <td class="py-3 align-middle text-center"><?= $row['accounts_asset'] == 1 ? 'Yes' : 'No' ?></td>
+                                <td class="py-3 align-middle text-center" <?= isset($row["cost"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                    <?= isset($row['cost']) ? '$' . number_format($row['cost'], 2) : "N/A" ?>
+                                </td>
                                 <td class="py-3 align-middle text-center"><?= $row['whs_asset'] == 1 ? 'Yes' : 'No' ?></td>
+                                <td class="py-3 align-middle text-center"><?= $row['ict_asset'] == 1 ? 'Yes' : 'No' ?></td>
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['purchase_date']) && $row['purchase_date'] ? date('j F Y', strtotime($row['purchase_date'])) : 'N/A' ?>
+                                </td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['disposal_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= isset($row['disposal_date']) && $row['disposal_date'] ? date('j F Y', strtotime($row['disposal_date'])) : 'N/A' ?>
                                 </td>
                                 <?php
                                 $today = new DateTime('now', new DateTimeZone('Australia/Sydney'));
@@ -621,11 +758,62 @@ $total_count = $count_row['total'];
                                         : 'N/A' ?>
                                 </td>
 
+                                <td
+                                    class="py-3 align-middle text-center text-white <?php echo !empty($row['manual']) ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?php if (!empty($row["manual"])) {
+                                        echo "Yes";
+                                    } else {
+                                        echo "No";
+                                    } ?>
+                                </td>
+                                <td
+                                    class="py-3 align-middle text-center text-white <?php echo !empty($row['risk_assessment']) ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?php if (!empty($row["risk_assessment"])) {
+                                        echo "Yes";
+                                    } else {
+                                        echo "No";
+                                    } ?>
+                                </td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['notes']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= isset($row['notes']) ? htmlspecialchars($row['notes']) : 'N/A' ?>
+                                </td>
+                                <?php if ($role === "full control") { ?>
+                                    <td class="py-3 align-middle text-center"
+                                        style="<?= isset($row['depreciation_timeframe']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                        <?= isset($row['depreciation_timeframe']) ? htmlspecialchars($row['depreciation_timeframe'] . ' Months') : 'N/A' ?>
+                                    </td>
+                                    <td class="py-3 align-middle text-center"
+                                        style="<?= isset($row['depreciation_percentage']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                        <?= isset($row['depreciation_percentage']) ? htmlspecialchars($row['depreciation_percentage'] . '%') : 'N/A' ?>
+                                    </td>
+                                    <td class="py-3 align-middle text-center">
+                                        <?php
+                                        $cost = floatval($row['cost']);
+                                        $depreciationRate = floatval($row['depreciation_percentage']);
+                                        $depreciationTimeframe = intval($row['depreciation_timeframe']);
+                                        $purchaseDate = isset($row['purchase_date']) ? new DateTime($row['purchase_date']) : null;
+                                        $today = new DateTime('now', new DateTimeZone('Australia/Sydney'));
+                                        $estimatedValue = "N/A";
+
+                                        if ($cost && $depreciationRate && $depreciationTimeframe && $purchaseDate) {
+                                            $interval = $purchaseDate->diff($today);
+                                            $monthsElapsed = ($interval->y * 12) + $interval->m;
+
+                                            $monthsElapsed = min($monthsElapsed, $depreciationTimeframe); // cap it at the timeframe
+                                            $estimatedValueCalc = $cost - ($cost * ($depreciationRate / 100) * ($monthsElapsed / $depreciationTimeframe));
+                                            $estimatedValue = '$' . number_format(max($estimatedValueCalc, 0), 2); // prevent negative value
+                                        }
+                                        echo $estimatedValue;
+                                        ?>
+
+                                    </td>
+                                <?php } ?>
                             </tr>
                         <?php } ?>
                     <?php } else { ?>
                         <tr>
-                            <td colspan="12" class="text-center py-3">No assets found</td>
+                            <td colspan="22" class="text-center py-3">No assets found</td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -814,6 +1002,22 @@ $total_count = $count_row['total'];
                 </div>
                 <div class="modal-body">
                     <form method="GET">
+                        <?php
+                        // Preserve current search param
+                        if (!empty($searchTerm)) {
+                            echo '<input type="hidden" name="search" value="' . htmlspecialchars($searchTerm) . '">';
+                        }
+                        // Also preserve other params like sort/order/page if needed
+                        if (!empty($sort)) {
+                            echo '<input type="hidden" name="sort" value="' . htmlspecialchars($sort) . '">';
+                        }
+                        if (!empty($order)) {
+                            echo '<input type="hidden" name="order" value="' . htmlspecialchars($order) . '">';
+                        }
+                        if (!empty($page)) {
+                            echo '<input type="hidden" name="page" value="' . htmlspecialchars($page) . '">';
+                        }
+                        ?>
                         <div class="row">
                             <div class="col-12 col-lg-4">
                                 <h5 class="signature-color fw-bold">Department</h5>
@@ -890,6 +1094,20 @@ $total_count = $count_row['total'];
                                         <label for="<?php echo $id; ?>"><?php echo $j === 1 ? "Yes" : "No"; ?></label>
                                     </p>
                                 <?php } ?>
+
+                                <h5 class="signature-color fw-bold mt-4">ICT</h5>
+                                <?php
+                                $ict = [1, 0];
+                                $selected_ict = isset($_GET['ict']) ? $_GET['ict'] : [];
+                                foreach ($ict as $k) {
+                                    $id = "ict_$k"; // unique ID
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input" id="<?php echo $id ?>" name="ict[]"
+                                            value="<?php echo $k ?>" <?php echo in_array($k, $selected_ict) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $id; ?>"><?php echo $k === 1 ? "Yes" : "No"; ?></label>
+                                    </p>
+                                <?php } ?>
                             </div>
                             <div class="d-flex justify-content-center mt-4">
                                 <button class="btn btn-secondary me-1" type="button"
@@ -934,11 +1152,18 @@ $total_count = $count_row['total'];
                 var department = button.getAttribute('data-department-id');
                 var assetName = button.getAttribute('data-asset-name');
                 var status = button.getAttribute('data-status');
+                var disposalDate = button.getAttribute('data-disposal-date');
                 var serialNumber = button.getAttribute('data-serial-number');
+                var cost = button.getAttribute('data-cost');
                 var purchaseDate = button.getAttribute('data-purchase-date');
                 var location = button.getAttribute('data-location');
+                var notes = button.getAttribute('data-notes');
+                var allocatedTo = button.getAttribute('data-allocated-to');
+                var depreciationTimeframe = button.getAttribute('data-depreciation-timeframe');
+                var depreciationPercentage = button.getAttribute('data-depreciation-percentage');
                 var accountsAsset = button.getAttribute('data-accounts-asset');
                 var whsAsset = button.getAttribute('data-whs-asset');
+                var ictAsset = button.getAttribute('data-ict-asset');
 
 
                 // Update the modal's content with the extracted info
@@ -947,18 +1172,30 @@ $total_count = $count_row['total'];
                 var modalDepartment = myModalEl.querySelector('#departmentToEdit');
                 var modalAssetName = myModalEl.querySelector('#assetNameToEdit');
                 var modalStatus = myModalEl.querySelector('#statusToEdit');
+                var modalDisposalDate = myModalEl.querySelector('#disposalDateToEdit');
                 var modalSerialNumber = myModalEl.querySelector('#serialNumberToEdit');
+                var modalCost = myModalEl.querySelector('#costToEdit');
+                var modalAllocatedTo = myModalEl.querySelector('#allocatedToToEdit');
+                var modalDepreciationTimeframe = myModalEl.querySelector('#depreciationTimeframeToEdit');
+                var modalDepreciationPercentage = myModalEl.querySelector('#depreciationPercentageToEdit');
                 var modalPurchaseDate = myModalEl.querySelector('#purchaseDateToEdit');
                 var modalLocation = myModalEl.querySelector('#locationToEdit');
+                var modalNotes = myModalEl.querySelector('#notesToEdit');
 
                 modalAssetId.value = assetId
                 modalAssetNo.value = assetNo.startsWith("FE") ? assetNo.substring(2) : assetNo;
                 modalDepartment.value = department;
                 modalAssetName.value = assetName;
                 modalStatus.value = status;
+                modalDisposalDate.value = disposalDate;
                 modalSerialNumber.value = serialNumber;
+                modalCost.value = cost;
                 modalPurchaseDate.value = purchaseDate;
                 modalLocation.value = location;
+                modalNotes.value = notes;
+                modalAllocatedTo.value = allocatedTo;
+                modalDepreciationTimeframe.value = depreciationTimeframe;
+                modalDepreciationPercentage.value = depreciationPercentage;
 
                 if (accountsAsset === "1") {
                     document.getElementById("accountsAssetToEditYes").checked = true;
@@ -971,6 +1208,36 @@ $total_count = $count_row['total'];
                 } else if (whsAsset === "0") {
                     document.getElementById("whsAssetToEditNo").checked = true;
                 }
+
+                if (ictAsset === "1") {
+                    document.getElementById("ictAssetToEditYes").checked = true;
+                } else if (ictAsset === "0") {
+                    document.getElementById("ictAssetToEditNo").checked = true;
+                }
+
+                const statusSelect = document.getElementById("statusToEdit");
+                const disposalDateToEditInput = document.querySelector("#disposalDateToEditInput");
+                const disposalDateToEdit = document.querySelector("#disposalDateToEdit");
+
+                function updateDisposalDateToEditFields() {
+                    const selectedOptionText = statusSelect.options[statusSelect.selectedIndex].text;
+
+                    if (selectedOptionText === "Disposed") {
+                        disposalDateToEdit.required = true;
+                        disposalDateToEditInput.classList.remove("d-none");
+                        disposalDateToEditInput.classList.add("d-block");
+                    } else {
+                        disposalDateToEdit.required = false;
+                        disposalDateToEdit.value = "";
+                        disposalDateToEditInput.classList.add("d-none");
+                        disposalDateToEditInput.classList.remove("d-block");
+                    }
+
+                    // Attach change event listener
+                    statusSelect.addEventListener('change', updateDisposalDateToEditFields);
+                }
+                // Initialize fields based on the currently selected option
+                updateDisposalDateToEditFields();
             });
         })
     </script>

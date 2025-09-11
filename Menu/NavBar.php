@@ -249,7 +249,7 @@ $user_details_result->free();
                     } else if (htmlspecialchars($abbr) == "CAPA") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
                     } else if (htmlspecialchars($abbr) == "HR") {
-                        $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                        $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php?status%5B%5D=1&apply_filters=";
                     }  else if (htmlspecialchars($abbr) == "PJ") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
                     } else if (htmlspecialchars($abbr) == "QA") {
