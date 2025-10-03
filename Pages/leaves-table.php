@@ -265,7 +265,6 @@ $total_pages = ceil($total_records / $records_per_page);
                 <tbody>
                     <?php if ($current_leaves_result->num_rows > 0) { ?>
                         <?php while ($row = $current_leaves_result->fetch_assoc()) { ?>
-
                             <?php
                             $departmentName = $row['department_name'];
                             if ($role === "modify 1") {

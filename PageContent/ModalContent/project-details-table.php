@@ -106,13 +106,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                 <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
                     <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
                 <?php } ?>
-                <th class="py-3 align-middle text-center print-mode" style="min-width: 120px">Item No.</th>
-                <th class="py-3 align-middle text-center" style="min-width: 240px">Description</th>
-                <th class="py-3 align-middle text-center" style="min-width: 200px">
+                <th class="py-3 align-middle text-center print-mode sortable" data-sort="item_number"
+                    style="min-width: 120px; cursor: pointer;">
+                    Item No. <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="description"
+                    style="min-width: 240px; cursor: pointer;">
+                    Description <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="progress" style="cursor: pointer;">
+                    Progress <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="delivery_date"
+                    style="min-width: 200px; cursor: pointer;">
                     <div class="dropdown">
                         <a class="text-decoration-none text-white" data-bs-toggle="dropdown" style="cursor: pointer"
                             aria-expanded="false">
-                            Estimated Delivery Date
+                            Estimated Delivery Date <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" id="toggleEditAllDeliveryDateBtn"> <i
@@ -121,12 +131,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                         </ul>
                     </div>
                 </th>
-                <th class="py-3 align-middle text-center">Revised Delivery Date</th>
-                <th class="py-3 align-middle text-center" style="min-width: 160px">Unit Price</th>
-                <th class="py-3 align-middle text-center">Qty</th>
-                <th class="py-3 align-middle text-center" style="min-width: 200px">Sub-Total</th>
-                <th class="py-3 align-middle text-center">Invoiced</th>
-                <th class="py-3 align-middle text-center">Approved By</th>
+                <th class="py-3 align-middle text-center sortable" data-sort="revised_delivery_date"
+                    style="cursor: pointer;">
+                    Revised Delivery Date <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="unit_price"
+                    style="min-width: 160px; cursor: pointer;">
+                    Unit Price <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="quantity" style="cursor: pointer;">
+                    Qty <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="sub_total"
+                    style="min-width: 200px; cursor: pointer;">
+                    Sub-Total <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="invoiced" style="cursor: pointer;">
+                    Invoiced <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
+                <th class="py-3 align-middle text-center sortable" data-sort="approved_by" style="cursor: pointer;">
+                    Approved By <span class="sort-icon"><i class="fa-solid fa-sort"></i></span>
+                </th>
             </tr>
         </thead>
         <tbody id="projectDetailsTbody">
@@ -330,7 +355,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
                     addProjectDetails: true,
                     projectIdToBeAdded: projectId,
                     date: date,
-                    revisedDeliveryDate : revisedDeliveryDate,
+                    revisedDeliveryDate: revisedDeliveryDate,
                     description: description,
                     unitPrice: unitPrice,
                     quantity: quantity,
@@ -524,5 +549,139 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     function printPage() {
         window.print();
     }
+</script>
+
+<script>
+    $(document).ready(function () {
+        let currentSort = {
+            column: null,
+            direction: 'asc' // 'asc' or 'desc'
+        };
+
+        // Add click event listeners to sortable headers
+        $('.sortable').on('click', function () {
+            const column = $(this).data('sort');
+
+            // Toggle direction if clicking the same column
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            // Update sort indicators
+            $('.sortable').removeClass('sort-asc sort-desc');
+            $(this).addClass(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+            // Sort the table
+            sortTable(column, currentSort.direction);
+        });
+
+        function sortTable(column, direction) {
+            const tbody = $('#projectDetailsTbody');
+            const rows = tbody.find('tr').get();
+
+            // Sort the rows
+            rows.sort((a, b) => {
+                let aValue, bValue;
+
+                switch (column) {
+                    case 'item_number':
+                        // Extract just the numeric part from the item number cell
+                        aValue = extractItemNumber($(a).find('[id^="item_number_"]'));
+                        bValue = extractItemNumber($(b).find('[id^="item_number_"]'));
+                        break;
+
+                    case 'description':
+                        aValue = $(a).find('[id^="description_"]').text().toLowerCase();
+                        bValue = $(b).find('[id^="description_"]').text().toLowerCase();
+                        break;
+
+                    case 'progress':
+                        aValue = $(a).find('[id^="current_step_"]').text().toLowerCase();
+                        bValue = $(b).find('[id^="current_step_"]').text().toLowerCase();
+                        break;
+
+                    case 'delivery_date':
+                        aValue = getDateValue($(a).find('[id^="date_"]'));
+                        bValue = getDateValue($(b).find('[id^="date_"]'));
+                        break;
+
+                    case 'revised_delivery_date':
+                        aValue = getDateValue($(a).find('[id^="revisedDeliveryDate_"]'));
+                        bValue = getDateValue($(b).find('[id^="revisedDeliveryDate_"]'));
+                        break;
+
+                    case 'unit_price':
+                        aValue = getCurrencyValue($(a).find('[id^="unitprice_"]'));
+                        bValue = getCurrencyValue($(b).find('[id^="unitprice_"]'));
+                        break;
+
+                    case 'quantity':
+                        aValue = parseInt($(a).find('[id^="quantity_"]').text()) || 0;
+                        bValue = parseInt($(b).find('[id^="quantity_"]').text()) || 0;
+                        break;
+
+                    case 'sub_total':
+                        aValue = getCurrencyValue($(a).find('[id^="sub_total_"]'));
+                        bValue = getCurrencyValue($(b).find('[id^="sub_total_"]'));
+                        break;
+
+                    case 'invoiced':
+                        aValue = $(a).find('input[type="checkbox"]').is(':checked') ? 1 : 0;
+                        bValue = $(b).find('input[type="checkbox"]').is(':checked') ? 1 : 0;
+                        break;
+
+                    case 'approved_by':
+                        aValue = $(a).find('[id^="approved_by_"]').text().toLowerCase();
+                        bValue = $(b).find('[id^="approved_by_"]').text().toLowerCase();
+                        break;
+
+                    default:
+                        return 0;
+                }
+
+                // Handle null/undefined values
+                if (aValue === null || aValue === undefined) aValue = '';
+                if (bValue === null || bValue === undefined) bValue = '';
+
+                // Compare values
+                if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Reattach sorted rows
+            tbody.empty().append(rows);
+        }
+
+        // New function to extract item number properly
+        function extractItemNumber(element) {
+            const text = element.text().trim();
+            // Extract only digits from the text
+            const numbers = text.match(/\d+/);
+            return numbers ? parseInt(numbers[0]) : 0;
+        }
+
+        // Your existing functions
+        function getDateValue(element) {
+            const text = element.text().trim();
+            if (text === 'N/A') return null;
+
+            const date = new Date(text);
+            return isNaN(date.getTime()) ? null : date.getTime();
+        }
+
+        function getCurrencyValue(element) {
+            const text = element.text().trim();
+            if (text === 'N/A') return 0;
+
+            // Remove currency symbols and commas, then parse as float
+            // This handles negative values correctly
+            const numericValue = text.replace(/[$,]/g, '');
+            return parseFloat(numericValue) || 0;
+        }
+    });
 </script>
 </body>

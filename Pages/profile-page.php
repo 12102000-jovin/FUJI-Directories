@@ -1559,9 +1559,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                             <div class="hide-print">
                                 <div class="d-flex flex-sm-row align-items-center mt-4 mt-sm-0">
-                                    <button class="btn btn-secondary me-2" onclick="toggleAndPrint()">
-                                        <i class="fa-solid fa-print"></i>
-                                    </button>
+                                    <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
+                                        <button class="btn btn-secondary me-2" onclick="toggleAndPrint()">
+                                            <i class="fa-solid fa-print"></i>
+                                        </button>
+                                    <?php } ?>
 
                                     <?php if ($role === "full control") { ?>
                                         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#editProfileModal"
@@ -1877,74 +1879,228 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 </div>
 
                 <div class="col-lg-4">
-                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                    <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
                         <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
+
                             <div class="p-3 hide-print">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
+
                                     <p class="fw-bold signature-color mb-0 pb-0">Files</p>
+
                                     <?php if ($role === "full control" || $role === "modify 1") { ?>
                                         <button class="btn btn-success btn-sm" data-bs-toggle="modal"
                                             data-bs-target="#uploadEmployeeFilesModal"><i
                                                 class="fa-solid fa-plus me-1"></i>Upload</button>
                                     <?php } ?>
                                 </div>
-                                <!-- 00 - Employee Documents -->
-                                <div class="d-flex justify-content-center">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <!-- 00 - Employee Documents -->
+                                    <div class="d-flex justify-content-center">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
                                             <div class="col-auto d-flex align-items-center">
-                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Open Folder">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                        </a>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            00 - Employee Documents
-                                                        </a>
-                                                    </div>
-                                                    <span>
+                                                <div class="col-auto d-flex align-items-center">
+                                                    <span class="folder-icon tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Open Folder">
                                                         <div class="d-flex align-items-center">
-                                                            <small id="pay-review-directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
-                                                            <!-- <input type="hidden"
+                                                            <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                    class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                            </a>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=00 - Employee Documents&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                00 - Employee Documents
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="pay-review-directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\00 - Employee Documents" ?></small>
+                                                                <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\00 - Employee Documents"; ?>">
                                                             <button id="copy-button" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
                                                             </button> -->
-                                                        </div>
-                                                    </span>
+                                                            </div>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                <?php } ?>
 
-                                <!-- 01 - Induction and Training Documents-->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                    <!-- 01 - Induction and Training Documents-->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
                                             <div class="col-auto d-flex align-items-center">
-                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Open Folder">
+                                                <div class="col-auto d-flex align-items-center">
+                                                    <span class="folder-icon tooltips" data-bs-toggle="tooltip"
+                                                        data-bs-placement="top" title="Open Folder">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                    class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                            </a>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                01 - Induction and Training Documents
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="pay-review-directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
+                                                                <!-- <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
+                                                            <button id="copy-button" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button> -->
+                                                            </div>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                    <!-- 02 - Resume, ID, and Qualifications -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
+                                                        <form method="POST">
+                                                            <input type="hidden" name="annualLeaveFolder">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                    class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                            </a>
+                                                        </form>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                02 - Resume, ID and Qualifications
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="annual-leaves-directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
+                                                                <!-- <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
+                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button> -->
+                                                            </div>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <!-- 03 - Accounts -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                        <form method="POST">
+                                                            <input type="hidden" name="annualLeaveFolder">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                    class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
+                                                            </a>
+                                                        </form>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                03 - Accounts
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="annual-leaves-directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
+                                                                <!-- <input type="hidden"
+                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
+                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
+                                                                onclick="copyDirectoryPath(this)"><i
+                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
+                                                                <small class="text-primary">Copy</small>
+                                                            </button> -->
+                                                            </div>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                    <!-- 04 - Leave -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
+                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
                                                                 class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
@@ -1952,361 +2108,234 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                     </div>
                                                 </span>
                                             </div>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=01 - Induction and Training Documents&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            01 - Induction and Training Documents
-                                                        </a>
-                                                    </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="pay-review-directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\01 - Induction and Training Documents" ?></small>
-                                                            <!-- <input type="hidden"
-                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\01 - Induction and Training Documents" ?>">
-                                                            <button id="copy-button" class="btn rounded btn-sm"
-                                                                onclick="copyDirectoryPath(this)"><i
-                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                                <small class="text-primary">Copy</small>
-                                                            </button> -->
+                                            <div class="col">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                04 - Leave
+                                                            </a>
                                                         </div>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 02 - Resume, ID, and Qualifications -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <form method="POST">
-                                                        <input type="hidden" name="annualLeaveFolder">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                        </a>
-                                                    </form>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=02 - Resume, ID and Qualifications&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            02 - Resume, ID and Qualifications
-                                                        </a>
-                                                    </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="annual-leaves-directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\02 - Resume, ID and Qualifications" ?></small>
-                                                            <!-- <input type="hidden"
-                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\02 - Resume, ID and Qualifications" ?>">
-                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
-                                                                onclick="copyDirectoryPath(this)"><i
-                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                                <small class="text-primary">Copy</small>
-                                                            </button> -->
-                                                        </div>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 03 - Accounts -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <form method="POST">
-                                                        <input type="hidden" name="annualLeaveFolder">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                        </a>
-                                                    </form>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=03 - Accounts&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            03 - Accounts
-                                                        </a>
-                                                    </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="annual-leaves-directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\03 - Accounts" ?></small>
-                                                            <!-- <input type="hidden"
-                                                                value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\03 - Accounts" ?>">
-                                                            <button id="copy-button-annual" class="btn rounded btn-sm"
-                                                                onclick="copyDirectoryPath(this)"><i
-                                                                    class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
-                                                                <small class="text-primary">Copy</small>
-                                                            </button> -->
-                                                        </div>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 04 - Leave -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
-                                                        <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=04 - Leave&payrollType=<?= $payrollType ?>"
-                                                            target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            04 - Leave
-                                                        </a>
-                                                    </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
-                                                            <!-- <input type="hidden"
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\04 - Leave" ?></small>
+                                                                <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\04 - Leave" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
                                                             </button> -->
-                                                        </div>
-                                                    </span>
+                                                            </div>
+                                                        </span>
+                                                    </div>
+                                                    <?php if ($role === "full control" || $role === "read") { ?>
+                                                        <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                                            data-bs-target="#addLeaveModal"><i
+                                                                class="fa-solid fa-plus me-1"></i>Upload</button>
+                                                    <?php } ?>
                                                 </div>
-                                                <?php if ($role === "full control") { ?>
-                                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal"
-                                                        data-bs-target="#addLeaveModal"><i
-                                                            class="fa-solid fa-plus me-1"></i>Upload</button>
-                                                <?php } ?>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <!-- 05 - HR Actions -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <!-- 05 - HR Actions -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                         <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            05 - HR Actions
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
                                                         </a>
                                                     </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
-                                                            <!-- <input type="hidden"
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=05 - HR Actions&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                05 - HR Actions
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\05 - HR Actions" ?></small>
+                                                                <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\05 - HR Actions" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
                                                             </button> -->
-                                                        </div>
-                                                    </span>
+                                                            </div>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <!-- 06 - Work Compensation -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
-                                                            class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
-                                                    </a>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <!-- 06 - Work Compensation -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                         <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
-                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            06 - Work Compensation
+                                                            class="btn btn-link p-0 m-0 text-decoration-underline fw-bold"><i
+                                                                class="fa-regular fa-folder-open text-warning fa-xl d-none"></i>
                                                         </a>
                                                     </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
-                                                            <!-- <input type="hidden"
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=06 - Work Compensation&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                06 - Work Compensation
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\06 - Work Compensation" ?></small>
+                                                                <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\06 - Work Compensation" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
                                                             </button> -->
-                                                        </div>
-                                                    </span>
+                                                            </div>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <!-- 07 - Exit Information -->
-                                <div class="d-flex justify-content-center mt-3">
-                                    <div class="row col-12 p-2 background-color rounded shadow-sm">
-                                        <div class="col-auto d-flex align-items-center">
-                                            <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Open Folder">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fa-solid fa-folder text-warning fa-xl"></i>
-                                                    <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information&payrollType=<?= $payrollType ?>"
-                                                        target="_blank"
-                                                        class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                    </a>
-                                                </div>
-                                            </span>
-                                        </div>
-                                        <div class="col">
-                                            <div class="d-flex align-items-center">
-                                                <div class="d-flex flex-column">
-                                                    <div class="d-flex justify-content-start">
+                                <?php } ?>
+
+                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <!-- 07 - Exit Information -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="row col-12 p-2 background-color rounded shadow-sm">
+                                            <div class="col-auto d-flex align-items-center">
+                                                <span class="folder-icon tooltips" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Open Folder">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-folder text-warning fa-xl"></i>
                                                         <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information&payrollType=<?= $payrollType ?>"
                                                             target="_blank"
                                                             class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
-                                                            07 - Exit Information
                                                         </a>
                                                     </div>
-                                                    <span>
-                                                        <div class="d-flex align-items-center">
-                                                            <small id="directory-path" class="me-1 text-break"
-                                                                style="color:#b1b1b1"><?php echo "$employeeId\07 - Exit Information" ?></small>
-                                                            <!-- <input type="hidden"
+                                                </span>
+                                            </div>
+                                            <div class="col">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex justify-content-start">
+                                                            <a href="../open-folder.php?employee_id=<?= $employeeId ?>&folder=07 - Exit Information&payrollType=<?= $payrollType ?>"
+                                                                target="_blank"
+                                                                class="btn btn-link p-0 m-0 text-decoration-underline fw-bold">
+                                                                07 - Exit Information
+                                                            </a>
+                                                        </div>
+                                                        <span>
+                                                            <div class="d-flex align-items-center">
+                                                                <small id="directory-path" class="me-1 text-break"
+                                                                    style="color:#b1b1b1"><?php echo "$employeeId\07 - Exit Information" ?></small>
+                                                                <!-- <input type="hidden"
                                                                 value="<?php echo "D:\\FSMBEH-Data\\09 - HR\\04 - Wage Staff\\$employeeId\\07 - Exit Information" ?>">
                                                             <button id="copy-button-policies" class="btn rounded btn-sm"
                                                                 onclick="copyDirectoryPath(this)"><i
                                                                     class="fa-regular fa-copy text-primary fa-xs p-0 m-0"></i>
                                                                 <small class="text-primary">Copy</small>
                                                             </button> -->
-                                                        </div>
-                                                    </span>
+                                                            </div>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                <?php } ?>
                             </div>
                         </div>
                     <?php } ?>
 
-                    <div class="card bg-white border-0 rounded shadow-lg mt-4">
-                        <div class="p-3 hide-print">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer"
-                                    data-bs-toggle="collapse" data-bs-target="#leaveDetails">Leaves <i
-                                        class="fas fa-chevron-down hide-print"></i></p>
-                                <!-- <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#Modal"><i
+                    <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $loginEmployeeId == $employeeId) { ?>
+                        <div class="card bg-white border-0 rounded shadow-lg mt-4">
+                            <div class="p-3 hide-print">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="fw-bold signature-color mb-0 pb-0" style="cursor: pointer"
+                                        data-bs-toggle="collapse" data-bs-target="#leaveDetails">Leaves <i
+                                            class="fas fa-chevron-down hide-print"></i></p>
+                                    <!-- <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#Modal"><i
                                             class="fa-solid fa-plus me-1"></i>Add</button> -->
-                            </div>
-                            <div id="leaveDetails" class="collapse">
-                                <canvas id="leaveHistoryChart"></canvas>
-                                <table class='table table-bordered mt-4'>
-                                    <thead>
-                                        <tr>
-                                            <th>Leave Type</th>
-                                            <th>Hours</th>
-                                            <th>Updated Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if ($leaves_result->num_rows > 0) { ?>
-                                            <?php while ($row = $leaves_result->fetch_assoc()) {
-                                                $leave_type = $row['leave_type'];
-                                                if ($leave_type === 'Annual Lve') {
-                                                    $leave_type = 'Annual';
-                                                } else if ($leave_type === 'Sick/Personal') {
-                                                    $leave_type = 'Personal';
-                                                } else if ($leave_type === 'LS Leave') {
-                                                    $leave_type = 'Long Service';
-                                                }
-                                                $leave_hours = $row['hours'];
-                                                $updated_date = $row['updated_date'];
-                                                ?>
-                                                <tr>
-                                                    <td><?php echo $leave_type ?></td>
-                                                    <td><?php echo $leave_hours ?></td>
-                                                    <td><?php echo date('d F Y', strtotime($updated_date)); ?></td>
-                                                </tr> <?php } ?>
-                                        <?php } else { ?>
+                                </div>
+                                <div id="leaveDetails" class="collapse">
+                                    <canvas id="leaveHistoryChart"></canvas>
+                                    <table class='table table-bordered mt-4'>
+                                        <thead>
                                             <tr>
-                                                <td colspan="3">Leaves data not available.</td>
+                                                <th>Leave Type</th>
+                                                <th>Hours</th>
+                                                <th>Updated Date</th>
                                             </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php if ($leaves_result->num_rows > 0) { ?>
+                                                <?php while ($row = $leaves_result->fetch_assoc()) {
+                                                    $leave_type = $row['leave_type'];
+                                                    if ($leave_type === 'Annual Lve') {
+                                                        $leave_type = 'Annual';
+                                                    } else if ($leave_type === 'Sick/Personal') {
+                                                        $leave_type = 'Personal';
+                                                    } else if ($leave_type === 'LS Leave') {
+                                                        $leave_type = 'Long Service';
+                                                    }
+                                                    $leave_hours = $row['hours'];
+                                                    $updated_date = $row['updated_date'];
+                                                    ?>
+                                                    <tr>
+                                                        <td><?php echo $leave_type ?></td>
+                                                        <td><?php echo $leave_hours ?></td>
+                                                        <td><?php echo date('d F Y', strtotime($updated_date)); ?></td>
+                                                    </tr> <?php } ?>
+                                            <?php } else { ?>
+                                                <tr>
+                                                    <td colspan="3">Leaves data not available.</td>
+                                                </tr>
+                                            <?php } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php } ?>
 
                     <!-- ================= Pay Raise History Chart (Wage) ================= -->
                     <?php if ($role === "full control" || $role === "modify 1") { ?>
@@ -2910,7 +2939,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                 </p>
 
                                 <div class="hide-print">
-                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
                                         <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
                                             data-bs-target="#addMachineCompetencyModal"><i
                                                 class="fa-solid fa-plus me-1"></i>Upload</button>
@@ -2934,7 +2963,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <i class="fas fa-chevron-down hide-print"></i>
                                 </p>
                                 <div class="hide-print">
-                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
                                         <button class="btn btn-success btn-sm fw-bold hide-print" data-bs-toggle="modal"
                                             data-bs-target="#addPoliciesModal"><i
                                                 class="fa-solid fa-plus me-1"></i>Upload</button>

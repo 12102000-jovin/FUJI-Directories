@@ -734,7 +734,7 @@ if (isset($_GET['file'])) {
                                         if (!empty($operatingSystemItems)) {
                                             echo "<div class='row'>";
                                             foreach ($operatingSystemItems as $index => $item) {
-                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                                echo "<div class='col-md-4 mx-4'><li>" . htmlspecialchars($item) . "</li></div>";
                                             }
                                             echo "</div>";
                                         } else {
@@ -753,7 +753,7 @@ if (isset($_GET['file'])) {
                                         if (!empty($softwareItems)) {
                                             echo "<div class='row'>";
                                             foreach ($softwareItems as $index => $item) {
-                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                                echo "<div class='col-md-4 mx-4'><li>" . htmlspecialchars($item) . "</li></div>";
                                             }
                                             echo "</div>";
                                         } else {
@@ -772,7 +772,7 @@ if (isset($_GET['file'])) {
                                         if (!empty($hardwareItems)) {
                                             echo "<div class='row'>";
                                             foreach ($hardwareItems as $index => $item) {
-                                                echo "<div class='col-md-4'><li>" . htmlspecialchars($item) . "</li></div>";
+                                                echo "<div class='col-md-4 mx-4'><li>" . htmlspecialchars($item) . "</li></div>";
                                             }
                                             echo "</div>";
                                         } else {
@@ -1157,9 +1157,12 @@ if (isset($_GET['file'])) {
                                         }
 
                                         // Output the file name with the icon
+                                        echo '<div class="d-flex justify-content-between align-items-center mb-2">';
                                         echo '<a class="text-decoration-none" href="../open-asset-details-file.php?asset_no=' . urlencode($asset_no) . '&folder=06 - Disposal&file=' . urlencode($file) . '">';
-                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a> </br>';
+                                        echo '<i class="fa-solid ' . $icon . '"></i> ' . htmlspecialchars($file) . '</a>';
+                                        echo '</div>';
                                     }
+                                    echo '</div>';
                                 } else {
                                     // If no files exist
                                     echo '<div class="alert alert-warning mt-3 mt-md-4 mb-0"role="alert">No disposal records available.</div>';
@@ -1171,7 +1174,56 @@ if (isset($_GET['file'])) {
                             ?>
                         </div>
                     </div>
-                    <!-- <div class="col-md-4">
+                    <div class="col-md-4">
+                        <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mt-1 mb-1 pb-0">Test & Tag</h5>
+                            </div>
+
+                            <?php if ($asset_cable_result->num_rows > 0) { ?>
+                                <div class="rounded-3 mb-0 mt-3 mt-md-4" style="overflow-y: hidden;">
+                                    <table class="table table-bordered table-hover mb-0 pb-0">
+                                        <thead>
+                                            <tr class="custom-table">
+                                                <th class="py-2 align-middle text-center">Cable No.</th>
+                                                <th class="py-2 align-middle text-center">Test Frequency</th>
+                                                <th class="py-2 align-middle text-center">Next Test Due</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php while ($row = $asset_cable_result->fetch_assoc()) {
+                                                // Format the next_test_due if it's not null or empty
+                                                $next_test_due = $row['next_test_due'] ? date('d F Y', strtotime($row['next_test_due'])) : null;
+                                                // Check if next_test_due is null or empty
+                                                $style = $next_test_due ? '' : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'";
+                                                ?>
+                                                <tr>
+                                                    <td class='align-middle text-center py-2'>
+                                                        <a href='cable-table.php?search=<?= urlencode($row['cable_no']) ?>'
+                                                            target='_blank'>
+                                                            <?= htmlspecialchars($row['cable_no']) ?>
+                                                        </a>
+                                                    </td>
+                                                    <td class='align-middle text-center py-2'>
+                                                        <?= htmlspecialchars($row['test_frequency'] === '60' ? '5 Years' : $row['test_frequency'] . ' Months') ?>
+                                                    </td>
+                                                    <td class='align-middle text-center py-2' <?= $style ?>>
+                                                        <?= $next_test_due ? htmlspecialchars($next_test_due) : 'N/A' ?>
+                                                    </td>
+                                                </tr>
+                                            <?php } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php } else { ?>
+                                <div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">
+                                    No test & tag records found for this asset.
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+
+                                    <!-- <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mt-1 mb-1 pb-0">Others</h5>
@@ -1225,54 +1277,6 @@ if (isset($_GET['file'])) {
                             ?>
                         </div>
                     </div> -->
-                    <div class="col-md-4">
-                        <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mt-1 mb-1 pb-0">Test & Tag</h5>
-                            </div>
-
-                            <?php if ($asset_cable_result->num_rows > 0) { ?>
-                                <div class="rounded-3 mb-0 mt-3 mt-md-4" style="overflow-y: hidden;">
-                                    <table class="table table-bordered table-hover mb-0 pb-0">
-                                        <thead>
-                                            <tr class="custom-table">
-                                                <th class="py-2 align-middle text-center">Cable No.</th>
-                                                <th class="py-2 align-middle text-center">Test Frequency</th>
-                                                <th class="py-2 align-middle text-center">Next Test Due</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php while ($row = $asset_cable_result->fetch_assoc()) {
-                                                // Format the next_test_due if it's not null or empty
-                                                $next_test_due = $row['next_test_due'] ? date('d F Y', strtotime($row['next_test_due'])) : null;
-                                                // Check if next_test_due is null or empty
-                                                $style = $next_test_due ? '' : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'";
-                                                ?>
-                                                <tr>
-                                                    <td class='align-middle text-center py-2'>
-                                                        <a href='cable-table.php?search=<?= urlencode($row['cable_no']) ?>'
-                                                            target='_blank'>
-                                                            <?= htmlspecialchars($row['cable_no']) ?>
-                                                        </a>
-                                                    </td>
-                                                    <td class='align-middle text-center py-2'>
-                                                        <?= htmlspecialchars($row['test_frequency'] === '60' ? '5 Years' : $row['test_frequency'] . ' Months') ?>
-                                                    </td>
-                                                    <td class='align-middle text-center py-2' <?= $style ?>>
-                                                        <?= $next_test_due ? htmlspecialchars($next_test_due) : 'N/A' ?>
-                                                    </td>
-                                                </tr>
-                                            <?php } ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            <?php } else { ?>
-                                <div class="alert alert-warning mt-3 mt-md-4 mb-0" role="alert">
-                                    No test & tag records found for this asset.
-                                </div>
-                            <?php } ?>
-                        </div>
-                    </div>
                 </div>
             </div>
         <?php } ?>
@@ -1555,7 +1559,7 @@ if (isset($_GET['file'])) {
         </div>
     </div>
 
-    <!-- ======================== L I N K  H A N D B O O K  M O D A L ======================== -->\
+    <!-- ======================== L I N K  H A N D B O O K  M O D A L ======================== -->
     <div class="modal fade" id="linkManualToAssetModal" tabindex="-1" aria-labelledby="linkManualToAssetLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1593,7 +1597,6 @@ if (isset($_GET['file'])) {
                         </div>
                     </form>
                 </div>
-
             </div>
         </div>
     </div>
@@ -1990,6 +1993,30 @@ if (isset($_GET['file'])) {
                 } else if (ictAsset === "0") {
                     document.getElementById("ictAssetToEditNo").checked = true;
                 }
+
+                const statusSelect = document.getElementById("statusToEdit");
+                const disposalDateToEditInput = document.querySelector("#disposalDateToEditInput");
+                const disposalDateToEdit = document.querySelector("#disposalDateToEdit");
+
+                function updateDisposalDateToEditFields() {
+                    const selectedOptionText = statusSelect.options[statusSelect.selectedIndex].text;
+
+                    if (selectedOptionText === "Disposed") {
+                        disposalDateToEdit.required = true;
+                        disposalDateToEditInput.classList.remove("d-none");
+                        disposalDateToEditInput.classList.add("d-block");
+                    } else {
+                        disposalDateToEdit.required = false;
+                        disposalDateToEdit.value = "";
+                        disposalDateToEditInput.classList.add("d-none");
+                        disposalDateToEditInput.classList.remove("d-block");
+                    }
+
+                    // Attach change event listener
+                    statusSelect.addEventListener('change', updateDisposalDateToEditFields);
+                }
+                // Initialize fields based on the currently selected option
+                updateDisposalDateToEditFields();
             });
         })
     </script>

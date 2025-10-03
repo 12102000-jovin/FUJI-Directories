@@ -14,14 +14,14 @@ if (isset($_POST['project_details_id'], $_POST['invoiced'], $_POST['approvedBy']
 
     // Update project_details table
     $stmt = $conn->prepare("UPDATE project_details SET invoiced = ?, approved_by = ? WHERE project_details_id = ?");
-    $stmt->bind_param("iii", $invoiced, $approvedBy, $project_details_id);
+    $stmt->bind_param("isi", $invoiced, $approvedBy, $project_details_id);
     $success = $stmt->execute();
 
     if ($success) {
         $approvedByName = '';
         if ($approvedBy) {
             $res = $conn->prepare("SELECT CONCAT(first_name, ' ', last_name) AS name FROM employees WHERE employee_id = ?");
-            $res->bind_param("i", $approvedBy);
+            $res->bind_param("s", $approvedBy);
             $res->execute();
             $row = $res->get_result()->fetch_assoc();
             if ($row) {

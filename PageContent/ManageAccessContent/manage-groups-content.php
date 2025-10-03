@@ -366,7 +366,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                     <div class="modal-header">
                         <h5 class="modal-title" id="memberModalLabel<?= $group_id ?>">Group Member</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
+                     </div>
                     <div class="modal-body">
                         <div class="table-responsive rounded-3 shadow-lg bg-light m-3">
                             <table class="table table-hover mb-0 pb-0">
@@ -395,7 +395,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                                     default => 'text-bg-secondary text-capitalize',
                                                 };
                                                 ?>
-                                                <span class="badge <?= $roleClass ?>">
+                                                <span class="badge rounded-pill <?= $roleClass ?>">
                                                     <?= htmlspecialchars($user_row['group_role']) ?>
                                                 </span>
                                             </td>

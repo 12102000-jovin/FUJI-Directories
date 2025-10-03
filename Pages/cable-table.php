@@ -931,6 +931,16 @@ img {
             location.reload();  // This reloads the page
         });
     </script>
+    <script>
+        // Restore scroll position after page reload
+        window.addEventListener('load', function () {
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                window.scrollTo(0, scrollPosition);
+                sessionStorage.removeItem('scrollPosition'); // Remove after restoring
+            }
+        });
+    </script>
 
 </body>
 

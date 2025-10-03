@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newFolderName'])) {
         echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '");</script>';
         exit(); // Ensure script execution stops after redirection
     } else {
-        $error_message = "Error: " . $$add_folder_result . "<br>" . $conn->error;
+        $error_message = "Error: " . $add_folder_result . "<br>" . $conn->error;
     }
 }
 
@@ -134,7 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['groupFolderIdToRemove
             <ol class="breadcrumb">
                 <li class="breadcrumb-item fw-bold"><a href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/index.php">Home</a></li>
                 <li class="breadcrumb-item fw-bold signature-color">Manage Folders</li>
-            </ol>
+            </ol>               
         </nav> -->
         <div class="row">
             <div class="col-lg-10 order-2 order-lg-1">

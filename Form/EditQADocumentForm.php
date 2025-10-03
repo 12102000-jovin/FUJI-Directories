@@ -188,17 +188,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
             <select class="form-select" aria-label="ownerToEdit" name="ownerToEdit" id="ownerToEdit" required>
                 <option disabled selected hidden></option>
                 <option value="Accounts Manager">Accounts Manager</option>
-                <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
                 <option value="Electrical Manager">Electrical Manager</option>
-                <option value="Sheet Metal Manager">Sheet Metal Manager
-                </option>
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="General Manager">General Manager</option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
-                <option value="QA Officer">QA Officer</option>
+                <option value="QA Manager">QA Manager</option>
                 <option value="Quality Control Manager">Quality Control Manager</option>
-                <option value="QA Officer">HR Officer</option>
-                <option value="WHS Committee">WHS Committee</option>
                 <option value="Risk Assessment Committee">Risk Assessment Committee</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager</option>
+                <option value="WHS Committee">WHS Committee</option>
                 <option value="N/A">N/A</option>
             </select>
             <div class="invalid-feedback">
@@ -227,17 +225,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
             <select class="form-select" aria-label="approvedByToEdit" name="approvedByToEdit" id="approvedByToEdit"
                 required>
                 <option disabled selected hidden></option>
-                <option value="General Manager">General Manager</option>
-                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="Accounts Manager">Accounts Manager</option>
                 <option value="Electrical Manager">Electrical Manager</option>
-                <option value="Sheet Metal Manager">Sheet Metal Manager
-                </option>
+                <option value="Engineering Manager">Engineering Manager</option>
+                <option value="General Manager">General Manager</option>
                 <option value="Operations Support Manager">Operations Support Manager</option>
-                <option value="QA Officer">QA Officer</option>
+                <option value="QA Manager">QA Manager</option>
                 <option value="Quality Control Manager">Quality Control Manager</option>
-                <option value="QA Officer">HR Officer</option>
-                <option value="WHS Committee">WHS Committee</option>
                 <option value="Risk Assessment Committee">Risk Assessment Committee</option>
+                <option value="Sheet Metal Manager">Sheet Metal Manager</option>
+                <option value="WHS Committee">WHS Committee</option>
                 <option value="N/A">N/A</option>
             </select>
             <div class="invalid-feedback">

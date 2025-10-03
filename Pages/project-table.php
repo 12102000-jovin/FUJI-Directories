@@ -88,6 +88,18 @@ if (isset($_GET['apply_filters'])) {
     }
 }
 
+$sortSql = $sort;
+if ($sort === 'earliest_estimated_date') {
+    // For earliest estimated date sorting, we need a complex CASE statement
+    $sortSql = "
+        CASE 
+            WHEN MIN(project_details.revised_delivery_date) IS NOT NULL 
+            THEN MIN(project_details.revised_delivery_date)
+            ELSE MIN(project_details.date)
+        END
+    ";
+}
+
 $project_sql = "
 SELECT 
     projects.*, 
@@ -110,7 +122,7 @@ WHERE
 GROUP BY 
     projects.project_id
 ORDER BY 
-    $sort $order
+    $sortSql $order
 LIMIT 
     $offset, $records_per_page
 ";
@@ -594,7 +606,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                 $engineer_names_list = NULL; // If no engineer is assigned
                             }
                             ?>
-                            <tr>
+                           <tr>
                                 <td class="align-middle <?= $rowClass ?>">
                                     <div class="d-flex">
                                         <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
@@ -942,7 +954,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                     <h5 class="modal-title">Project Report</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="true"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body overflow-auto overflow-x-hidden">
                     <?php require("../PageContent/ModalContent/project-report.php") ?>
                 </div>
             </div>
@@ -1407,3 +1419,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
     </script>
     </div>
 </body>
+

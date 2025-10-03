@@ -85,6 +85,14 @@ if (isset($_GET['apply_filters'])) {
         $filterApplied = true;
     }
 
+    // Check if "gender" is set and apply the filter for gender
+    if (isset($_GET['gender'])) {
+        $selected_gender = $_GET['gender'];
+        $gender_placeholders = implode(',', array_fill(0, count($selected_gender), '?'));
+        $whereClause .= " AND gender IN ($gender_placeholders)";
+        $filterApplied = true;
+    }
+
     // Check if "active" is set and apply the filter for active/inactive employee
     if (isset(($_GET['status'])) && is_array($_GET['status'])) {
         $selected_status = $_GET['status'];
@@ -97,14 +105,6 @@ if (isset($_GET['apply_filters'])) {
     if (isset($_GET['expiredVisa'])) {
         $current_date = date('Y-m-d');
         $whereClause .= " AND visa_expiry_date < ?";
-        $filterApplied = true;
-    }
-
-    // Check if "gender" is set and apply the filter for gender
-    if (isset($_GET['gender'])) {
-        $selected_gender = $_GET['gender'];
-        $gender_placeholders = implode(',', array_fill(0, count($selected_gender), '?'));
-        $whereClause .= " AND gender IN ($gender_placeholders)";
         $filterApplied = true;
     }
 
@@ -200,7 +200,17 @@ if (!empty($_GET['minAge']) && !empty($_GET['maxAge'])) {
 }
 
 // Bind parameters only if there are types to bind
-$params = array_merge($selected_departments, $selected_employment_types, $selected_visa, $selected_payroll_types, $selected_section, $selected_status, $selected_work_shift, $selected_gender);
+$params = array_merge(
+    $selected_departments,
+    $selected_employment_types,
+    $selected_visa,
+    $selected_payroll_types,
+    $selected_section,
+    $selected_work_shift,
+    $selected_gender,
+    $selected_status
+);
+
 if (isset($_GET['expiredVisa'])) {
     $params[] = $current_date; // Bind the current date for expired visas
 }
@@ -233,6 +243,11 @@ if ($employee_list_result->num_rows > 0) {
 if ($role !== "full control" && $role !== "modify 1") {
     // Exclude payroll_type = 'salary' for non-admin roles
     $whereClause .= " AND payroll_type != 'salary'";
+}
+
+// If role is "read", further restrict by employment_type
+if ($role === "read") {
+    $whereClause .= " AND is_active = 1";
 }
 
 // Further restrict based on the position name
@@ -869,17 +884,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                 $payrollType = $employee['payroll_type'];
                 $departmentName = $employee['department_name'];
                 $visaRestrictions = $employee['visa_restrictions'];
+                $employmentType = $employee['employment_type'];
 
                 // Check if the role is not "admin" and the payroll type is "Salary"
                 if (($role !== 'full control' && $role !== 'modify 1' && $payrollType == 'salary')) {
                     continue; // Skip this employee
                 }
 
+                if ($role === "read" && $isActive == 0) {
+                    continue;
+                }
+
                 if ($role === "modify 1") {
-                 
                     if ($position_name === 'Engineering Manager' && $departmentName != 'Engineering') {
                         continue;
-                    } 
+                    }
                 }
 
                 if ($role === "modify 2") {
@@ -1052,8 +1071,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                             $visaRestrictions = $employee['visa_restrictions'];
 
                             // Check if the role is not "admin" and the payroll type is "Salary"
-                            if ($role !== 'full control' && $payrollType == 'salary') {
+                            if (($role !== 'full control' && $role !== 'modify 1' && $payrollType == 'salary')) {
                                 continue; // Skip this employee
+                            }
+
+                            if ($role === "read" && $isActive == 0) {
+                                continue;
+                            }
+
+                            if ($role === "modify 1") {
+                                if ($position_name === 'Engineering Manager' && $departmentName != 'Engineering') {
+                                    continue;
+                                }
+                            }
+
+                            if ($role === "modify 2") {
+                                if (($position_name === 'Sheet Metal Manager' && $departmentName != 'Sheet Metal') || ($position_name === 'Sheet Metal Production Supervisor' && $departmentName != 'Sheet Metal')) {
+                                    continue; // Show only Sheet Metal department employees
+                                } else if ($position_name === 'Operations Support Manager' && $departmentName != 'Operations Support') {
+                                    continue;
+                                } else if ($position_name === 'Engineering Manager' && $departmentName != 'Engineering') {
+                                    continue;
+                                } else if ($position_name === 'Electrical Manager' && $departmentName != 'Electrical') {
+                                    continue;
+                                }
                             }
                             ?>
                             <tr>
@@ -1171,7 +1212,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                     }
                                     ?>
                                 </td>
-
 
                                 <td class="align-middle text-center dietaryRestrictionsColumn <?= $isActive == 0 ? 'bg-danger bg-opacity-25' : '' ?>"
                                     <?php if (!$dietaryRestrictions)
