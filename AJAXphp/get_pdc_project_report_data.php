@@ -30,7 +30,6 @@ if ($poFilter === 'yes') {
     $poCondition = "AND (aws_po_no IS NULL OR aws_po_no = '')";
 }
 
-
 if ($filterType === 'month') {
     $startMonth = $_GET['startMonth'] ?? null;
     $endMonth = $_GET['endMonth'] ?? null;
@@ -81,11 +80,12 @@ if ($filterType === 'month') {
     exit;
 }
 
-// ================== PDC Projects ==================
+// ================== PDC Projects - USING TABLE LOGIC ==================
 $startDateStr = $months[0] . '-01';
 $lastMonth = end($months);
 $lastDay = date('t', strtotime($lastMonth . '-01'));
 $endDateStr = $lastMonth . '-' . $lastDay;
+
 $pdc_sql = "
 SELECT month, SUM(qty) AS total_qty, GROUP_CONCAT(fbn ORDER BY fbn SEPARATOR ', ') AS fbns
 FROM (
@@ -94,88 +94,100 @@ FROM (
         fbn,
         status,
         aws_po_no,
+        freight_type,
+        approved,
+        resolved,
+        rOSD_changed,
+        rOSD_po,
+        rOSD_forecast,
         DATE_FORMAT(
             CASE
-                WHEN LOWER(freight_type) = 'air' THEN
-                    CASE 
-                        WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN DATE_SUB(rOSD_changed, INTERVAL 7 DAY)
-                        WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN DATE_SUB(rOSD_po, INTERVAL 7 DAY)
-                        WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN DATE_SUB(rOSD_forecast, INTERVAL 7 DAY)
-                        ELSE NULL
-                    END
-                ELSE
-                    CASE 
-                        WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN DATE_SUB(rOSD_changed, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN DATE_SUB(rOSD_po, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN DATE_SUB(rOSD_forecast, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        ELSE NULL
-                    END
+                -- Priority 1: approved rOSD_changed
+                WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_changed,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- Priority 2: PO rOSD only if resolved = 'PO'
+                WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_po,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- Priority 3: Forecast rOSD only if resolved = 'Forecast'
+                WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_forecast,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- No fallback: if none of the above applies, return NULL
+                ELSE NULL
             END
         , '%Y-%m') AS month,
         DATE(
             CASE
-                WHEN LOWER(freight_type) = 'air' THEN
-                    CASE 
-                        WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN DATE_SUB(rOSD_changed, INTERVAL 7 DAY)
-                        WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN DATE_SUB(rOSD_po, INTERVAL 7 DAY)
-                        WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN DATE_SUB(rOSD_forecast, INTERVAL 7 DAY)
-                        ELSE NULL
-                    END
-                ELSE
-                    CASE 
-                        WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN DATE_SUB(rOSD_changed, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN DATE_SUB(rOSD_po, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN DATE_SUB(rOSD_forecast, 
-                            INTERVAL 
-                                CASE 
-                                    WHEN SUBSTRING(fbn,1,3) IN ('SYD','MEL','AKL') THEN 2*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('CGK','BKK','SIN','KUL') THEN 4*7
-                                    WHEN SUBSTRING(fbn,1,3) IN ('HYD','BOM','DUB','ICN','TPE','HKG','NRT') THEN 8*7
-                                    ELSE 0
-                                END DAY
-                        )
-                        ELSE NULL
-                    END
+                -- Priority 1: approved rOSD_changed
+                WHEN approved = 1 AND rOSD_changed IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_changed,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- Priority 2: PO rOSD only if resolved = 'PO'
+                WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_po,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- Priority 3: Forecast rOSD only if resolved = 'Forecast'
+                WHEN resolved = 'Forecast' AND rOSD_forecast IS NOT NULL THEN
+                    DATE_SUB(
+                        rOSD_forecast,
+                        INTERVAL CASE
+                            WHEN LOWER(freight_type) = 'air' THEN 7
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
+                            WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
+                            ELSE 0
+                        END DAY
+                    )
+                -- No fallback: if none of the above applies, return NULL
+                ELSE NULL
             END
         ) AS estimated_departure_date
     FROM pdc_projects
@@ -203,7 +215,7 @@ SELECT
     qty, 
     resolved,
     aws_po_no,
-    -- Determine the correct rOSD date
+    -- Determine the correct rOSD date (matches table logic)
     CASE 
         WHEN approved = '1' AND rOSD_changed IS NOT NULL THEN rOSD_changed
         WHEN resolved = 'PO' AND rOSD_po IS NOT NULL THEN rOSD_po
@@ -242,6 +254,7 @@ $groupedTotalPDC = [];
 $groupedFbnsPDC = [];
 $groupedTotalRosd = [];
 $groupedFbnsRosd = [];
+
 if ($filterType === 'month') {
     foreach ($months as $m) {
         $groupedLabels[] = $m;
@@ -257,33 +270,77 @@ if ($filterType === 'month') {
         $month = (int) substr($m, 5, 2);
         $q = 'Q' . ceil($month / 3);
         $key = "$year-$q";
-        $quarters[$key]['totalPDC'] = ($quarters[$key]['totalPDC'] ?? 0) + ($total_pdc_project_data[$m]['total_qty'] ?? 0);
-        $quarters[$key]['fbnsPDC'] = ($quarters[$key]['fbnsPDC'] ?? []) + (isset($total_pdc_project_data[$m]['fbns']) ? explode(', ', $total_pdc_project_data[$m]['fbns']) : []);
-        $quarters[$key]['totalRosd'] = ($quarters[$key]['totalRosd'] ?? 0) + ($rosdCorrectData[$m]['total_qty'] ?? 0);
-        $quarters[$key]['fbnsRosd'] = ($quarters[$key]['fbnsRosd'] ?? []) + (isset($rosdCorrectData[$m]) ? $rosdCorrectData[$m]['fbns'] : []);
+        
+        // Initialize if not exists
+        if (!isset($quarters[$key])) {
+            $quarters[$key] = [
+                'totalPDC' => 0,
+                'fbnsPDC' => [],
+                'totalRosd' => 0,
+                'fbnsRosd' => []
+            ];
+        }
+        
+        // Add PDC data
+        if (isset($total_pdc_project_data[$m])) {
+            $quarters[$key]['totalPDC'] += $total_pdc_project_data[$m]['total_qty'];
+            if (!empty($total_pdc_project_data[$m]['fbns'])) {
+                $fbnsArray = explode(', ', $total_pdc_project_data[$m]['fbns']);
+                $quarters[$key]['fbnsPDC'] = array_merge($quarters[$key]['fbnsPDC'], $fbnsArray);
+            }
+        }
+        
+        // Add ROSD data
+        if (isset($rosdCorrectData[$m])) {
+            $quarters[$key]['totalRosd'] += $rosdCorrectData[$m]['total_qty'];
+            $quarters[$key]['fbnsRosd'] = array_merge($quarters[$key]['fbnsRosd'], $rosdCorrectData[$m]['fbns']);
+        }
     }
+    
     foreach ($quarters as $q => $data) {
         $groupedLabels[] = $q;
         $groupedTotalPDC[] = $data['totalPDC'];
-        $groupedFbnsPDC[] = implode(', ', $data['fbnsPDC']);
+        $groupedFbnsPDC[] = implode(', ', array_unique($data['fbnsPDC']));
         $groupedTotalRosd[] = $data['totalRosd'];
-        $groupedFbnsRosd[] = implode(', ', $data['fbnsRosd']);
+        $groupedFbnsRosd[] = implode(', ', array_unique($data['fbnsRosd']));
     }
 } elseif ($filterType === 'year') {
     $years = [];
     foreach ($months as $m) {
         $y = substr($m, 0, 4);
-        $years[$y]['totalPDC'] = ($years[$y]['totalPDC'] ?? 0) + ($total_pdc_project_data[$m]['total_qty'] ?? 0);
-        $years[$y]['fbnsPDC'] = ($years[$y]['fbnsPDC'] ?? []) + (isset($total_pdc_project_data[$m]['fbns']) ? explode(', ', $total_pdc_project_data[$m]['fbns']) : []);
-        $years[$y]['totalRosd'] = ($years[$y]['totalRosd'] ?? 0) + ($rosdCorrectData[$m]['total_qty'] ?? 0);
-        $years[$y]['fbnsRosd'] = ($years[$y]['fbnsRosd'] ?? []) + (isset($rosdCorrectData[$m]) ? $rosdCorrectData[$m]['fbns'] : []);
+        
+        // Initialize if not exists
+        if (!isset($years[$y])) {
+            $years[$y] = [
+                'totalPDC' => 0,
+                'fbnsPDC' => [],
+                'totalRosd' => 0,
+                'fbnsRosd' => []
+            ];
+        }
+        
+        // Add PDC data
+        if (isset($total_pdc_project_data[$m])) {
+            $years[$y]['totalPDC'] += $total_pdc_project_data[$m]['total_qty'];
+            if (!empty($total_pdc_project_data[$m]['fbns'])) {
+                $fbnsArray = explode(', ', $total_pdc_project_data[$m]['fbns']);
+                $years[$y]['fbnsPDC'] = array_merge($years[$y]['fbnsPDC'], $fbnsArray);
+            }
+        }
+        
+        // Add ROSD data
+        if (isset($rosdCorrectData[$m])) {
+            $years[$y]['totalRosd'] += $rosdCorrectData[$m]['total_qty'];
+            $years[$y]['fbnsRosd'] = array_merge($years[$y]['fbnsRosd'], $rosdCorrectData[$m]['fbns']);
+        }
     }
+    
     foreach ($years as $y => $data) {
         $groupedLabels[] = $y;
         $groupedTotalPDC[] = $data['totalPDC'];
-        $groupedFbnsPDC[] = implode(', ', $data['fbnsPDC']);
+        $groupedFbnsPDC[] = implode(', ', array_unique($data['fbnsPDC']));
         $groupedTotalRosd[] = $data['totalRosd'];
-        $groupedFbnsRosd[] = implode(', ', $data['fbnsRosd']);
+        $groupedFbnsRosd[] = implode(', ', array_unique($data['fbnsRosd']));
     }
 }
 
@@ -294,3 +351,4 @@ $response['totalQtyRosd'] = $groupedTotalRosd;
 $response['fbnsRosd'] = $groupedFbnsRosd;
 
 echo json_encode($response);
+?>

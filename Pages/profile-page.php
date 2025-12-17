@@ -1468,6 +1468,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $payrollType = $row['payroll_type'];
                         $email = $row['email'];
                         $personalEmail = $row['personal_email'];
+                        $workNumber = $row['work_phone_number'];
+                        $extensionNum = $row['extension_num'];
                         $isActive = $row['is_active'];
                         $bankBuildingSociety = $row['bank_building_society'];
                         $bsb = $row['bsb'];
@@ -1480,10 +1482,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         $financialSupplementDebt = $row['financial_supplement_debt'];
                         $toolAllowance = $row['tool_allowance'];
                         $firstAidAllowance = $row['first_aid_allowance'];
+                        $gasketRoomAllowance = $row['gasket_room_allowance'];
+                        $gasketRoomAllowanceCheck = $row['gasket_room_allowance_check'];
                         $teamLeaderAllowance = $row['team_leader_allowance'];
                         $teamLeaderAllowanceCheck = $row['team_leader_allowance_check'];
                         $trainerAllowance = $row['trainer_allowance'];
                         $trainerAllowanceCheck = $row['trainer_allowance_check'];
+                        $transportAllowance = $row['transport_allowance'];
+                        $transportAllowanceCheck = $row['transport_allowance_check'];
                         $supervisorAllowance = $row['supervisor_allowance'];
                         $supervisorAllowanceCheck = $row['supervisor_allowance_check'];
                         $painterAllowance = $row['painter_allowance'];
@@ -1692,12 +1698,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                                 <?php echo isset($personalEmail) && $personalEmail != NULL ? $personalEmail : "N/A"; ?>
                                             </h5>
                                         </div>
-                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <div class="col-lg-6 col-xl-4 d-flex flex-column">
                                             <small>Phone Number</small>
                                             <h5 class="fw-bold"><?php echo isset($phoneNumber) ? $phoneNumber : "N/A"; ?>
                                             </h5>
                                         </div>
-                                        <div class="col-lg-6 col-xl-3 d-flex flex-column">
+                                        <div class="col-lg-6 col-xl-4 d-flex flex-column">
+                                            <small>Work Phone Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($workNumber) ? $workNumber : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-4 d-flex flex-column">
+                                            <small>Extension Number</small>
+                                            <h5 class="fw-bold"><?php echo isset($extensionNum) ? $extensionNum : "N/A"; ?>
+                                            </h5>
+                                        </div>
+                                        <div class="col-lg-6 col-xl-4 d-flex flex-column">
                                             <small>Plate Number</small>
                                             <h5 class="fw-bold"><?php echo isset($plateNumber) ? $plateNumber : "N/A"; ?>
                                             </h5>
@@ -1809,9 +1825,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         </div>
                                         <div class="col-lg-6 col-xl-3 d-flex flex-column">
                                             <small>Locker Number</small>
-                                            <h5 class="fw-bold rounded-2">
-                                                <?php echo isset($lockerNumber) ? $lockerNumber : "N/A"; ?>
-                                            </h5>
+                                            <h5 class="fw-bold"><?php echo !empty($lockerNumber) ? $lockerNumber : "N/A"; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -1879,7 +1893,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 </div>
 
                 <div class="col-lg-4">
-                    <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                    <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $role === "read") { ?>
                         <div class="card bg-white border-0 rounded shadow-lg mt-4 mt-lg-0">
 
                             <div class="p-3 hide-print">
@@ -1887,13 +1901,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                                     <p class="fw-bold signature-color mb-0 pb-0">Files</p>
 
-                                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                    <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $role === "read") { ?>
                                         <button class="btn btn-success btn-sm" data-bs-toggle="modal"
                                             data-bs-target="#uploadEmployeeFilesModal"><i
                                                 class="fa-solid fa-plus me-1"></i>Upload</button>
                                     <?php } ?>
                                 </div>
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                     <!-- 00 - Employee Documents -->
                                     <div class="d-flex justify-content-center">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -1942,7 +1956,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $role === "read") { ?>
                                     <!-- 01 - Induction and Training Documents-->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -1991,7 +2005,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $role === "read") { ?>
                                     <!-- 02 - Resume, ID, and Qualifications -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2041,7 +2055,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                     <!-- 03 - Accounts -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2091,7 +2105,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1" || $role === "read") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2" || $role === "read") { ?>
                                     <!-- 04 - Leave -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2143,7 +2157,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                     <!-- 05 - HR Actions -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2190,7 +2204,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                     <!-- 06 - Work Compensation -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2237,7 +2251,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     </div>
                                 <?php } ?>
 
-                                <?php if ($role === "full control" || $role === "modify 1") { ?>
+                                <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                                     <!-- 07 - Exit Information -->
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="row col-12 p-2 background-color rounded shadow-sm">
@@ -2338,7 +2352,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     <?php } ?>
 
                     <!-- ================= Pay Raise History Chart (Wage) ================= -->
-                    <?php if ($role === "full control" || $role === "modify 1") { ?>
+                    <?php if ($role === "full control" || $role === "modify 1" || $role === "modify 2") { ?>
                         <?php $latestWage = !empty($wagesData) ? $wagesData[array_key_last($wagesData)]['amount'] : 0; ?>
                         <div
                             class="card bg-white border-0 rounded shadow-lg mt-4 <?php echo ($payrollType === "wage") ? 'd-block' : 'd-none'; ?>">
@@ -2511,6 +2525,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                     <tr class="text-center">
                                         <td class="col-5">Trainer</td>
                                         <td class="col-5"><?php echo '$' . number_format($trainerAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Transport Allowance
+                                    $transportAmount = isset($transportAllowance) && $transportAllowanceCheck == 1 ? $transportAllowance : 0;
+                                    $totalAllowances += $transportAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Transport</td>
+                                        <td class="col-5"><?php echo '$' . number_format($transportAmount, 2); ?></td>
+                                    </tr>
+
+                                    <?php
+                                    // Gasket Room Allowance
+                                    $gasketRoomAmount = isset($gasketRoomAllowance) && $gasketRoomAllowanceCheck == 1 ? $gasketRoomAllowance : 0;
+                                    $totalAllowances += $gasketRoomAmount;
+                                    ?>
+                                    <tr class="text-center">
+                                        <td class="col-5">Gasket Room</td>
+                                        <td class="col-5"><?php echo '$' . number_format($gasketRoomAmount, 2); ?></td>
                                     </tr>
 
                                     <?php
@@ -3097,6 +3131,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         // Check if the trainer allowance should be included
                                         $trainerAllowanceChecked = isset($trainerAllowanceCheck) && $trainerAllowanceCheck == 1;
 
+                                        // Check if the transport allowance should be included
+                                        $transportAllowanceChecked = isset($transportAllowanceCheck) && $transportAllowanceCheck == 1;
+
+                                        // Check if the gasketRoom allowance should be included
+                                        $gasketRoomAllowanceChecked = isset($gasketRoomAllowanceCheck) && $gasketRoomAllowanceCheck == 1;
+
                                         // Check if the supervisor allowance should be included
                                         $supervisorAllowanceChecked = isset($supervisorAllowanceCheck) && $supervisorAllowanceCheck == 1;
 
@@ -3125,6 +3165,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                                         // Add Trainer Allowance if checked
                                         if ($trainerAllowanceChecked) {
                                             $totalAllowance += $trainerAllowance;
+                                        }
+
+                                        // Add Transport Allowance if checked
+                                        if ($transportAllowanceChecked) {
+                                            $totalAllowance += $transportAllowance;
+                                        }
+
+                                        // Add Gasket Room Allowance if checked
+                                        if ($gasketRoomAllowanceChecked) {
+                                            $totalAllowance += $gasketRoomAllowance;
                                         }
 
                                         // Add Supervisor Allowance if checked
@@ -3289,6 +3339,103 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
 
                                                                     <button class="btn btn-sm btn-danger ms-1"
                                                                         id="cancelTrainerEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="transportAllowanceCheckbox"
+                                                                    onchange="transportAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($transportAllowanceChecked) && $transportAllowanceChecked == 1 ? 'checked' : '' ?>>
+                                                            </td>
+                                                            <td class="col-5">Transport</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-transport d-flex justify-content-center align-items-center">
+                                                                    <p class="transportAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($transportAllowance) ? number_format($transportAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Transport Allowance" role="button"
+                                                                        id="editTransportAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-transport d-none">
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
+                                                                        name="transportAllowanceToEdit"
+                                                                        value="<?php echo $transportAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveTransportBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-transport-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelTransportEditBtn">
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-xmark text-white m-1"></i>
+                                                                            Cancel
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+
+                                                        <tr class="text-center">
+                                                            <td class="col-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="gasketRoomAllowanceCheckbox"
+                                                                    onchange="gasketRoomAllowanceCheckbox(this, <?php echo $employeeId ?>)"
+                                                                    <?php echo isset($gasketRoomAllowanceChecked) && $gasketRoomAllowanceChecked == 1 ? 'checked' : '' ?>>
+                                                            </td>
+                                                            <td class="col-5">Gasket Room</td>
+                                                            <td class="col-5">
+                                                                <div
+                                                                    class="view-mode-gasket-room d-flex justify-content-center align-items-center">
+                                                                    <p class="gasketRoomAllowanceAmount mt-1 mb-0 pb-0">
+                                                                        $<?php echo isset($gasketRoomAllowance) ? number_format($gasketRoomAllowance, 2) : '00.00'; ?>
+                                                                    </p>
+                                                                    <i class="fa-regular fa-pen-to-square ms-2 signature-color tooltips"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                        title="Edit Gasket Room Allowance" role="button"
+                                                                        id="editGasketRoomAllowanceBtn"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="d-flex align-items-center edit-mode-gasket-room d-none">
+                                                                    <input type="number" step="any"
+                                                                        class="form-control mx-auto"
+                                                                        name="gasketRoomAllowanceToEdit"
+                                                                        value="<?php echo $gasketRoomAllowance ?>"
+                                                                        style="width: 80%">
+                                                                    <button class="btn btn-sm btn-success ms-1"
+                                                                        id="saveGasketRoomBtn"
+                                                                        data-employee-id="<?php echo $employeeId ?>"
+                                                                        data-gasket-room-allowance>
+                                                                        <div class="d-flex justify-content-center"><i
+                                                                                role="button"
+                                                                                class="fa-solid fa-check text-white m-1"></i>
+                                                                            Save
+                                                                        </div>
+                                                                    </button>
+
+                                                                    <button class="btn btn-sm btn-danger ms-1"
+                                                                        id="cancelGasketRoomEditBtn">
                                                                         <div class="d-flex justify-content-center"><i
                                                                                 role="button"
                                                                                 class="fa-solid fa-xmark text-white m-1"></i>
@@ -5062,6 +5209,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 let firstAidAllowanceChecked = <?php echo isset($firstAidAllowance) && $firstAidAllowance == 1 ? 'true' : 'false'; ?>;
                 let teamLeaderAllowanceChecked = <?php echo isset($teamLeaderAllowanceChecked) && $teamLeaderAllowanceChecked == 1 ? 'true' : 'false'; ?>;
                 let trainerAllowanceChecked = <?php echo isset($trainerAllowanceChecked) && $trainerAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let transportAllowanceChecked = <?php echo isset($transportAllowanceChecked) && $transportAllowanceChecked == 1 ? 'true' : 'false'; ?>;
+                let gasketRoomAllowanceChecked = <?php echo isset($gasketRoomAllowanceChecked) && $gasketRoomAllowanceChecked == 1 ? 'true' : 'false'; ?>;
                 let supervisorAllowanceChecked = <?php echo isset($supervisorAllowanceChecked) && $supervisorAllowanceChecked == 1 ? 'true' : 'false'; ?>;
                 let painterAllowanceChecked = <?php echo isset($painterAllowanceChecked) && $painterAllowanceChecked == 1 ? 'true' : 'false'; ?>;
                 let machineMaintenanceAllowanceChecked = <?php echo isset($machineMaintenanceAllowanceChecked) && $machineMaintenanceAllowanceChecked == 1 ? 'true' : 'false'; ?>;
@@ -5071,6 +5220,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                 const firstAidAllowanceAmount = <?php echo isset($firstAidAllowanceData[0]['amount']) ? $firstAidAllowanceData[0]['amount'] : 0; ?>;
                 let teamLeaderAllowanceAmount = <?php echo isset($teamLeaderAllowance) ? $teamLeaderAllowance : 0; ?>; // Ensure this is set properly
                 let trainerAllowanceAmount = <?php echo isset($trainerAllowance) ? $trainerAllowance : 0; ?>;
+                let transportAllowanceAmount = <?php echo isset($transportAllowance) ? $transportAllowance : 0; ?>;
+                let gasketRoomAllowanceAmount = <?php echo isset($gasketRoomAllowance) ? $gasketRoomAllowance : 0; ?>;
                 let supervisorAllowanceAmount = <?php echo isset($supervisorAllowance) ? $supervisorAllowance : 0; ?>;
                 let painterAllowanceAmount = <?php echo isset($painterAllowance) ? $painterAllowance : 0; ?>;
                 let machineMaintenanceAllowanceAmount = <?php echo isset($machineMaintenanceAllowance) ? $machineMaintenanceAllowance : 0; ?>;
@@ -5175,6 +5326,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                         });
                 }
 
+                // Function to handle the checkbox change for Transport Allowance
+                function transportAllowanceCheckbox(checkbox, employeeId) {
+                    transportAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('transport_allowance_check', transportAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Transport allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update transport allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating transport allowance:", error);
+                        });
+                }
+
+                // Function to handle the checkbox change for Gasket Room Allowance
+                function gasketRoomAllowanceCheckbox(checkbox, employeeId) {
+                    gasketRoomAllowanceChecked = checkbox.checked;
+                    const formData = new FormData();
+                    formData.append('employeeId', employeeId);
+                    formData.append('gasket_room_allowance_check', gasketRoomAllowanceChecked ? 1 : 0);
+
+                    fetch('../AJAXphp/update_team_leader_allowance.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Gasket room allowance updated successfully.");
+                                updateTotalAllowance();
+                            } else {
+                                console.error("Failed to update gasket room allowance.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error updating gasket room allowance:", error);
+                        });
+                }
+
                 // Function to handle the checkbox change for Supervisor Allowance
                 function supervisorAllowanceCheckbox(checkbox, employeeId) {
                     supervisorAllowanceChecked = checkbox.checked;
@@ -5265,6 +5466,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                     }
                     if (trainerAllowanceChecked) {
                         totalAllowance += parseFloat(trainerAllowanceAmount) || 0;
+                    }
+                    if (transportAllowanceChecked) {
+                        totalAllowance += parseFloat(transportAllowanceAmount) || 0;
+                    }
+                    if (gasketRoomAllowanceChecked) {
+                        totalAllowance += parseFloat(gasketRoomAllowanceAmount) || 0;
                     }
                     if (supervisorAllowanceChecked) {
                         totalAllowance += parseFloat(supervisorAllowanceAmount) || 0;
@@ -5437,7 +5644,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    console.log("Team leader allowance rate updated successfully.");
+                                    console.log("Trainer rate updated successfully.");
 
 
                                     // Update the display of the trainer allowance in the modal
@@ -5461,6 +5668,164 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             })
                             .catch(error => {
                                 console.error("Error updating trainer allowance:", error);
+                            });
+                    });
+                });
+            </script>
+
+            <!-- Transport Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editTransportAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
+
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-transport, .edit-mode-transport').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
+
+                    // Cancel button click event handler
+                    document.getElementById('cancelTransportEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
+
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-transport, .edit-mode-transport').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
+
+                    // Edit transport button
+                    document.getElementById('saveTransportBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveTransportBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var transportAllowance = document.querySelector('input[name="transportAllowanceToEdit"]').value;
+
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('transport_allowance', transportAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Transport allowance rate updated successfully.");
+
+
+                                    // Update the display of the transport allowance in the modal
+                                    const formattedAllowance = parseFloat(transportAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.transportAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-transport').classList.add('d-none');
+                                    document.querySelector('.view-mode-transport').classList.remove('d-none');
+
+                                    transportAllowanceAmount = transportAllowance;
+
+                                    console.log(transportAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update transport allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating transport allowance:", error);
+                            });
+                    });
+                });
+            </script>
+
+            <!-- Gasket Room Allowance -->
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Edit button click event handler
+                    document.getElementById('editGasketRoomAllowanceBtn').addEventListener('click', function () {
+                        // Get the parent rows
+                        var row = this.closest('tr');
+
+                        // Toggle edit mode
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-gasket-room, .edit-mode-gasket-room').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    });
+
+                    // Cancel button click event handler
+                    document.getElementById('cancelGasketRoomEditBtn').addEventListener('click', function () {
+                        // Get the parent row
+                        var row = this.closest('tr');
+
+                        // Toggle back to view mode (exit edit mode)
+                        row.classList.toggle('editing');
+
+                        // Toggle visibility of view and edit elements
+                        row.querySelectorAll('.view-mode-gasket-room, .edit-mode-gasket-room').forEach(function (elem) {
+                            elem.classList.toggle('d-none');
+                        });
+                    })
+
+                    // Edit gasket room button
+                    document.getElementById('saveGasketRoomBtn').addEventListener('click', function () {
+                        var button = document.getElementById('saveGasketRoomBtn');
+                        var employeeId = button.getAttribute('data-employee-id');
+                        var gasketRoomAllowance = document.querySelector('input[name="gasketRoomAllowanceToEdit"]').value;
+
+                        // Prepare the data to send
+                        const formData = new FormData();
+                        formData.append('employeeId', employeeId);
+                        formData.append('gasket_room_allowance', gasketRoomAllowance);
+
+                        // Use fetch to send the data to the server
+                        fetch('../AJAXphp/update_team_leader_allowance.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Gasket Room allowance rate updated successfully.");
+
+
+                                    // Update the display of the gasket room allowance in the modal
+                                    const formattedAllowance = parseFloat(gasketRoomAllowance).toFixed(2); // Format to 2 decimal places
+                                    document.querySelector('.gasketRoomAllowanceAmount').innerHTML = `$${formattedAllowance}`;
+
+                                    // Optionally, hide the edit mode and show the view mode
+                                    document.querySelector('.edit-mode-gasket-room').classList.add('d-none');
+                                    document.querySelector('.view-mode-gasket-room').classList.remove('d-none');
+
+                                    gasketRoomAllowanceAmount = gasketRoomAllowance;
+
+                                    console.log(gasketRoomAllowanceAmount);
+
+                                    // Update the total allowance display
+                                    updateTotalAllowance();
+
+                                } else {
+                                    console.error("Failed to update gasket room allowance rate.");
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating gasket room allowance:", error);
                             });
                     });
                 });
@@ -5516,7 +5881,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    console.log("Team leader allowance rate updated successfully.");
+                                    console.log("Supervisor rate updated successfully.");
 
 
                                     // Update the display of the supervisor allowance in the modal
@@ -5595,7 +5960,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    console.log("Team leader allowance rate updated successfully.");
+                                    console.log("Painter allowance rate updated successfully.");
 
 
                                     // Update the display of the painter allowance in the modal
@@ -5674,7 +6039,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revieweeEmployeeIdTwe
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    console.log("Team leader allowance rate updated successfully.");
+                                    console.log("Machine maintenance allowance rate updated successfully.");
 
 
                                     // Update the display of the machine maintenance allowance in the modal

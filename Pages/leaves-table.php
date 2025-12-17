@@ -49,19 +49,57 @@ if ($position_name == "Sheet Metal Manager") {
 }
 
 $current_leaves_sql = "
-SELECT *
-FROM (
-    SELECT e.employee_id, e.first_name, e.last_name, e.nickname, e.department, d.department_name,
-           MAX(CASE WHEN l.leave_type = 'Annual Lve' THEN l.hours END) AS annual_hours,
-           MAX(CASE WHEN l.leave_type = 'Sick/Personal' THEN l.hours END) AS sick_hours,
-           MAX(CASE WHEN l.leave_type = 'LS Leave' THEN l.hours END) AS long_service_hours,
-           MAX(l.updated_date) AS latest_updated
-    FROM employees e
-    LEFT JOIN leaves l ON e.employee_id = l.employee_id
-    JOIN department d ON e.department = d.department_id
-    WHERE $whereClause
-    GROUP BY e.employee_id, e.first_name, e.last_name, e.nickname, e.department, d.department_name
-) AS t
+SELECT 
+    e.employee_id, 
+    e.first_name, 
+    e.last_name, 
+    e.nickname, 
+    e.department, 
+    d.department_name,
+    annual.hours AS annual_hours,
+    sick.hours AS sick_hours,
+    ls.hours AS long_service_hours,
+    GREATEST(
+        COALESCE(annual.updated_date, '0000-00-00'),
+        COALESCE(sick.updated_date, '0000-00-00'),
+        COALESCE(ls.updated_date, '0000-00-00')
+    ) AS latest_updated
+FROM employees e
+JOIN department d ON e.department = d.department_id
+LEFT JOIN (
+    SELECT l1.employee_id, l1.hours, l1.updated_date
+    FROM leaves l1
+    INNER JOIN (
+        SELECT employee_id, MAX(updated_date) AS latest_date
+        FROM leaves
+        WHERE leave_type = 'Annual Lve'
+        GROUP BY employee_id
+    ) l2 ON l1.employee_id = l2.employee_id AND l1.updated_date = l2.latest_date
+    WHERE l1.leave_type = 'Annual Lve'
+) annual ON e.employee_id = annual.employee_id
+LEFT JOIN (
+    SELECT l1.employee_id, l1.hours, l1.updated_date
+    FROM leaves l1
+    INNER JOIN (
+        SELECT employee_id, MAX(updated_date) AS latest_date
+        FROM leaves
+        WHERE leave_type = 'Sick/Personal'
+        GROUP BY employee_id
+    ) l2 ON l1.employee_id = l2.employee_id AND l1.updated_date = l2.latest_date
+    WHERE l1.leave_type = 'Sick/Personal'
+) sick ON e.employee_id = sick.employee_id
+LEFT JOIN (
+    SELECT l1.employee_id, l1.hours, l1.updated_date
+    FROM leaves l1
+    INNER JOIN (
+        SELECT employee_id, MAX(updated_date) AS latest_date
+        FROM leaves
+        WHERE leave_type = 'LS Leave'
+        GROUP BY employee_id
+    ) l2 ON l1.employee_id = l2.employee_id AND l1.updated_date = l2.latest_date
+    WHERE l1.leave_type = 'LS Leave'
+) ls ON e.employee_id = ls.employee_id
+WHERE $whereClause
 ORDER BY $sort $order
 LIMIT $offset, $records_per_page
 ";
@@ -246,7 +284,7 @@ $total_pages = ceil($total_records / $records_per_page);
                         </th>
                         <th class="py-4 align-middle text-center" style="cursor: pointer;">
                             <a onclick="updateSort('sick_hours', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white">Sick <i class="fa-solid fa-sort fa-md ms-1"></i>
+                                class="text-decoration-none text-white">Personal <i class="fa-solid fa-sort fa-md ms-1"></i>
                             </a>
                         </th>
                         <th class="py-4 align-middle text-center" style="cursor: pointer">

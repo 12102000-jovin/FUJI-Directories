@@ -380,6 +380,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                         data-bs-target="#filterDocumentModal">
                         <p class="text-nowrap fw-bold mb-0 pb-0">Filter <i class="fa-solid fa-filter py-1"></i></p>
                     </button>
+
+                    <button class="btn btn-success ms-2" id="printCheckedDocuments">Print</button>
                 </div>
 
                 <!-- Add Document Button (Admin only) -->
@@ -655,7 +657,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                             <tr class="document-row">
                                 <?php if ($role === "full control") { ?>
                                     <td class="align-middle">
-                                        <div class="d-flex">
+                                        <div class="d-flex align-items-center justify-content-center">
                                             <button class="btn" data-bs-toggle="modal" data-bs-target="#editDocumentModal"
                                                 data-qa-id="<?= $row["qa_id"] ?>" data-qa-document="<?= $row["qa_document"] ?>"
                                                 data-document-name="<?= $row["document_name"] ?>"
@@ -672,6 +674,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                             <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
                                                 data-qa-id="<?= $row["qa_id"] ?>" data-qa-document="<?= $row["qa_document"] ?>"><i
                                                     class="fa-regular fa-trash-can text-danger"></i></button>
+
+                                            <input class="form-check-input mb-1" type="checkbox" value="" id="flexCheckDefault">
                                         </div>
                                     </td>
                                 <?php } ?>
@@ -706,8 +710,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["revisionNumberCellToE
                                                 <select name="revisionNumberCellToEdit" class="form-select" style="min-width: 80px;"
                                                     onchange="this.form.submit()">
                                                     <?php
-                                                    for ($i = 0; $i <= 99; $i++) {
-                                                        // Format the number with leading zeros (e.g., 0 -> R00, 9 -> R09, 10 -> R10)
+                                                    for ($i = 1; $i <= 99; $i++) {
+                                                        // Format the number with leading zeros (e.g., 0 -> R01, 9 -> R09, 10 -> R10)
                                                         $rev = "R" . str_pad($i, 2, "0", STR_PAD_LEFT);
                                                         echo "<option value=\"$rev\"" . ($row['rev_no'] === $rev ? ' selected' : '') . ">$rev</option>";
                                                     }

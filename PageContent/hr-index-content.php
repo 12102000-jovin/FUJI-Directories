@@ -15,7 +15,6 @@ $config = include('../config.php');
 $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
-
 // =============================== D E P A R T M E N T  C H A R T ===============================
 
 $departments_sql = "SELECT department_id, department_name FROM department";
@@ -238,7 +237,7 @@ $total_estimating_employee_sql = "
         COUNT(CASE WHEN employees.employment_type = 'Casual' THEN 1 END) AS total_estimating_casual_employees_count
     FROM employees
     JOIN department ON department.department_id = employees.department
-    WHERE department.department_name = 'Estimating' AND is_active = 1;
+    WHERE department.department_name = 'Sales / Estimating' AND is_active = 1;
 ";
 
 $total_estimating_employee_result = $conn->query($total_estimating_employee_sql);
@@ -1590,7 +1589,6 @@ $folders_result->free();
         }
 
     </script>
-
 
 </body>
 

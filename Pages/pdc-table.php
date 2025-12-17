@@ -22,7 +22,7 @@ $serverAddress = $config['server_address'];
 $projectName = $config['project_name'];
 
 // Sorting Variables
-$sortKey = isset($_GET['sort']) ? $_GET['sort'] : 'pdc_project_id';
+$sortKey = isset($_GET['sort']) ? $_GET['sort'] : 'item_number';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
 switch ($sortKey) {
@@ -43,7 +43,8 @@ switch ($sortKey) {
                     DATE_SUB(rOSD_changed, INTERVAL
                         CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -53,7 +54,8 @@ switch ($sortKey) {
                     DATE_SUB(rOSD_po, INTERVAL
                         CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -63,7 +65,8 @@ switch ($sortKey) {
                     DATE_SUB(rOSD_forecast, INTERVAL
                         CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -73,8 +76,8 @@ switch ($sortKey) {
             END)";
         break;
     default:
-        $allowedColumns = ['pdc_project_id', 'project_no', 'fbn', 'site_type', 'status', 'version', 'qty', 'cost', 'rosd_forecast', 'conflict', 'actual_departure_date', 'actual_delivered_date'];
-        $sortSql = in_array($sortKey, $allowedColumns) ? $sortKey : 'pdc_project_id';
+        $allowedColumns = ['item_number', 'project_no', 'fbn', 'site_type', 'status', 'version', 'qty', 'cost', 'rosd_forecast', 'conflict', 'actual_departure_date', 'actual_delivered_date'];
+        $sortSql = in_array($sortKey, $allowedColumns) ? $sortKey : 'item_number';
         break;
 }
 
@@ -90,6 +93,7 @@ $whereClause = "(fbn LIKE '%$searchTerm%' OR project_no LIKE '%$searchTerm%' OR 
 
 // Arrays to hold selected filter values
 $selected_status = [];
+$selected_version = [];
 $rosd_correct_start = '';
 $rosd_correct_end = '';
 $estimated_departure_start = '';
@@ -118,6 +122,46 @@ if (isset($_GET['apply_filters'])) {
         if (!empty($conditions)) {
             $whereClause .= " AND (" . implode(" OR ", $conditions) . ")";
             $filterApplied = true;
+        }
+    }
+
+    // Version filter 
+    if (isset($_GET['version']) && is_array($_GET['version'])) {
+        $selected_version = $_GET['version'];
+
+        // Separate N/A (null) from the normal version values
+        $normal_version = array_filter($selected_version, fn($s) => $s !== 'N/A');
+        $has_na = in_array('N/A', $selected_version);
+
+        $conditions = [];
+        if (!empty($normal_version)) {
+            $version_placeholders = "'" . implode("','", $normal_version) . "'";
+            $conditions[] = "`version` IN ($version_placeholders)";
+        }
+        if ($has_na) {
+            $conditions[] = "`version` IS NULL";
+        }
+
+        if (!empty($conditions)) {
+            $whereClause .= " AND (" . implode(" OR ", $conditions) . ")";
+            $filterApplied = true;
+        }
+    }
+
+    // Airport filter
+    if (isset($_GET['airport']) && is_array($_GET['airport'])) {
+        $selected_airport = $_GET['airport'];
+
+        if (!empty($selected_airport)) {
+            $airport_conditions = [];
+            foreach ($selected_airport as $airport) {
+                $airport_conditions[] = "fbn LIKE '" . $conn->real_escape_string($airport) . "%'";
+            }
+
+            if (!empty($airport_conditions)) {
+                $whereClause .= " AND (" . implode(" OR ", $airport_conditions) . ")";
+                $filterApplied = true;
+            }
         }
     }
 
@@ -168,7 +212,8 @@ if (isset($_GET['apply_filters'])) {
                         rOSD_changed,
                         INTERVAL CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -180,7 +225,8 @@ if (isset($_GET['apply_filters'])) {
                         rOSD_po,
                         INTERVAL CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -192,7 +238,8 @@ if (isset($_GET['apply_filters'])) {
                         rOSD_forecast,
                         INTERVAL CASE
                             WHEN LOWER(freight_type) = 'air' THEN 7
-                            WHEN LEFT(fbn,3) IN ('SYD','MEL','AKL') THEN 14
+                            WHEN LEFT(fbn,3) IN ('SYD','MEL') THEN 2
+                            WHEN LEFT(fbn,3) IN ('AKL') THEN 14
                             WHEN LEFT(fbn,3) IN ('CGK','BKK','SIN','KUL') THEN 28
                             WHEN LEFT(fbn,3) IN ('HYD','BOM','DUB','ICN','PUS','USN','TPE','HKG','NRT','KIX') THEN 56
                             ELSE 0
@@ -231,11 +278,10 @@ $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
-// Get total number of records
-$total_records_sql = "SELECT COUNT(*) AS total FROM pdc_projects WHERE $whereClause";
-$total_records_result = $conn->query($total_records_sql);
-$total_records = $total_records_result->fetch_assoc()['total'];
-$total_pages = ceil($total_records / $records_per_page);
+// Get total cost
+$total_cost_sql = "SELECT SUM(cost) AS total_cost FROM pdc_projects WHERE $whereClause";
+$total_cost_result = $conn->query($total_cost_sql);
+$total_cost = $total_cost_result->fetch_assoc()['total_cost'] ?? 0;
 
 // Get all URL parameters from $_GET
 $urlParams = $_GET;
@@ -285,7 +331,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['fbnIdToDelete'])) {
 
 // ========================= A D D  P D C  P R O J E C T (.csv) =========================
 if (isset($_POST['import_csv']) && isset($_FILES['csvFile']) && $_FILES['csvFile']['error'] === UPLOAD_ERR_OK) {
-    require_once '../db_connect.php'; // Your DB connection
+
+    require_once '../db_connect.php';
 
     $fileTmpPath = $_FILES['csvFile']['tmp_name'];
     $fileExtension = strtolower(pathinfo($_FILES['csvFile']['name'], PATHINFO_EXTENSION));
@@ -295,53 +342,107 @@ if (isset($_POST['import_csv']) && isset($_FILES['csvFile']) && $_FILES['csvFile
         return;
     }
 
-    // Get manual import date from form
+    // Manual import date
     $importDate = $_POST['importDate'];
 
+    // Convert date function
     function convertDate($value)
     {
-        $dateObj = DateTime::createFromFormat('d/m/Y', $value);
-        return $dateObj ? $dateObj->format('Y-m-d') : null;
+        $formats = ['m/d/Y', 'd/m/Y', 'Y-m-d'];
+        foreach ($formats as $format) {
+            $dateObj = DateTime::createFromFormat($format, $value);
+            if ($dateObj) {
+                return $dateObj->format('Y-m-d');
+            }
+        }
+        return null;
     }
 
-    if (($handle = fopen($fileTmpPath, 'r')) !== false) {
-        fgetcsv($handle); // Skip header row
+    // Get latest item_number
+    $result = $conn->query("SELECT item_number FROM pdc_projects ORDER BY item_number DESC LIMIT 1");
+    $latestItemNumber = ($row = $result->fetch_assoc()) ? (int)$row['item_number'] : 0;
 
+    if (($handle = fopen($fileTmpPath, 'r')) !== false) {
+
+        fgetcsv($handle); // skip header
+
+        // Prepare statement
         $stmt = $conn->prepare("
-            INSERT INTO pdc_projects (fbn, site_type, rOSD_forecast, qty, import_date)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO pdc_projects (item_number, fbn, site_type, rOSD_forecast, qty, version, import_date, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
             ON DUPLICATE KEY UPDATE 
                 site_type = VALUES(site_type),
                 rOSD_forecast = VALUES(rOSD_forecast),
                 qty = VALUES(qty),
-                import_date = VALUES(import_date)
+                version = VALUES(version),
+                import_date = VALUES(import_date),
+                status = CASE 
+                    WHEN status IN ('AWS Removed FF', 'Cancelled') THEN NULL
+                    ELSE status 
+                END
         ");
 
-        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-            if (count($row) < 4)
-                continue;
+        // Track imported FBNs
+        $importedFBNs = [];
 
-            // Clean up
+        while (($row = fgetcsv($handle, 2000, ',')) !== false) {
+
+            if (count($row) < 5) continue;
+
             $row = array_map(fn($item) => mb_convert_encoding(trim($item), 'UTF-8', 'auto'), $row);
 
-            [$fbn, $siteType, $rosdForecast, $qty] = $row;
+            [$fbn, $siteType, $rosdForecast, $qty, $version] = $row;
 
-            $rosdForecast = convertDate($rosdForecast); // Convert "d/m/y" to "Y-m-d"
+            // Add to imported list
+            $importedFBNs[] = $fbn;
 
-            $stmt->bind_param("sssis", $fbn, $siteType, $rosdForecast, $qty, $importDate);
+            // Convert date formats
+            $rosdForecast = convertDate($rosdForecast);
+
+            // Version mapping
+            $versionMap = [
+                'V2' => 'V2.0 630A TF Double Door (IEC)',
+                'V3' => 'V3.0. 1000A TF (IEC)'
+            ];
+            $version = $versionMap[$version] ?? $version;
+
+            // Increment item number
+            $latestItemNumber++;
+
+            // Bind and insert
+            $stmt->bind_param("isssiss", $latestItemNumber, $fbn, $siteType, $rosdForecast, $qty, $version, $importDate);
             $stmt->execute();
         }
 
         fclose($handle);
+        $stmt->close();
+
+        // --------------------------------------------
+        // STEP: Mark missing FBNs as "AWS Removed FF"
+        // --------------------------------------------
+        if (!empty($importedFBNs)) {
+
+            // Escape FBN list
+            $escapedList = "'" . implode("','", array_map([$conn, 'real_escape_string'], $importedFBNs)) . "'";
+
+            $conn->query("
+                UPDATE pdc_projects
+                SET status = 'AWS Removed FF'
+                WHERE status IS NULL
+                AND fbn NOT IN ($escapedList)
+            ");
+        }
+
         echo "<script>alert('CSV Imported Successfully');</script>";
 
-        // Refresh
+        // Refresh current page
         $current_url = $_SERVER['PHP_SELF'];
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
         header("Location: $current_url");
         exit();
+
     } else {
         echo "<script>alert('Failed to open CSV file.');</script>";
     }
@@ -388,7 +489,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
     if ($update_stmt->execute()) {
         // Redirect back to the same page to see the updated value
         $current_url = $_SERVER['PHP_SELF'];
-        if (!empty($_SERVER['QUERY_STRING'])) {
+        if (!empty($_SERVER['QUERY_STRING'])) { 
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
         header("Location: " . $current_url);
@@ -495,6 +596,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                             }
                         }
                         ?>
+                        <input type="hidden" name="page" value="1">
                         <div class="d-flex align-items-center w-100">
                             <!-- Search Input Group  -->
                             <div class="input-group me-2 flex-grow-1">
@@ -531,6 +633,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                             <button class="btn btn-success me-2" data-bs-toggle="modal"
                                 data-bs-target="#projectReportModal">
                                 <i class="fa-solid fa-square-poll-vertical"></i> Report
+                            </button>
+                            <button class="btn btn-primary me-2" onclick="exportToExcel()"> Export to Excel
                             </button>
                             <?php if ($role === "full control") { ?>
                                 <div class="btn-group">
@@ -596,8 +700,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                     <?php }
                 }
 
-                // Purchase Order Filter Badge
-                if ($key === 'purchaseOrderFilter' && !empty($value) && $value !== 'Any') { ?>
+                // Version badges
+                if ($key === 'version' && is_array($value)) {
+                    foreach ($value as $version) { ?>
+                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                            <strong><span class="text-warning">Version: </span><?php echo htmlspecialchars($version); ?></strong>
+                            <a href="?<?php
+                            $filteredParams = $_GET;
+                            $filteredParams['version'] = array_diff($filteredParams['version'], [$version]);
+                            echo http_build_query($filteredParams);
+                            ?>" class="text-white ms-1">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        </span>
+                    <?php }
+                }
+
+                // Airport Filter Badges
+                if ($key === 'airport' && is_array($value)) {
+                    foreach ($value as $airport) { ?>
+                        <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
+                            <strong><span class="text-warning">Airport: </span><?php echo htmlspecialchars($airport); ?></strong>
+                            <a href="?<?php
+                            $filteredParams = $_GET;
+                            $filteredParams['airport'] = array_diff($filteredParams['airport'], [$airport]);
+                            echo http_build_query($filteredParams);
+                            ?>" class="text-white ms-1">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        </span>
+                    <?php }
+                }
+
+                // Purchase Order Filter Badge - Show even for "Any" values
+                if ($key === 'purchaseOrderFilter' && !empty($value)) { ?>
                     <span class="badge rounded-pill signature-bg-color text-white me-2 mb-2">
                         <strong>
                             <span class="text-warning">Purchase Order: </span>
@@ -661,19 +797,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
             <div class="alert <?php echo ($total_records == 0) ? 'alert-danger' : 'alert-info'; ?>">
                 <?php if ($total_records > 0): ?>
                     <strong>Total Results:</strong>
-                    <span class="fw-bold text-decoration-underline me-2"> <?php echo $total_records ?></span>
+                    <span class="fw-bold text-decoration-underline me-2">
+                        <?php echo $total_records ?>
+                    </span>
+
+                    <br>
+
+                    <strong>Total Cost:</strong>
+                    <span class="fw-bold text-decoration-underline">
+                        <?php echo "$" . number_format($total_cost, 2); ?>
+                    </span>
                 <?php else: ?>
                     <strong>No results found for the selected filters.</strong>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
 
+
         <div class="table-responsive rounded-3 shadow-lg bg-light mb-0">
             <table class="table table-bordered table-hover mb-0 pb-0">
                 <thead>
                     <tr>
                         <th></th>
-                        <th class="py-1 align-middle text-center" style="max-width: 100px;">Item Numbers</th>
+                        <th class="py-1 align-middle text-center itemNumber" style="cursor: pointer"><a
+                                onclick="updateSort('item_number', '<?= $order ?>')">Item No
+                                <i class="fa-solid fa-sort fa-md ms-1"></i> </a></th>
                         <th class="py-1 align-middle text-center projectNo" style="cursor: pointer"><a
                                 onclick="updateSort('project_no', '<?= $order ?>')">Project No
                                 <i class="fa-solid fa-sort fa-md ms-1"></i> </a></th>
@@ -697,7 +845,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                         <!-- <th class="py-1 align-middle text-center" style="min-width:150px">PO Date</th> -->
                         <!-- <th class="py-1 align-middle text-center">Production from PO</th> -->
                         <th class="py-1 align-middle text-center version" style="min-width:280px; cursor: pointer;"> <a
-                                onclick="updateSort('Version', '<?= $order ?>')"> Version<i
+                                onclick="updateSort('version', '<?= $order ?>')"> Version<i
                                     class="fa-solid fa-sort fa-ms ms-1"></i></a></th>
                         <!-- <th class="py-1 align-middle text-center" style="min-width:280px;">Drawing Status</th> -->
                         <th class="py-1 align-middle text-center qty" style="cursor:pointer"> <a
@@ -743,7 +891,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                 <tbody>
                     <?php if (!empty($projects)) { ?>
                         <?php
-                        $item_number = ($page - 1) * $records_per_page + 1;
                         $fbn_pattern = '/^([A-Za-z]+)(\d+)([A-Za-z]+)(\d+)?$/';
                         $counter = 0;
                         foreach ($projects as $row) {
@@ -790,7 +937,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                             data-freight-type="<?= $row['freight_type'] ?>"
                                             data-estimated-departure-date="<?= $row['estimated_departure_date'] ?>"
                                             data-actual-departure-date="<?= $row['actual_departure_date'] ?>"
-                                            data-actual-delivered-date="<?= $row['actual_delivered_date'] ?>">
+                                            data-actual-delivered-date="<?= $row['actual_delivered_date'] ?>"
+                                            data-notes="<?= $row['notes'] ?>">
                                             <i class="fa-regular fa-pen-to-square"></i>
                                         </button>
                                         <button class="btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
@@ -801,7 +949,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                                 class="fa-solid fa-circle-info text-warning"></i></button>
                                     </div>
                                 </td>
-                                <td class="p-1 align-middle text-center"><?= $item_number++ ?></td>
+                                <td class="p-1 align-middle text-center"><?= $row["item_number"] ?></td>
                                 <td class="p-1 align-middle text-center projectNo" <?= isset($row["project_no"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['project_no']) ? $row['project_no'] : "N/A" ?>
                                 </td>
@@ -816,6 +964,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                 <!-- <td class="p-1 align-middle text-center">
                                     <?php
                                     $country_codes = [
+                                        'ABX' => 'AUS',
                                         'SYD' => 'AUS',
                                         'MEL' => 'AUS',
                                         'HYD' => 'IND',
@@ -823,16 +972,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                         'NRT' => 'JPN',
                                         'KIX' => 'JPN',
                                         'BKK' => 'THA',
-                                        'SIN' => 'SGP',
+                                        'SIN' => 'SGD',
                                         'CGK' => 'IDS',
                                         'DUB' => 'IRL',
                                         'AKL' => 'NZL',
                                         'ICN' => 'KOR',
                                         'USN' => 'KOR',
                                         'PUS' => 'KOR',
-                                        'HKG' => 'HGK',
+                                        'HKG' => 'HKG',
                                         'TPE' => 'TWN',
-                                        'KUL' => 'MYS'
+                                        'KUL' => 'MYS',
+                                        'ZHY' => 'CHN'
                                     ];
 
                                     echo isset($country_codes[$airport_code]) ? $country_codes[$airport_code] : '';
@@ -974,6 +1124,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                 <?php
                                 // Determine country code from airport code
                                 $country_codes = [
+                                    'ABX' => 'AUS',
                                     'SYD' => 'AUS',
                                     'MEL' => 'AUS',
                                     'HYD' => 'IND',
@@ -981,7 +1132,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                     'NRT' => 'JPN',
                                     'KIX' => 'JPN',
                                     'BKK' => 'THA',
-                                    'SIN' => 'SGP',
+                                    'SIN' => 'SGD',
                                     'CGK' => 'IDS',
                                     'DUB' => 'IRL',
                                     'AKL' => 'NZL',
@@ -990,7 +1141,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                     'PUS' => 'KOR',
                                     'HKG' => 'HKG',
                                     'TPE' => 'TWN',
-                                    'KUL' => 'MYS'
+                                    'KUL' => 'MYS',
+                                    'ZHY' => 'CHN'
                                 ];
 
                                 $airport_code = substr(trim(explode(' - ', $row['fbn'])[0]), 0, 3);
@@ -1005,7 +1157,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                         date_modify($date, '-7 days');
                                     } else {
                                         // Country-based weeks offset multiplied by 7 to get days
-                                        if ($country === "AUS" || $country === "NZL") {
+                                        if ($country === "AUS") {
+                                            date_modify($date, '-2 days'); // 2 days
+                                        } elseif ($country === "NZL") {
                                             date_modify($date, '-14 days'); // 2 weeks × 7
                                         } elseif (in_array($country, ["IDS", "THA", "SGP", "MYS"])) {
                                             date_modify($date, '-28 days'); // 4 weeks × 7
@@ -1092,6 +1246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                             <span><strong>Airport Code: </strong> <?php echo $airport_code ?> </span>
                                             <span><strong>C-Code: </strong> <?php
                                             $country_codes = [
+                                                'ABX' => 'AUS',
                                                 'SYD' => 'AUS',
                                                 'MEL' => 'AUS',
                                                 'HYD' => 'IND',
@@ -1099,16 +1254,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                                 'NRT' => 'JPN',
                                                 'KIX' => 'JPN',
                                                 'BKK' => 'THA',
-                                                'SIN' => 'SGP',
+                                                'SIN' => 'SGD',
                                                 'CGK' => 'IDS',
                                                 'DUB' => 'IRL',
                                                 'AKL' => 'NZL',
                                                 'ICN' => 'KOR',
                                                 'USN' => 'KOR',
                                                 'PUS' => 'KOR',
-                                                'HKG' => 'HGK',
+                                                'HKG' => 'HKG',
                                                 'TPE' => 'TWN',
-                                                'KUL' => 'MYS'
+                                                'KUL' => 'MYS',
+                                                'ZHY' => 'CHN'
                                             ];
 
                                             echo isset($country_codes[$airport_code]) ? $country_codes[$airport_code] : '';
@@ -1123,6 +1279,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                                 <?= isset($row['purchase_order_date']) ? (date("j F Y", strtotime($row['purchase_order_date']))) : "N/A" ?></span>
                                             <span><strong>Production from PO: </strong>
                                                 <?= !empty($weeksDisplay) ? $weeksDisplay : "N/A" ?></span>
+                                            <span><strong>Notes:</strong>
+                                                <?= isset($row["notes"]) ? $row["notes"] : "N/A" ?>
+                                            </span>
                                         </div>
 
                                         <div class="col-md-6 d-flex flex-column">
@@ -1461,7 +1620,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
     <!-- ========================== F I L T E R  M O D A L ========================== -->
     <div class="modal fade" id="filterProjectModal" tabindex="1" aria-labelledby="filterProjectModal"
         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Filter PDC Project</h5>
@@ -1486,7 +1645,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                         }
                         ?>
                         <div class="row">
-                            <div class="col-12 col-lg-6">
+                            <div class="col-12 col-lg-4">
                                 <h5 class="signature-color fw-bold">Status</h5>
                                 <p class="mb-0 pb-0">
                                     <input type="checkbox" id="selectAll" class="form-check-input">
@@ -1495,21 +1654,97 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                 <?php
                                 $statusFilters = ['AWS Removed FF', 'Cancelled', 'Sheet Metal', 'Sheet Metal Assembly', 'Electrical', 'Testing', 'Crated', 'In Transit', 'Delivered/Invoiced', 'N/A'];
                                 $selected_status = isset($_GET['status']) ? (array) $_GET['status'] : [];
+
                                 foreach ($statusFilters as $statusFilter) {
+                                    $id = 'status_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $statusFilter));
                                     ?>
                                     <p class="mb-0 pb-0">
                                         <input type="checkbox" class="form-check-input statusCheckbox"
-                                            id="<?php echo strtolower(str_replace(' ', '', $statusFilter)) ?>"
-                                            name="status[]" value="<?php echo $statusFilter ?>" <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
-                                        <label for="<?php echo strtolower(str_replace(' ', '', $statusFilter)); ?>">
-                                            <?php echo $statusFilter ?>
-                                        </label>
+                                            id="<?php echo $id; ?>" name="status[]" value="<?php echo $statusFilter; ?>"
+                                            <?php echo in_array($statusFilter, $selected_status) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $id; ?>"><?php echo $statusFilter; ?></label>
                                     </p>
                                 <?php } ?>
                             </div>
 
-                            <div class="col-12 col-lg-6 mt-4 mt-lg-0">
-                                <h5 class="signature-color fw-bold">rOSD (Correct) Timeframe</h5>
+                            <div class="col-12 col-lg-4 mt-4 mt-lg-0">
+                                <h5 class="signature-color fw-bold">Version</h5>
+                                <?php
+                                $versionFilters = ['V1.0 630A TF Single Door (IEC)', 'V1.0 630A TF Double Door (IEC)', 'V1.0 630A TF Double Door (AUS)', 'V2.0 630A TF Double Door (IEC)', 'V2.0 250A TF Double Door (IEC)', 'V2.0 250A BF Double Door (IEC)', 'V3.0. 1000A TF (IEC)', 'N/A'];
+                                $selected_version = isset($_GET['version']) ? (array) $_GET['version'] : [];
+
+                                foreach ($versionFilters as $versionFilter) {
+                                    $id = 'version_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $versionFilter));
+                                    ?>
+                                    <p class="mb-0 pb-0">
+                                        <input type="checkbox" class="form-check-input versionCheckbox"
+                                            id="<?php echo $id; ?>" name="version[]" value="<?php echo $versionFilter; ?>"
+                                            <?php echo in_array($versionFilter, $selected_version) ? 'checked' : ''; ?>>
+                                        <label for="<?php echo $id; ?>"><?php echo $versionFilter; ?></label>
+                                    </p>
+                                <?php } ?>
+
+                                <?php
+                                // 1. Fetch airport codes
+                                $airport_sql = "SELECT DISTINCT LEFT(fbn, 3) AS airport_code 
+            FROM pdc_projects 
+            WHERE fbn IS NOT NULL AND fbn <> '' 
+            ORDER BY airport_code ASC";
+
+                                $airport_result = $conn->query($airport_sql);
+
+                                $airport_codes = [];
+                                while ($row = $airport_result->fetch_assoc()) {
+                                    $airport_codes[] = $row['airport_code'];
+                                }
+
+                                // 2. Get selected airport filter from GET
+                                $selected_airport = isset($_GET['airport']) ? (array) $_GET['airport'] : [];
+
+                                // 3. Split airport codes into two columns
+                                $airport_count = count($airport_codes);
+                                $mid_point = ceil($airport_count / 2);
+                                $airport_column1 = array_slice($airport_codes, 0, $mid_point);
+                                $airport_column2 = array_slice($airport_codes, $mid_point);
+                                ?>
+
+                                <h5 class="signature-color fw-bold mt-4">Airport Code</h5>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <?php foreach ($airport_column1 as $airport):
+                                            $id = 'airport_' . strtolower($airport);
+                                            ?>
+                                            <p class="mb-0 pb-0">
+                                                <input type="checkbox" class="form-check-input airportCheckbox"
+                                                    id="<?php echo $id; ?>" name="airport[]" value="<?php echo $airport; ?>"
+                                                    <?php echo in_array($airport, $selected_airport) ? 'checked' : ''; ?>>
+                                                <label for="<?php echo $id; ?>">
+                                                    <?php echo $airport; ?>
+                                                </label>
+                                            </p>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <?php foreach ($airport_column2 as $airport):
+                                            $id = 'airport_' . strtolower($airport);
+                                            ?>
+                                            <p class="mb-0 pb-0">
+                                                <input type="checkbox" class="form-check-input airportCheckbox"
+                                                    id="<?php echo $id; ?>" name="airport[]" value="<?php echo $airport; ?>"
+                                                    <?php echo in_array($airport, $selected_airport) ? 'checked' : ''; ?>>
+                                                <label for="<?php echo $id; ?>">
+                                                    <?php echo $airport; ?>
+                                                </label>
+                                            </p>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-4 mt-4 mt-lg-0">
+                                <h5 class=" signature-color fw-bold">rOSD (Correct) Timeframe</h5>
                                 <div class="d-flex align-items-center mb-2 col-lg-5">
                                     <input type="month" class="form-control me-2" name="rosd_correct_start"
                                         value="<?php echo htmlspecialchars($rosd_correct_start) ?>">
@@ -1552,7 +1787,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                                 <button id="clearFiltersBtn" class="btn btn-danger me-1" type="button">Clear</button>
                                 <button class="btn btn-secondary me-1" type="button"
                                     data-bs-dismiss="modal">Cancel</button>
-                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply Filter</button>
+                                <button class="btn btn-dark" type="submit" name="apply_filters">Apply
+                                    Filter</button>
                             </div>
                         </div>
                     </form>
@@ -1561,7 +1797,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
         </div>
     </div>
 
-    <!-- ========================== R E P O R T  M O D A L ========================== -->
+    <!-- ========================== R E P O R T M O D A L ========================== -->
     <div class="modal fade" id="projectReportModal" tabindex="-1" aria-labelledby="projectReportModal"
         aria-hidden="true">
         <div class="modal-dialog modal-fullscreen">
@@ -1639,9 +1875,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                 var approved = button.getAttribute('data-approved');
                 var rosdCorrect = button.getAttribute('data-rosd-correct');
                 var freightType = button.getAttribute('data-freight-type');
-                var estimatedDepartureDate = button.getAttribute('data-estimated-departure-date');
                 var actualDepartureDate = button.getAttribute('data-actual-departure-date');
                 var actualDeliveredDate = button.getAttribute('data-actual-delivered-date');
+                var notes = button.getAttribute('data-notes');
 
                 // Update the modal's content with the extracted data
                 var modalPdcProjectId = myModalEl.querySelector('#pdcProjectIdToEdit');
@@ -1666,9 +1902,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                 var modalApproved = myModalEl.querySelector('#rosdCorrectConfirmationToEdit');
                 var modalRosdCorrect = myModalEl.querySelector('#rosdCorrectToEdit');
                 var modalFreightType = myModalEl.querySelector('#freightTypeToEdit');
-                var modalEstimatedDepartureDate = myModalEl.querySelector('#estimatedDepartureDateToEdit');
                 var modalActualDepartureDate = myModalEl.querySelector('#actualDepartureDateToEdit');
                 var modalActualDeliveredDate = myModalEl.querySelector('#actualDeliveredDateToEdit');
+                var modalNotes = myModalEl.querySelector('#notesToEdit');
 
                 if (resolved === "PO") {
                     modalRosdResolved.value = rosdPO;
@@ -1709,9 +1945,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
                 modalRosdChanged.value = rosdChanged;
                 modalRosdCorrect.value = rosdCorrect;
                 modalFreightType.value = freightType;
-                modalEstimatedDepartureDate.value = estimatedDepartureDate;
                 modalActualDepartureDate.value = actualDepartureDate;
                 modalActualDeliveredDate.value = actualDeliveredDate;
+                modalNotes.value = notes;
             })
         })
     </script>
@@ -1826,6 +2062,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
             window.location.href = url.toString();
         }
     </script>
+
     <script>
         function updatePage(page) {
             // Check if page number is valid
@@ -1836,6 +2073,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
             window.location.href = url.toString();
         }
     </script>
+
     <script>
         function updateURLWithRecordsPerPage() {
             const selectElement = document.getElementById('recordsPerPage');
@@ -1846,6 +2084,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
             window.location.href = url.toString();
         }
     </script>
+
     <script>
         document.getElementById('clearFiltersBtn').addEventListener('click', function () {
             const form = document.getElementById('filterForm');
@@ -1972,4 +2211,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['pdcIdToEditActualDeli
         }
     </script>
 
+    <script>
+        function exportToExcel() {
+            // Get all current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Build the export URL with all current filters
+            let exportUrl = '../AJAXphp/export_pdc_to_excel.php?' + urlParams.toString();
+
+            // Redirect to export script with all current filters
+            window.location.href = exportUrl;
+        }
+    </script>
 </body>

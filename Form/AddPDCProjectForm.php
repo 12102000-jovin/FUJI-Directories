@@ -3,7 +3,19 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
+// Get latest item_number and increment by 1
+$item_number_sql = "SELECT MAX(item_number) AS latest_item_number FROM pdc_projects";
+$item_number_result = $conn->query($item_number_sql);
+
+if ($item_number_result && $item_number_result->num_rows > 0) {
+    $row = $item_number_result->fetch_assoc();
+    $new_item_number = $row['latest_item_number'] + 1;
+} else {
+    $new_item_number = 1; // start from 1 if table empty
+}
+
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["fbn"])) {
     // Assign all POST variables
     $projectNo = !empty($_POST["projectNo"]) ? $_POST["projectNo"] : NULL;
     $fbn = $_POST["fbn"];
@@ -20,10 +32,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
     $serialNumber = !empty($_POST["serialNumber"]) ? htmlspecialchars($_POST["serialNumber"]) : NULL;
     $rosdPO = !empty($_POST["rosdPO"]) ? date('Y-m-d', strtotime($_POST["rosdPO"])) : NULL;
     $rosdForecast = !empty($_POST["rosdForecast"]) ? date('Y-m-d', strtotime($_POST["rosdForecast"])) : NULL;
-    $resolved =  !empty($_POST["resolved"]) ? $_POST["resolved"] : NULL;
+    $resolved = !empty($_POST["resolved"]) ? $_POST["resolved"] : "Forecast";
     $rosdChanged = !empty($_POST["rosdChanged"]) ? date('Y-m-d', strtotime($_POST["rosdChanged"])) : NULL;
     $rosdChangedConfirmation = !empty($_POST["rosdChangedConfirmation"]) ? $_POST["rosdChangedConfirmation"] : NULL;
     $rosdCorrectConfirmation = isset($_POST["rosdCorrectConfirmation"]) ? (int) $_POST["rosdCorrectConfirmation"] : NULL;
+    $notes = !empty($_POST["notes"]) ? $_POST["notes"] : NULL;
 
     // Calculate conflict
     if ($rosdPO !== null && $rosdForecast !== null && ($rosdPO === $rosdForecast)) {
@@ -41,6 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
     $actualDeliveredDate = !empty($_POST["actualDeliveredDate"]) ? date('Y-m-d', strtotime($_POST["actualDeliveredDate"])) : NULL;
 
     $add_pdc_project_sql = "INSERT INTO pdc_projects (
+        item_number,
         project_no, 
         fbn, 
         site_type, 
@@ -64,12 +78,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
         estimated_departure_date,
         actual_departure_date,
         actual_delivered_date,
-        approved
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        approved,
+        notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     if ($add_pdc_project_result = $conn->prepare($add_pdc_project_sql)) {
         $add_pdc_project_result->bind_param(
-            "ssssssssssssssssisissssi",
+            "issssssssssssssssisissssis",
+            $new_item_number,
             $projectNo,
             $fbn,
             $siteType,
@@ -93,7 +109,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
             $estimatedDepartureDate,
             $actualDepartureDate,
             $actualDeliveredDate,
-            $rosdCorrectConfirmation
+            $rosdCorrectConfirmation,
+            $notes
         );
 
         if ($add_pdc_project_result->execute()) {
@@ -102,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                 $current_url .= '?' . $_SERVER['QUERY_STRING'];
             }
             echo "<script>alert('Document added successfully');</script>";
-            echo "<script>window.location.replace('" . $current_url . "')</script>";
+            // echo "<script>window.location.replace('" . $current_url . "')</script>";
         } else {
             echo "Error executing statement: " . $add_pdc_project_result->error;
         }
@@ -110,7 +127,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
         echo "Prepare failed: " . $conn->error;
     }
 }
-
 ?>
 
 <form method="POST" id="addPDCProjectForm" novalidate>
@@ -231,7 +247,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                     </div>
                     <div class="form-group col-md-12 mt-3">
                         <label for="serialNumber" class="fw-bold">Serial Number</label>
-                        <textarea type="text" name="serialNumber" class="form-control" rows="4"> </textarea>
+                        <textarea type="text" name="serialNumber" class="form-control" rows="1"> </textarea>
+                    </div>
+                    <div class="form-group col-md-12 mt-3">
+                        <label for="notes" class="fw-bold">Notes</label>
+                        <textarea type="text" name="notes" class="form-control" rows="1"></textarea>
                     </div>
                 </div>
             </div>
@@ -334,12 +354,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                     </div>
 
                     <div class="form-group col-md-6 mt-3">
-                        <label for="estimatedDepartureDate" class="fw-bold">Estimated Departure Date</label>
-                        <input type="date" name="estimatedDepartureDate" id="estimatedDepartureDate"
-                            class="form-control">
-                    </div>
-
-                    <div class="form-group col-md-6 mt-3">
                         <label for="actualDepartureDate" class="fw-bold">Actual Departure Date</label>
                         <input type="date" name="actualDepartureDate" id="actualDepartureDate" class="form-control">
                     </div>
@@ -406,7 +420,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                 conflictBanner.classList.remove("d-none");
             } else {
                 conflictBanner.classList.add("d-none");
-             }
+            }
         });
 
         // Function to enable 'resolved' only when both fields have values
@@ -474,6 +488,83 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addPDCProject"])) {
                 rosdDate.setDate(rosdDate.getDate() - 7);
 
                 estimatedDepartureDate.value = rosdDate.toISOString().split("T")[0];
+            }
+        })
+    })
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const addPDCProjectForm = document.getElementById("addPDCProjectForm");
+        const fbn = document.getElementById('fbn');
+
+        fbn.addEventListener('blur', function () {
+            const fbnValue = fbn.value;
+            console.log('FBN:', fbnValue);
+        });
+        const errorMessage = document.getElementById("result");
+
+        function checkDuplicateDocument() {
+            return fetch('../AJAXphp/check-pdc-duplicate.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    fbn: `${fbn.value}` // String interpolation
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Server Response:', data);
+                    return data === '0'; // Return true if no duplicate (0), false if duplicate (1)
+                });
+        }
+
+        function validateForm() {
+            return checkDuplicateDocument().then(isDuplicateValid => {
+                return isDuplicateValid;
+            })
+        }
+
+        addPDCProjectForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Check Validity of the form
+            if (addPDCProjectForm.checkValidity() === false) {
+                addPDCProjectForm.classList.add('was-validated');
+            } else {
+                console.log(addPDCProjectForm);
+                // Perform duplicate document check
+                validateForm().then(isValid => {
+                    if (isValid) {
+                        // Perform AJAX submission instead of standard form submission
+                        fetch(addPDCProjectForm.action, {
+                            method: 'POST',
+                            body: new FormData(addPDCProjectForm)
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text();
+                                } else {
+                                    throw new Error('Network response was not ok');
+                                }
+                            })
+                            .then(data => {
+                                location.reload(); // Reload the page
+                            })
+                            .catch(error => {
+                                errorMessage.classList.remove('d-none');
+                                errorMessage.innerHTML = "An error occurred: " + error.message;
+                            });
+                    } else {
+                        addPDCProjectForm.classList.add('was-validated');
+                        errorMessage.classList.remove('d-none');
+                        errorMessage.innerHTML = "Duplicate FBN found."
+                    }
+                }).catch(error => {
+                    errorMessage.classList.remove('d-none');
+                    errorMessage.innerHTML = "An error occurred: " + error.message;
+                });
             }
         })
     })

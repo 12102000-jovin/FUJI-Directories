@@ -498,7 +498,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                                         <label class="form-check-label fw-bold bg-danger px-2 text-white rounded-5 text-sm"
                                             for="role"> Full Control </label>
                                     </div>
-
                                 </div>
                                 <ul id="selectedUsersList<?= $group_id ?>" class="list-group"></ul>
                             </div>
@@ -576,7 +575,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
         <?php
     }
     ?>
-
+  
     <!-- Add Group Modal-->
     <div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog" aria-labelledby="addGroupModalLabel"
         aria-hidden="true">
@@ -660,7 +659,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['newGroupName']) && is
                            JOIN folders ON groups_folders.folder_id = folders.folder_id
                            WHERE groups_folders.group_id = $group_id";
         $group_folder_result = $conn->query($group_folder_sql);
-        ?>
+        ?> 
         <!-- Member Modal for each group -->
         <div class="modal fade" id="folderModal<?= $group_id ?>" tabindex="-1" role="dialog"
             aria-labelledby="folderModalLabel<?= $group_id ?>" aria-hidden="true">

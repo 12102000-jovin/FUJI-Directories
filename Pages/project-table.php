@@ -1,5 +1,5 @@
 <?php
-ini_set('diplay_errors', 1);
+ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
@@ -21,6 +21,9 @@ $projectName = $config['project_name'];
 $employee_id = $_SESSION['employee_id'] ?? '';
 $username = $_SESSION['username'] ?? '';
 
+// Start timing for performance monitoring
+$start_time = microtime(true);
+
 // Sorting Variables
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'project_no';
 $order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
@@ -31,193 +34,285 @@ $page = isset($_GET["page"]) ? intval($_GET["page"]) : 1;
 $offset = ($page - 1) * $records_per_page;
 
 // Get search term
-$searchTerm = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+$searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Base WHERE condition
-$whereClause = "(project_no LIKE '%$searchTerm%' OR quote_no LIKE '%$searchTerm%' OR project_name LIKE '%$searchTerm%' OR customer LIKE '%$searchTerm%')";
+// Initialize variables for prepared statements
+$whereConditions = [];
+$params = [];
+$types = "";
+$filterApplied = false;
 
 // Arrays to hold selected filter values
 $selected_status = [];
 $selected_project_type = [];
+$selected_payment_terms = [];
 
-$filterApplied = false;
+// Build WHERE clause with prepared statements
+if (!empty($searchTerm)) {
+    // Use index-friendly search patterns
+    $whereConditions[] = "(p.project_no LIKE CONCAT(?, '%') OR p.quote_no LIKE CONCAT(?, '%') OR p.customer LIKE CONCAT(?, '%') OR p.project_name LIKE ?)";
+    $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, "%$searchTerm%"]);
+    $types .= "ssss";
+}
 
 if (isset($_GET['apply_filters'])) {
-    if(isset($_GET['status']) && is_array($_GET['status'])) {
+    if(isset($_GET['status']) && is_array($_GET['status']) && !empty($_GET['status'])) {
         $selected_status = $_GET['status'];
-        $status_placeholders = "'" . implode("','", $selected_status) . "'";
-        $whereClause .= " AND `current` IN ($status_placeholders)";
+        $placeholders = implode(',', array_fill(0, count($selected_status), '?'));
+        $whereConditions[] = "p.current IN ($placeholders)";
+        $params = array_merge($params, $selected_status);
+        $types .= str_repeat("s", count($selected_status));
         $filterApplied = true;
     }
 
-    if (isset($_GET['projectType']) && is_array($_GET['projectType'])) {
+    if (isset($_GET['projectType']) && is_array($_GET['projectType']) && !empty($_GET['projectType'])) {
         $selected_project_type = $_GET['projectType'];
-        $project_type_placeholders = "'" . implode("','", $selected_project_type) . "'";
-        $whereClause .= " AND project_type IN ($project_type_placeholders)";
+        $placeholders = implode(',', array_fill(0, count($selected_project_type), '?'));
+        $whereConditions[] = "p.project_type IN ($placeholders)";
+        $params = array_merge($params, $selected_project_type);
+        $types .= str_repeat("s", count($selected_project_type));
         $filterApplied = true;
     }
 
-    if (isset($_GET['paymentTerms']) && is_array($_GET['paymentTerms'])) {
+    if (isset($_GET['paymentTerms']) && is_array($_GET['paymentTerms']) && !empty($_GET['paymentTerms'])) {
         $selected_payment_terms = $_GET['paymentTerms'];
-        $payment_terms_placeholders = "'" . implode("','", $selected_payment_terms) . "'";
-        $whereClause .= " AND payment_terms IN ($payment_terms_placeholders)";
+        $placeholders = implode(',', array_fill(0, count($selected_payment_terms), '?'));
+        $whereConditions[] = "p.payment_terms IN ($placeholders)";
+        $params = array_merge($params, $selected_payment_terms);
+        $types .= str_repeat("s", count($selected_payment_terms));
         $filterApplied = true;
     }
 
+    // Optimized invoice filter - handled in the subquery
     if (isset($_GET['invoiceFilter']) && is_array($_GET['invoiceFilter'])) {
         $invoiceFilter = $_GET['invoiceFilter'];
-    
-        if (in_array('invoiced', $invoiceFilter) && !in_array('not_invoiced', $invoiceFilter)) {
-            $whereClause .= " AND projects.project_id IN (
-                SELECT project_id FROM project_details 
-                GROUP BY project_id 
-                HAVING MIN(COALESCE(invoiced, 0)) = 1 AND MAX(COALESCE(invoiced, 0)) = 1
-            )"; 
-            $filterApplied = true;
-        }
-    
-        if (in_array('not_invoiced', $invoiceFilter) && !in_array('invoiced', $invoiceFilter)) {
-            $whereClause .= " AND projects.project_id IN (
-                SELECT project_id FROM project_details 
-                GROUP BY project_id 
-                HAVING MAX(COALESCE(invoiced, 0)) = 0
-            )";
-            $filterApplied = true;
-        }
         $filterApplied = true;
     }
 }
 
-$sortSql = $sort;
+$whereClause = !empty($whereConditions) ? implode(' AND ', $whereConditions) : '1=1';
+
+// Handle sorting
+$sortSql = "p." . $sort;
 if ($sort === 'earliest_estimated_date') {
-    // For earliest estimated date sorting, we need a complex CASE statement
-    $sortSql = "
-        CASE 
-            WHEN MIN(project_details.revised_delivery_date) IS NOT NULL 
-            THEN MIN(project_details.revised_delivery_date)
-            ELSE MIN(project_details.date)
-        END
-    ";
+    $sortSql = "pd.earliest_effective_date";
 }
 
+// Build the main query with optimized structure
 $project_sql = "
 SELECT 
-    projects.*, 
-    -- Earliest effective date: use revised if exists, otherwise estimated
-    MIN(CASE 
-            WHEN project_details.revised_delivery_date IS NOT NULL THEN project_details.revised_delivery_date
-            ELSE project_details.date
-        END) AS earliest_effective_date,
-    MAX(project_details.date) AS latest_estimated_date,
-    MIN(project_details.revised_delivery_date) AS earliest_revised_delivery_date,
-    MAX(project_details.revised_delivery_date) AS latest_revised_delivery_date,
-    MIN(CASE WHEN project_details.invoiced IS NOT NULL THEN project_details.invoiced ELSE 0 END) AS min_invoiced,
-    MAX(project_details.invoiced) AS max_invoiced
+    p.project_id, p.project_no, p.quote_no, p.current, p.project_name, 
+    p.project_type, p.customer, p.value, p.payment_terms, p.project_engineer, 
+    p.customer_address, p.variation, p.estimated_delivery_date,
+    pd.earliest_effective_date,
+    pd.latest_estimated_date,
+    pd.earliest_revised_delivery_date,
+    pd.latest_revised_delivery_date,
+    pd.min_invoiced,
+    pd.max_invoiced,
+    COUNT(*) OVER() AS total_records
 FROM 
-    projects
-LEFT JOIN 
-    project_details ON projects.project_id = project_details.project_id
+    projects p
+INNER JOIN (
+    SELECT 
+        project_id,
+        MIN(CASE 
+            WHEN revised_delivery_date IS NOT NULL THEN revised_delivery_date
+            ELSE date
+        END) AS earliest_effective_date,
+        MAX(date) AS latest_estimated_date,
+        MIN(revised_delivery_date) AS earliest_revised_delivery_date,
+        MAX(revised_delivery_date) AS latest_revised_delivery_date,
+        MIN(COALESCE(invoiced, 0)) AS min_invoiced,
+        MAX(invoiced) AS max_invoiced
+    FROM 
+        project_details
+    GROUP BY 
+        project_id
+) pd ON p.project_id = pd.project_id
 WHERE 
     $whereClause
-GROUP BY 
-    projects.project_id
+";
+
+// Apply invoice filters if specified
+if (isset($_GET['invoiceFilter']) && is_array($_GET['invoiceFilter'])) {
+    $invoiceFilter = $_GET['invoiceFilter'];
+    
+    if (in_array('invoiced', $invoiceFilter) && !in_array('not_invoiced', $invoiceFilter)) {
+        $project_sql .= " AND pd.min_invoiced = 1 AND pd.max_invoiced = 1";
+    }
+    
+    if (in_array('not_invoiced', $invoiceFilter) && !in_array('invoiced', $invoiceFilter)) {
+        $project_sql .= " AND (pd.max_invoiced = 0 OR pd.max_invoiced IS NULL)";
+    }
+}
+
+// Add sorting and pagination
+$project_sql .= "
 ORDER BY 
     $sortSql $order
 LIMIT 
     $offset, $records_per_page
 ";
 
+// Execute query with prepared statement
+$stmt = $conn->prepare($project_sql);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
 
-// Execute query
-$project_result = $conn->query($project_sql);
+$stmt->execute();
+$project_result = $stmt->get_result();
 
 // Fetch results
+$total_records = 0;
 $projects = [];
 if ($project_result->num_rows > 0) {
     while ($row = $project_result->fetch_assoc()) {
+        if ($total_records === 0) {
+            $total_records = $row['total_records'] ?? 0;
+        }
+        // Remove total_records from result array to avoid conflicts
+        unset($row['total_records']);
         $projects[] = $row;
     }
 } else {
     $projects = [];
 }
 
-// Separate query just for the Gantt chart (no LIMIT or pagination)
-$gantt_sql = "
-SELECT 
-    projects.*, 
-    MIN(project_details.date) AS earliest_estimated_date,
-    MAX(project_details.date) AS latest_estimated_date
-FROM 
-    projects
-LEFT JOIN 
-    project_details ON projects.project_id = project_details.project_id
-GROUP BY 
-    projects.project_id
-";
+$total_pages = $total_records > 0 ? ceil($total_records / $records_per_page) : 0;
 
-// Fetch and build $ganttProjects array
-$gantt_result = $conn->query($gantt_sql);
+// Cache Gantt chart data for better performance
+$gantt_cache_key = 'gantt_projects_data';
 $ganttProjects = [];
-while ($row = $gantt_result->fetch_assoc()) {
-    $ganttProjects[] = $row;
+
+// Try to get from cache first (if using APC/u)
+if (function_exists('apc_fetch')) {
+    $ganttProjects = apc_fetch($gantt_cache_key);
 }
 
-// Get total number of records
-$total_records_sql = "SELECT COUNT(*) AS total FROM projects WHERE $whereClause";
-$total_records_result = $conn->query($total_records_sql);
-$total_records = $total_records_result->fetch_assoc()['total'];
-$total_pages = ceil($total_records / $records_per_page);
+if ($ganttProjects === false || empty($ganttProjects)) {
+    $gantt_sql = "
+    SELECT 
+        p.project_id, p.project_no, p.project_name, p.current,
+        MIN(pd.date) AS earliest_estimated_date,
+        MAX(pd.date) AS latest_estimated_date
+    FROM 
+        projects p
+    LEFT JOIN 
+        project_details pd ON p.project_id = pd.project_id
+    GROUP BY 
+        p.project_id, p.project_no, p.project_name, p.current
+    ";
+    
+    $gantt_result = $conn->query($gantt_sql);
+    $ganttProjects = [];
+    while ($row = $gantt_result->fetch_assoc()) {
+        $ganttProjects[] = $row;
+    }
+    
+    // Cache for 10 minutes if APC is available
+    if (function_exists('apc_store')) {
+        apc_store($gantt_cache_key, $ganttProjects, 600);
+    }
+}
 
 // Get all URL parameters from $_GET
 $urlParams = $_GET;
 
-// Fetch the project engineer's ID(s) for the project
-$project_engineer_ids = $row["project_engineer"];
-$engineer_names = [];
-
-if (!empty($project_engineer_ids)) {
-    // Split the IDs by comma (in case of multiple IDs)
-    $engineer_ids = explode(',', $project_engineer_ids);
-
-    // Query the database to get the names of the engineers
-    foreach ($engineer_ids as $engineer_id) {
-        $engineer_id = trim($engineer_id); // Remove any extra spaces
-        $engineer_sql = "SELECT name FROM employees WHERE employee_id = '$engineer_id'";
-        $engineer_result = $conn->query($engineer_sql);
-
-        if ($engineer_result && $engineer_result->num_rows > 0) {
-            // Get the engineer's name and add it to the array
-            $engineer_row = $engineer_result->fetch_assoc();
-            $engineer_names[] = $engineer_row['name'];
+// Optimize engineer names fetching
+$all_engineer_ids = [];
+foreach ($projects as $project) {
+    if (!empty($project['project_engineer'])) {
+        $ids = explode(',', $project['project_engineer']);
+        foreach ($ids as $id) {
+            $clean_id = trim($id);
+            if (!empty($clean_id) && is_numeric($clean_id)) {
+                $all_engineer_ids[$clean_id] = true;
+            }
         }
     }
+}
 
-    // Join the names with commas if there are multiple
-    $engineer_names_list = implode(', ', $engineer_names);
-} else {
-    $engineer_names_list = "N/A"; // If no engineer is assigned
+// Single query to get all engineer names with prepared statement
+$engineer_names_map = [];
+if (!empty($all_engineer_ids)) {
+    $engineer_ids_str = implode(',', array_keys($all_engineer_ids));
+    $engineer_sql = "SELECT employee_id, CONCAT(first_name, ' ', last_name) as full_name 
+                     FROM employees 
+                     WHERE employee_id IN ($engineer_ids_str)";
+    $engineer_result = $conn->query($engineer_sql);
+    
+    if ($engineer_result) {
+        while ($engineer_row = $engineer_result->fetch_assoc()) {
+            $engineer_names_map[$engineer_row['employee_id']] = $engineer_row['full_name'];
+        }
+    }
+}
+
+// Process projects with pre-fetched engineer data
+foreach ($projects as &$row) {
+    $engineer_names = [];
+    if (!empty($row["project_engineer"])) {
+        $engineer_ids = explode(',', $row["project_engineer"]);
+        foreach ($engineer_ids as $engineer_id) {
+            $engineer_id = trim($engineer_id);
+            if (isset($engineer_names_map[$engineer_id])) {
+                $engineer_names[] = $engineer_names_map[$engineer_id];
+            }
+        }
+        $row['engineer_names_list'] = !empty($engineer_names) ? implode(', ', $engineer_names) : NULL;
+    } else {
+        $row['engineer_names_list'] = NULL;
+    }
+}
+unset($row);
+
+// Log performance for slow queries
+$end_time = microtime(true);
+$execution_time = $end_time - $start_time;
+
+if ($execution_time > 2) { // Log queries taking more than 2 seconds
+    error_log("Slow project query: " . round($execution_time, 3) . " seconds - " . $_SERVER['REQUEST_URI']);
 }
 
 // ========================= D E L E T E  D O C U M E N T =========================
-
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"])) {
     $projectIdToDelete = $_POST["projectIdToDelete"];
 
-    $delete_document_sql = "DELETE FROM projects WHERE project_id = ?";
-    $delete_document_result = $conn->prepare($delete_document_sql);
-    $delete_document_result->bind_param("i", $projectIdToDelete);
+    // Use transaction for data integrity
+    $conn->begin_transaction();
+    
+    try {
+        // First delete from project_details due to foreign key constraint
+        $delete_details_sql = "DELETE FROM project_details WHERE project_id = ?";
+        $delete_details_stmt = $conn->prepare($delete_details_sql);
+        $delete_details_stmt->bind_param("i", $projectIdToDelete);
+        $delete_details_stmt->execute();
+        $delete_details_stmt->close();
 
-    if ($delete_document_result->execute()) {
+        // Then delete from projects
+        $delete_project_sql = "DELETE FROM projects WHERE project_id = ?";
+        $delete_project_stmt = $conn->prepare($delete_project_sql);
+        $delete_project_stmt->bind_param("i", $projectIdToDelete);
+        $delete_project_stmt->execute();
+        $delete_project_stmt->close();
+
+        $conn->commit();
+
+        // Redirect to current page with parameters
         $current_url = $_SERVER['PHP_SELF'];
         if (!empty($_SERVER['QUERY_STRING'])) {
             $current_url .= '?' . $_SERVER['QUERY_STRING'];
         }
         header("Location: " . $current_url);
         exit();
-    } else {
-        echo "Error: " . $delete_document_result . "<br>" . $conn->error;
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        error_log("Delete project error: " . $e->getMessage());
+        echo "Error: Unable to delete project. Please try again.";
     }
-    $delete_document_result->close();
 }
 ?>
 
@@ -248,7 +343,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
         .table thead th {
             background-color: #043f9d;
             color: white;
-            border: 1px solid #043f9d !important;
+            border: none;
         }
 
         .pagination .page-item.active .page-link {
@@ -376,6 +471,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#ganttChartModal"><i class="fa-solid fa-chart-gantt"></i> Gantt</a>
                                     <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#projectReportModal"><i class="fa-solid fa-square-poll-vertical"></i>  Report</a>
                                     <a class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#projectDashboardModal"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                                    <a class="dropdown-item" type="button" onclick="exportProjectToExcel()"><i class="fa-solid fa-file-export"></i> Export to Excel</a>
                                 </div>
                             </div>
                             <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
@@ -575,36 +671,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                             (int)$row['max_invoiced'] == 1
                         );
                         
-
                         // Add class bg-success if all invoiced
                         $rowClass = $allInvoiced ? 'bg-success bg-opacity-25' : '';
 
-                            // Fetch the project engineer's ID(s) for the project
-                            $project_engineer_ids = $row["project_engineer"];
-                            $engineer_names = [];
-
-                            if (!empty($project_engineer_ids)) {
-                                // Split the IDs by comma (in case of multiple IDs)
-                                $engineer_ids = explode(',', $project_engineer_ids);
-
-                                // Query the database to get the names of the engineers
-                                foreach ($engineer_ids as $engineer_id) {
-                                    $engineer_id = trim($engineer_id); // Remove any extra spaces
-                                    $engineer_sql = "SELECT first_name, last_name FROM employees WHERE employee_id = '$engineer_id'";
-                                    $engineer_result = $conn->query($engineer_sql);
-
-                                    if ($engineer_result && $engineer_result->num_rows > 0) {
-                                        // Get the engineer's name and add it to the array
-                                        $engineer_row = $engineer_result->fetch_assoc();
-                                        $engineer_names[] = $engineer_row['first_name'] . " " . $engineer_row['last_name'];
-                                    }
-                                }
-
-                                // Join the names with commas if there are multiple
-                                $engineer_names_list = implode(', ', $engineer_names);
-                            } else {
-                                $engineer_names_list = NULL; // If no engineer is assigned
-                            }
                             ?>
                            <tr>
                                 <td class="align-middle <?= $rowClass ?>">
@@ -684,8 +753,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
                                     <?= $row['payment_terms'] === 'COD' ? 'bg-warning fw-bold text-white' : $rowClass ?>">
                                     <?= $row["payment_terms"] ?>
                                 </td>
-                                <td class="py-3 align-middle text-center projectEngineerColumn <?= $rowClass ?>" <?= isset($engineer_names_list) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
-                                    <?= isset($engineer_names_list) ? $engineer_names_list : "N/A" ?>
+                                <td class="py-3 align-middle text-center projectEngineerColumn <?= $rowClass ?>" <?= isset($row['engineer_names_list']) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
+                                    <?= isset($row['engineer_names_list']) ? $row['engineer_names_list'] : "N/A" ?>
                                 </td>
                                 <td class="py-3 align-middle text-center customerAddressColumn <?= $rowClass ?>"
                                     <?= isset($row["customer_address"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
@@ -1417,6 +1486,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["projectIdToDelete"]))
             location.reload();  // This reloads the page
         });
     </script>
+
+    <script>
+        function exportProjectToExcel() {
+            // Get all current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Build the export URL with all current filters
+            let exportUrl = '../AJAXphp/export_project_to_excel.php?' + urlParams.toString();
+            
+            // Redirect to export script with all current filters
+            window.location.href = exportUrl;
+        }
+    </script>
     </div>
 </body>
+
 

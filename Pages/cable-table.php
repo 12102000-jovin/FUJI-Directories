@@ -844,14 +844,6 @@ img {
     </script>
 
     <script>
-        // Listen for the modal close event
-        $('#cableTestTagModal').on('hidden.bs.modal', function () {
-            // Reload the page and keep the parameters in the URL
-            location.reload();  // This reloads the page
-        });
-    </script>
-
-    <script>
         function updateSort(sort, order) {
             const url = new URL(window.location.href);
             url.searchParams.set('sort', sort);
@@ -921,7 +913,7 @@ img {
             window.location.href = url.toString();
         }
     </script>
-    <script>
+    <!-- <script>
         // Listen for the modal close event
         $('#cableTestTagModal').on('hidden.bs.modal', function () {
             // Disable buttons during reload
@@ -930,7 +922,7 @@ img {
             // Reload the page and keep the parameters in the URL
             location.reload();  // This reloads the page
         });
-    </script>
+    </script> -->
     <script>
         // Restore scroll position after page reload
         window.addEventListener('load', function () {
@@ -941,7 +933,6 @@ img {
             }
         });
     </script>
-
 </body>
 
 </html>

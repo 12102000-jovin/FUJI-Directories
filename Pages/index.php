@@ -18,15 +18,6 @@ require_once("../status_check.php");
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="shortcut icon" href="../Images/FE-logo-icon.ico" type="image/x-icon">
-    <style>
-        html,
-        body {
-            overflow-x: hidden;
-            width: 100%;
-            box-sizing: border-box;
-            background-color: #eef3f9;
-        }
-    </style>
 </head>
 
 <body>

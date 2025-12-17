@@ -10,6 +10,57 @@ if ($conn->connect_error) {
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['gasket_room_allowance_check'])) {
+    // Get the employee ID and gasket room allowance status from the POST data
+    $employeeId = $_POST['employeeId'];
+    $gasketRoomAllowance = $_POST['gasket_room_allowance_check'];
+
+    // Update the gasket_room_allowance in the database
+    $gasket_room_update_sql = "UPDATE employees SET gasket_room_allowance_check = ? WHERE employee_id = ?";
+    $gasket_room_update_stmt = $conn->prepare($gasket_room_update_sql);
+
+    // Check if preparation was successful
+    if ($gasket_room_update_stmt === false) {
+        echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $conn->error]);
+        exit();
+    }
+
+    $gasket_room_update_stmt->bind_param("ii", $gasketRoomAllowance, $employeeId); // Both are integers
+
+    // Execute the statement and check for success
+    if ($gasket_room_update_stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update gasket room allowance']);
+    }
+
+    $gasket_room_update_stmt->close();
+}
+
+if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['gasket_room_allowance'])) {
+    $employeeId = $_POST['employeeId'];
+    $gasketRoomAllowance = $_POST['gasket_room_allowance'];
+
+    // Update the gasket_room_allowance in the database
+    $gasket_room_allowance_rate_sql = "UPDATE employees SET gasket_room_allowance = ? WHERE employee_id = ?";
+    $gasket_room_allowance_rate_stmt = $conn->prepare($gasket_room_allowance_rate_sql);
+
+    // Check if preparation was successful
+    if ($gasket_room_allowance_rate_stmt === false) {
+        echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $conn->error]);
+        exit();
+    }
+
+    $gasket_room_allowance_rate_stmt->bind_param("di", $gasketRoomAllowance, $employeeId);
+
+    // Execute the statement and check for success
+    if ($gasket_room_allowance_rate_stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update gasket room allowance rate.']);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['team_leader_allowance_check'])) {
     // Get the employee ID and team leader allowance status from the POST data
     $employeeId = $_POST['employeeId'];
@@ -109,6 +160,57 @@ if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['trainer_allowance']
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update trainer allowance rate.']);
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transport_allowance_check'])) {
+    // Get the employee ID and transport allowance status from the POST data
+    $employeeId = $_POST['employeeId'];
+    $transportAllowance = $_POST['transport_allowance_check'];
+
+    // Update the transport_allowance in the database
+    $transport_update_sql = "UPDATE employees SET transport_allowance_check = ? WHERE employee_id = ?";
+    $transport_update_stmt = $conn->prepare($transport_update_sql);
+
+    // Check if preparation was successful
+    if ($transport_update_stmt === false) {
+        echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $conn->error]);
+        exit();
+    }
+
+    $transport_update_stmt->bind_param("ii", $transportAllowance, $employeeId); // Both are integers
+
+    // Execute the statement and check for success
+    if ($transport_update_stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update transport allowance']);
+    }
+
+    $transport_update_stmt->close();
+}
+
+if (($_SERVER['REQUEST_METHOD'] === 'POST') && isset($_POST['transport_allowance'])) {
+    $employeeId = $_POST['employeeId'];
+    $transportAllowance = $_POST['transport_allowance'];
+
+    // Update the transport_allowance in the database
+    $transport_allowance_rate_sql = "UPDATE employees SET transport_allowance = ? WHERE employee_id = ?";
+    $transport_allowance_rate_stmt = $conn->prepare($transport_allowance_rate_sql);
+
+    // Check if preparation was successful
+    if ($transport_allowance_rate_stmt === false) {
+        echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $conn->error]);
+        exit();
+    }
+
+    $transport_allowance_rate_stmt->bind_param("di", $transportAllowance, $employeeId);
+
+    // Execute the statement and check for success
+    if ($transport_allowance_rate_stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update transport allowance rate.']);
     }
 }
 

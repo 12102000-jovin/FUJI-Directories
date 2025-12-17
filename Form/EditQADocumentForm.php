@@ -122,8 +122,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["qaIdToEdit"])) {
             <select name="revNoToEdit" class="form-select" id="revNoToEdit" required>
                 <option disabled selected hidden></option>
                 <?php
-                for ($i = 0; $i <= 99; $i++) {
-                    // Format the number with leading zeros (e.g., 0 -> R00, 9 -> R09, 10 -> R10)
+                for ($i = 1; $i <= 99; $i++) {
+                    // Format the number with leading zeros (e.g., 0 -> R01, 9 -> R09, 10 -> R10)
                     $rev = "R" . str_pad($i, 2, "0", STR_PAD_LEFT);
 
                     echo "<option value=\"$rev\"" . ($row['rev_no'] === $rev ? ' selected' : '') . ">$rev</option>";

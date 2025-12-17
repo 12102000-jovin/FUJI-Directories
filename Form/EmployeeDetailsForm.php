@@ -99,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     }
     $visaExpiryDate = isset($_POST["visaExpiryDate"]) ? $_POST["visaExpiryDate"] : null;
 
-    // ================ C O N T A C T S ================ 
+    // ================ C O N T A C T S ================  
     if (empty($_POST["address"])) {
         $errors['address'] = "Address is required";
     } else {
@@ -109,6 +109,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     $email = isset($_POST['email']) && $_POST['email'] !== "" ? $_POST['email'] : null;
 
     $personalEmail = isset($_POST['personalEmail']) && $_POST['personalEmail'] !== "" ? $_POST['personalEmail'] : null;
+
+    $workPhone = isset($_POST['workPhone']) && $_POST['workPhone'] !== "" ? $_POST['workPhone'] : null;
+    $extensionNum = isset($_POST['extensionNum']) && $_POST['extensionNum'] !== "" ? $_POST['extensionNum'] : null;
 
     if (empty($_POST["phoneNumber"])) {
         $errors['phoneNumber'] = "Phone Number is required";
@@ -377,10 +380,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
     } else if (empty($errors)) {
         // If there are no errors, proceed with database insertion
         // Prepare and execute SQL statement to insert data into 'employees' table
-        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift, dietary_restrictions, visa_restrictions) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (first_name, last_name, nickname, gender, dob, visa, visa_expiry_date , address, email, personal_email, work_phone_number, extension_num, phone_number, plate_number, emergency_contact_phone_number, emergency_contact_name, emergency_contact_relationship, employee_id, start_date, employment_type, department, section, position, locker_number, bank_building_society, bsb, account_number, superannuation_fund_name, unique_superannuation_identifier, superannuation_member_number, tax_file_number, higher_education_loan_programme, financial_supplement_debt, profile_image, payroll_type, tool_allowance, work_shift, dietary_restrictions, visa_restrictions) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssssssssssssissssssssssiississi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift, $dietaryRestrictions, $visaRestrictions);
+        $stmt->bind_param("sssssssssssssssssssssssssssssssiississi", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $workPhone, $extensionNum, $phoneNumber, $vehicleNumberPlate, $emergencyContact, $emergencyContactName, $emergencyContactRelationship, $employeeId, $startDate, $employmentType, $department, $section, $position, $lockerNumber, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuatioIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $encodedImage, $payrollType, $toolAllowance, $workShift, $dietaryRestrictions, $visaRestrictions);
         // Execute the prepared statement for inserting into the 'employees' table
         if ($stmt->execute()) {
             echo "Employee data inserted successfully.";
@@ -711,7 +714,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             </div>
                         </div>
 
-
                         <div class="form-group col-md-6 mt-3 d-none" id="dietaryRestrictionsInput">
                             <label for="dietaryRestrictions" class="fw-bold"><small>Dietary Restrictions</small></label>
                             <input class="form-control" type="text" name="dietaryRestrictions" id="dietaryRestrictions"
@@ -757,6 +759,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['firstName']) && isset
                             <div class="invalid-feedback">
                                 Please provide a valid personal email address.
                             </div>
+                        </div>
+
+                        <div class="form-group col-md-6 mt-3">
+                            <label for="workPhone" class="fw-bold"><small>Work Phone</small></label>
+                            <input type="text" class="form-control" id="workPhone" name="workPhone">
+                        </div>
+
+                        <div class="form-group col-md-6 mt-3">
+                            <label for="extensionNumber" class="fw-bold"><small>Extension Number</small></label>
+                            <input type="text" class="form-control" id="extensionNumber" name="extensionNumber">
                         </div>
 
                         <div class="form-group col-md-6 mt-3">

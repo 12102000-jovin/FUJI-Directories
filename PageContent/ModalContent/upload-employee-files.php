@@ -158,6 +158,7 @@
                     <option value="Birth Certificate">Birth Certificate</option>
                     <option value="CoE">CoE</option>
                     <option value="ID">ID</option>
+                    <option value="Medicare">Medicare</option>
                     <option value="Passport">Passport</option>
                     <option value="Qualifications">Qualifications</option>
                     <option value="Resume">Resume</option>
@@ -356,6 +357,8 @@
                     employeeFileName.textContent = currentDateValue + "-CoE (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                 } else if (selectedResumeIdQualifications.value.trim() === "ID") {
                     employeeFileName.textContent = currentDateValue + "-ID (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
+                } else if (selectedResumeIdQualifications.value.trim() === "Medicare") {
+                    employeeFileName.textContent = currentDateValue + "-Medicare (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                 } else if (selectedResumeIdQualifications.value.trim() === "Passport") {
                     employeeFileName.textContent = currentDateValue + "-Passport (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                 } else if (selectedResumeIdQualifications.value.trim() === "Qualifications") {
@@ -829,6 +832,8 @@
                         employeeFileName.textContent = fileUploadDateInputValue + "-CoE (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                     } else if (selectedResumeIdQualifications.value.trim() === "ID") {
                         employeeFileName.textContent = fileUploadDateInputValue + "-ID (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
+                    } else if (selectedResumeIdQualifications.value.trim() === "Medicare") {
+                        employeeFileName.textContent = fileUploadDateInputValue + "-Medicare (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                     } else if (selectedResumeIdQualifications.value.trim() === "Passport") {
                         employeeFileName.textContent = fileUploadDateInputValue + "-Passport (" + empIdToUploadEmployeeFile + " " + empNameToUploadEmployeeFile + ") Signed";
                     } else if (selectedResumeIdQualifications.value.trim() === "Qualifications") {

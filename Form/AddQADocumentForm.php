@@ -103,12 +103,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addDocument"])) {
             <select name="revNo" class="form-select" id="revNo" required>
                 <option disabled selected hidden></option>
                 <?php
-                for ($i = 0; $i <= 99; $i++) {
-                    // Format the number with leading zeros (e.g., 0 -> R00, 9 -> R09, 10 -> R10)
+                for ($i = 1; $i <= 99; $i++) {
+                    // Format the number with leading zeros (e.g., 0 -> R01, 9 -> R09, 10 -> R10)
                     $rev = "R" . str_pad($i, 2, "0", STR_PAD_LEFT);
 
-                    // Check if the current value is R00 and set it as selected
-                    $selected = ($rev === 'R00') ? 'selected' : '';
+                    // Check if the current value is R01 and set it as selected
+                    $selected = ($rev === 'R01') ? 'selected' : '';
 
                     echo "<option value=\"$rev\" $selected>$rev</option>";
                 }

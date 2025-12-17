@@ -252,7 +252,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 <tr class="text-center">
                                     <th class="py-4 align-middle">Name</th>
                                     <th class="py-4 align-middle">Employee Id</th>
-                                    <th class="py-4 aling-middle">System Role</th>
+                                    <th class="py-4 align-middle">System Role</th>
                                     <th class="py-4 align-middle">Action</th>
                                 </tr>
                             </thead>
@@ -582,6 +582,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                             </div>
                         </div>
                     </div>
+        
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-dark">Add User</button>
@@ -639,7 +640,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
                                 Please provide a role.
                             </div>
                         </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -672,7 +672,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['employeeIdToDelete'])
             </div>
         </div>
     </div>
-
+    
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             // Initialize Bootstrap modal

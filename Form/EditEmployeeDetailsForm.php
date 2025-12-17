@@ -59,6 +59,8 @@
             $address = $_POST['address'];
             $email = !empty($_POST['email']) ? $_POST['email'] : null;
             $personalEmail = !empty($_POST['personalEmail']) ? $_POST['personalEmail'] : null;
+            $workNumber = !empty($_POST['workNumber']) ? $_POST['workNumber'] : null;
+            $extensionNum = !empty($_POST['extensionNumber']) ? $_POST['extensionNumber'] : null;
             $phoneNumber = $_POST['phoneNumber'];
             $vehicleNumberPlate = isset($_POST['vehicleNumberPlate']) && $_POST['vehicleNumberPlate'] !== "" ? $_POST['vehicleNumberPlate'] : null;
             $emergencyContactName = $_POST['emergencyContactName'];
@@ -174,9 +176,9 @@
             $higherEducationLoanProgramme = $_POST['higherEducationLoanProgramme'];
             $financialSupplementDebt = $_POST['financialSupplementDebt'];
 
-            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, work_shift = ?, permanent_date = ?, locker_number = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ?, dietary_restrictions = ?, visa_restrictions = ? WHERE employee_id = ?";
+            $edit_employee_detail_sql = "UPDATE employees SET first_name = ?, last_name = ?, nickname = ?, gender = ?, dob = ?, visa = ?, visa_expiry_date = ?, address = ?, email= ?, personal_email = ?, work_phone_number = ?, extension_num = ?, phone_number = ?, plate_number = ?, emergency_contact_name = ?, emergency_contact_phone_number = ?, emergency_contact_relationship = ?, start_date = ?, department = ?, section = ?, work_shift = ?, permanent_date = ?, locker_number = ?, employment_type = ?, position = ?, payroll_type = ?, bank_building_society = ?, bsb = ?, account_number = ?, superannuation_fund_name = ?, unique_superannuation_identifier = ?, superannuation_member_number = ?, tax_file_number = ?, higher_education_loan_programme = ?, financial_supplement_debt = ?, dietary_restrictions = ?, visa_restrictions = ? WHERE employee_id = ?";
             $edit_employee_detail_result = $conn->prepare($edit_employee_detail_sql);
-            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssssssisis", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $workShift, $permanentDate, $lockerNumber, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $dietaryRestrictions, $visaRestrictions, $employeeIdToEdit);
+            $edit_employee_detail_result->bind_param("ssssssssssssssssssssssssssssssssssisis", $firstName, $lastName, $nickname, $gender, $dob, $visaStatus, $visaExpiryDate, $address, $email, $personalEmail, $workNumber, $extensionNum, $phoneNumber, $vehicleNumberPlate, $emergencyContactName, $emergencyContact, $emergencyContactRelationship, $startDate, $department, $section, $workShift, $permanentDate, $lockerNumber, $employmentType, $position, $payrollType, $bankBuildingSociety, $bsb, $accountNumber, $superannuationFundName, $uniqueSuperannuationIdentifier, $superannuationMemberNumber, $taxFileNumber, $higherEducationLoanProgramme, $financialSupplementDebt, $dietaryRestrictions, $visaRestrictions, $employeeIdToEdit);
 
             if ($edit_employee_detail_result->execute()) {
                 echo '<script>window.location.replace("' . $_SERVER['PHP_SELF'] . '?employee_id=' . urlencode(trim($employeeIdToEdit)) . '");</script>';
@@ -435,6 +437,17 @@
                                         <input type="text" class="form-control" id="personalEmail" name="personalEmail"
                                             value="<?php echo (isset($personalEmail) && $personalEmail !== "" ? $personalEmail : "" )?>">
                                     </div>
+
+                                    <div class="form-group col-md-6 mt-3">
+                                        <label for="workNumber" class="fw-bold">Work Phone Number</label>
+                                        <input type="text" class="form-control" id="workNumber" name="workNumber" value="<?php echo (isset($workNumber) && $workNumber !== "" ? $workNumber : "") ?>">
+                                    </div>
+
+                                    <div class="form-group col-md-6 mt-3">
+                                        <label for="extensionNumber" class="fw-bold">Extension Number</label>
+                                        <input type="text" class="form-control" id="extensionNumber" name="extensionNumber" value="<?php echo (isset($extensionNum) && $extensionNum !== "" ? $extensionNum : "") ?>">
+                                    </div>
+
                                     <div class="form-group col-md-6 mt-3">
                                         <label for="phoneNumber" class="fw-bold">Mobile</label>
                                         <input type="text" class="form-control" id="phoneNumber"
@@ -447,8 +460,8 @@
                                     </div>
 
                                     <div class="form-group col-md-6 mt-3">
-                                        <label for="vehicleNumberPlate" class="fw-bold"><small>Vehicle
-                                                Number Plate</small></label>
+                                        <label for="vehicleNumberPlate" class="fw-bold">Vehicle
+                                                Number Plate</label>
                                         <input type="text" class="form-control" id="vehicleNumberPlate"
                                             name="vehicleNumberPlate"
                                             value="<?php echo isset($vehicleNumberPlate) && $vehicleNumberPlate !== "" ? $vehicleNumberPlate : ""; ?>">

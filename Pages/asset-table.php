@@ -18,6 +18,18 @@ $projectName = $config['project_name'];
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'asset_no';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
+// Handle sorting for employee name specifically
+$orderByClause = "";
+switch ($sort) {
+    case 'allocated_to':
+        // Sort by employee last name, then first name
+        $orderByClause = "employees.first_name $order";
+        break;
+    default:
+        $orderByClause = "$sort $order";
+        break;
+}
+
 // Pagination
 $records_per_page = isset($_GET['recordsPerPage']) ? intval($_GET['recordsPerPage']) : 30; // Number of records per page
 $page = isset($_GET["page"]) ? intval($_GET["page"]) : 1; // Current Page
@@ -26,7 +38,14 @@ $offset = ($page - 1) * $records_per_page; // Offset for SQL query
 $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Search condition
-$whereClause = "(asset_no LIKE '%$searchTerm%' OR asset_name LIKE '%$searchTerm%' OR serial_number LIKE '%$searchTerm%' OR operating_system LIKE '%$searchTerm%' )";
+$whereClause = "(asset_no LIKE '%$searchTerm%' 
+                OR asset_name LIKE '%$searchTerm%' 
+                OR serial_number LIKE '%$searchTerm%' 
+                OR operating_system LIKE '%$searchTerm%'
+                OR CONCAT(employees.first_name, ' ', employees.last_name) LIKE '%$searchTerm%'
+                OR employees.first_name LIKE '%$searchTerm%'
+                OR employees.last_name LIKE '%$searchTerm%'
+                OR employees.nickname LIKE '%$searchTerm%')";
 
 // Arrays to hold selected filter values
 $selected_departments = [];
@@ -123,7 +142,10 @@ $assets_sql = "SELECT
                     location.location_name,
                     department.department_name,
                     latest_cal.latest_calibration,
-                    latest_main.latest_maintenance
+                    latest_main.latest_maintenance,
+                    employees.first_name,
+                    employees.last_name,
+                    employees.nickname
                 FROM assets
                 LEFT JOIN location 
                     ON assets.location_id = location.location_id
@@ -143,14 +165,18 @@ $assets_sql = "SELECT
                     GROUP BY asset_id
                 ) AS latest_main
                     ON assets.asset_id = latest_main.asset_id
+                LEFT JOIN employees ON assets.allocated_to = employees.employee_id 
                 WHERE $whereClause 
-                ORDER BY $sort $order 
+                ORDER BY $orderByClause 
                 LIMIT $offset, $records_per_page";
 
 $assets_result = $conn->query($assets_sql);
 
 // Get total number of records
-$total_records_sql = "SELECT COUNT(*) AS total FROM assets WHERE $whereClause";
+$total_records_sql = "SELECT COUNT(*) AS total 
+                      FROM assets 
+                      LEFT JOIN employees ON assets.allocated_to = employees.employee_id 
+                      WHERE $whereClause";
 $total_records_result = $conn->query($total_records_sql);
 $total_records = $total_records_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
@@ -216,7 +242,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["assetIdToDelete"])) {
 $urlParams = $_GET;
 
 // Get total count of filtered results (Total)
-$count_sql = "SELECT COUNT(*) as total FROM assets WHERE $whereClause";
+$count_sql = "SELECT COUNT(*) as total FROM assets LEFT JOIN employees ON assets.allocated_to = employees.employee_id WHERE $whereClause";
 $count_stmt = $conn->prepare($count_sql);
 if (!empty($types)) {
     $count_stmt->bind_param($types, ...$params);
@@ -309,6 +335,7 @@ $total_count = $count_row['total'];
                             }
                         }
                         ?>
+                        <input type="hidden" name="page" value="1">
                         <div class="d-flex align-items-center">
                             <div class="input-group me-2">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -533,6 +560,10 @@ $total_count = $count_row['total'];
                                 onclick="updateSort('status', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Status <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                        <th class="py-4 align-middle text-center"><a
+                                onclick="updateSort('disposal_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
+                                class="text-decoration-none text-white" style="cursor:pointer"> Disposal Date <i
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                         <th class="py-4 align-middle text-center"> <a
                                 onclick="updateSort('allocated_to', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Allocated to <i
@@ -555,21 +586,17 @@ $total_count = $count_row['total'];
                                 class="text-decoration-none text-white" style="cursor: pointer">Cost <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a>
                         </th>
-                        <th class="py-4 align-middle text-center"><a
+                        <!-- <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('whs_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="curdor: pointer">WHS <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
-                        <th class="py-4 align-middle text-center"><a
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th> -->
+                        <!-- <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('ict_asset', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="curdor: pointer">ICT <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
+                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th> -->
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('purchase_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
                                 class="text-decoration-none text-white" style="cursor:pointer"> Purchase Date <i
-                                    class="fa-solid fa-sort fa-md ms-1"></i></a></th>
-                        <th class="py-4 align-middle text-center"><a
-                                onclick="updateSort('disposal_date', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
-                                class="text-decoration-none text-white" style="cursor:pointer"> Disposal Date <i
                                     class="fa-solid fa-sort fa-md ms-1"></i></a></th>
                         <th class="py-4 align-middle text-center"><a
                                 onclick="updateSort('latest_calibration', '<?= $order == 'asc' ? 'desc' : 'asc' ?>')"
@@ -648,44 +675,28 @@ $total_count = $count_row['total'];
                                     }
                                     ?>
                                 "><?= $row['status'] ?></td>
+                                <td class="py-3 align-middle text-center"
+                                    style="<?= isset($row['disposal_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
+                                    <?= isset($row['disposal_date']) && $row['disposal_date'] ? date('j F Y', strtotime($row['disposal_date'])) : 'N/A' ?>
+                                </td>
                                 <?php
-                                $employee_id = $row['allocated_to'];
-                                $employee_name = "N/A"; // Default value
-                        
-                                if (isset($employee_id)) {
-                                    // Prepare and execute the query to fetch employee name
-                                    $stmt = $conn->prepare("SELECT first_name, last_name, nickname FROM employees WHERE employee_id = ?");
-                                    $stmt->bind_param("i", $employee_id);
-                                    $stmt->execute();
-                                    $result = $stmt->get_result();
+                                // Remove the old employee query section and replace with this simpler version
+                                $employee_name = "N/A";
 
-                                    // Fetch the employee name
-                                    if ($rowEmployee = $result->fetch_assoc()) {
-                                        $employee_first_name = $rowEmployee['first_name'];
-                                        $employee_last_name = $rowEmployee['last_name'];
-                                        $employee_nickname = $rowEmployee['nickname'];
+                                if (!empty($row['first_name']) && !empty($row['last_name'])) {
+                                    $employee_first_name = $row['first_name'];
+                                    $employee_last_name = $row['last_name'];
+                                    $employee_nickname = $row['nickname'];
 
-                                        // Combine with nickname if it exists
-                                        if (!empty($employee_nickname)) {
-                                            $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
-                                        } else {
-                                            $employee_name = $employee_first_name . ' ' . $employee_last_name;
-                                        }
-                                    }// Fetch the employee name
-                                    if ($rowEmployee = $result->fetch_assoc()) {
-                                        $employee_first_name = $rowEmployee['first_name'];
-                                        $employee_last_name = $rowEmployee['last_name'];
-                                        $employee_nickname = $rowEmployee['nickname'];
-
-                                        // Combine with nickname if it exists
-                                        if (!empty($employee_nickname)) {
-                                            $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
-                                        } else {
-                                            $employee_name = $employee_first_name . ' ' . $employee_last_name;
-                                        }
+                                    // Combine with nickname if it exists
+                                    if (!empty($employee_nickname)) {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name . ' (' . $employee_nickname . ')';
+                                    } else {
+                                        $employee_name = $employee_first_name . ' ' . $employee_last_name;
                                     }
                                 }
                                 ?>
+
                                 <td class="py-3 align-middle text-center"
                                     style="<?= ($employee_name !== 'N/A') ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= ($employee_name !== 'N/A') ? htmlspecialchars($employee_name) : 'N/A' ?>
@@ -700,15 +711,11 @@ $total_count = $count_row['total'];
                                 <td class="py-3 align-middle text-center" <?= isset($row["cost"]) ? "" : "style='background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold'" ?>>
                                     <?= isset($row['cost']) ? '$' . number_format($row['cost'], 2) : "N/A" ?>
                                 </td>
-                                <td class="py-3 align-middle text-center"><?= $row['whs_asset'] == 1 ? 'Yes' : 'No' ?></td>
-                                <td class="py-3 align-middle text-center"><?= $row['ict_asset'] == 1 ? 'Yes' : 'No' ?></td>
+                                <!-- <td class="py-3 align-middle text-center"><?= $row['whs_asset'] == 1 ? 'Yes' : 'No' ?></td>
+                                <td class="py-3 align-middle text-center"><?= $row['ict_asset'] == 1 ? 'Yes' : 'No' ?></td> -->
                                 <td class="py-3 align-middle text-center"
                                     style="<?= isset($row['purchase_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
                                     <?= isset($row['purchase_date']) && $row['purchase_date'] ? date('j F Y', strtotime($row['purchase_date'])) : 'N/A' ?>
-                                </td>
-                                <td class="py-3 align-middle text-center"
-                                    style="<?= isset($row['disposal_date']) ? '' : 'background: repeating-linear-gradient(45deg, #c8c8c8, #c8c8c8 10px, #b3b3b3 10px, #b3b3b3 20px); color: white; font-weight: bold;' ?>">
-                                    <?= isset($row['disposal_date']) && $row['disposal_date'] ? date('j F Y', strtotime($row['disposal_date'])) : 'N/A' ?>
                                 </td>
                                 <?php
                                 $today = new DateTime('now', new DateTimeZone('Australia/Sydney'));
@@ -1194,8 +1201,15 @@ $total_count = $count_row['total'];
                 modalLocation.value = location;
                 modalNotes.value = notes;
                 modalAllocatedTo.value = allocatedTo;
-                modalDepreciationTimeframe.value = depreciationTimeframe;
-                modalDepreciationPercentage.value = depreciationPercentage;
+
+                if (depreciationTimeframe) {
+                    modalDepreciationTimeframe.value = depreciationTimeframe;
+                }
+
+                if (depreciationPercentage) {
+                    modalDepreciationPercentage.value = depreciationPercentage;
+                }
+
 
                 if (accountsAsset === "1") {
                     document.getElementById("accountsAssetToEditYes").checked = true;
@@ -1235,6 +1249,8 @@ $total_count = $count_row['total'];
 
                     // Attach change event listener
                     statusSelect.addEventListener('change', updateDisposalDateToEditFields);
+
+                    console.log("triggered");
                 }
                 // Initialize fields based on the currently selected option
                 updateDisposalDateToEditFields();

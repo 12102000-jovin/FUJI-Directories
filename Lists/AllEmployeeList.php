@@ -457,21 +457,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                     </ol>
                 </nav> -->
             </div>
-            <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
-                <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
-                    <!-- <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a> -->
+
+            <div class="col-md-6 d-flex justify-content-start justify-content-md-end align-items-center mt-3 mt-md-0">
+                <!-- <a class="btn btn-primary fw-bold me-2" href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/hr-index.php"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a> -->
+                <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2" || $role == "read") { ?>
+                    <a class="btn btn-info text-white fw-bold me-2"
+                        href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/employee-documents-table.php"> <i
+                            class="fa-solid fa-file-lines"></i> Emp Docs</a>
+                <?php } ?>
+                <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
                     <a class="btn btn-warning text-white fw-bold me-2"
                         href="http://<?php echo $serverAddress ?>/<?php echo $projectName ?>/Pages/leaves-table.php"> <i
                             class="fa-solid fa-calendar-days"></i> Leaves</a>
                     <a class="btn btn-primary fw-bold me-2" type="button" data-bs-toggle="modal"
                         data-bs-target="#HRDashboardModal"> <i class="fa-solid fa-chart-pie"></i> HR Dashboard </a>
-                    <?php if ($role == "full control") { ?>
-                        <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
-                            <i class="fa-solid fa-user-plus"></i> Add Employee
-                        </a>
-                    <?php } ?>
-                </div>
-            <?php } ?>
+                <?php } ?>
+                <?php if ($role == "full control" || $role == "read") { ?>
+                    <a class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                        <i class="fa-solid fa-user-plus"></i> Add Employee
+                    </a>
+                <?php } ?>
+            </div>
+
         </div>
         <hr />
         <div class="row">
@@ -929,7 +936,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
                                     <!-- Profile image -->
                                     <div class="bg-gradient shadow-lg rounded-circle"
                                         style="width: 80px; height: 80px; overflow: hidden;">
-                                        <img src="data:image/jpeg;base64,<?php echo $profileImage; ?>" alt="Profile Image"
+                                        <img loading="lazy" src="data:image/jpeg;base64,<?php echo $profileImage; ?>" alt="Profile Image"
                                             class="profile-pic img-fluid rounded-circle"
                                             style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>
@@ -2063,8 +2070,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
             localStorage.setItem(columnClass, 'visible');
             localStorage.removeItem(columnClass + '_timestamp'); // Clear the timestamp
         });
-    }
+    }9
 </script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".payroll-cell").forEach(cell => {
@@ -2076,7 +2084,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
         });
     });
 </script>
-
 
 <script>
     function editDepartment(cell) {
@@ -2370,13 +2377,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["workShiftCellToEdit"]
         const columnIndexes = {
             'Employee ID': 1,
             'Name': 2,
+            'Nickname': 3,
             'Position': 4,
             'Gender': 5,
+            'Status': 6,
             'Department': 7,
             'Employment Type': 8,
+            'Age': 9,
+            'Dietary Restrictions': 10,
+            'Payroll Type': 11,
+            'Work Shift': 12,
             'Start Date': 13,
+            'Duration': 14,
+            'Permanent Date': 15,
             'Visa': 16,
-            'Visa Expiry Date': 17
+            'Visa Expiry Date': 17,
+            'Last Date': 18,
+            'Locker Number': 19,
         };
         const exportIndexes = Object.values(columnIndexes);
 

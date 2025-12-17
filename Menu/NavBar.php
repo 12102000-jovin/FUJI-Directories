@@ -5,7 +5,7 @@ error_reporting(E_ALL);
 
 require_once("../db_connect.php");
 require_once("../status_check.php");
-require_once("../system_role_check.php"); 
+require_once("../system_role_check.php");
 
 $config = include('../config.php');
 $serverAddress = $config['server_address'];
@@ -213,11 +213,11 @@ $user_details_result->free();
         </div>
         <div class="d-none d-md-block">
             <div class="d-flex justify-content-center signature-bg-color">
-            <a href="<?php echo 'http://' . $serverAddress . '/' . $projectName . '/Pages/index.php'; ?>"
-                class="col py-2 text-decoration-none text-white text-center fw-bold border-end abbreviation"
-                style="cursor:pointer">
-                <i class="fa-solid fa-house me-1 mb-1"></i> Home
-            </a>
+                <a href="<?php echo 'http://' . $serverAddress . '/' . $projectName . '/Pages/index.php'; ?>"
+                    class="col py-2 text-decoration-none text-white text-center fw-bold border-end abbreviation"
+                    style="cursor:pointer">
+                    <i class="fa-solid fa-house me-1 mb-1"></i> Home
+                </a>
 
                 <?php
                 $folders_abbr = [
@@ -229,6 +229,7 @@ $user_details_result->free();
                     'ES' => 'Estimating',
                     'HR' => 'Human Resources',
                     'OS' => 'Operations Support',
+                    'MN' => 'Management',
                     'PJ' => 'Project',
                     'QA' => 'Quality Assurances',
                     'QC' => 'Quality Control',
@@ -250,7 +251,7 @@ $user_details_result->free();
                         $folder_page = "http://$serverAddress/$projectName/Pages/capa-table.php";
                     } else if (htmlspecialchars($abbr) == "HR") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/employee-list-index.php?status%5B%5D=1&apply_filters=";
-                    }  else if (htmlspecialchars($abbr) == "PJ") {
+                    } else if (htmlspecialchars($abbr) == "PJ") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/project-table.php";
                     } else if (htmlspecialchars($abbr) == "QA") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/qa-table.php";
@@ -258,6 +259,8 @@ $user_details_result->free();
                         $folder_page = "http://$serverAddress/$projectName/Pages/cable-table.php";
                     } else if ($abbr == "WHS") {
                         $folder_page = "http://$serverAddress/$projectName/Pages/whs-table.php";
+                    } else if ($abbr == "MN") {
+                        $folder_page = "http://$serverAddress/$projectName/Pages/management-page.php";
                     } else {
                         $folder_page = "http://$serverAddress/$projectName/Pages/index.php";
                     }
@@ -276,25 +279,27 @@ $user_details_result->free();
         <div class="collapse navbar-collapse text-center d-md-none" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto list-unstyled">
                 <?php foreach ($folders as $folder_name): ?>
-                    <a href="<?php 
-                          if (htmlspecialchars($folder_name) == "Asset") {
-                            echo "http://$serverAddress/$projectName/Pages/asset-table.php";
-                        } else if (htmlspecialchars($folder_name) == "CAPA") {
-                            echo "http://$serverAddress/$projectName/Pages/capa-table.php";
-                        } else if (htmlspecialchars($folder_name) == "Human Resources") {
-                            echo "http://$serverAddress/$projectName/Pages/employee-list-index.php";
-                        }  else if (htmlspecialchars($folder_name) == "Project") {
-                            echo "http://$serverAddress/$projectName/Pages/project-table.php";
-                        } else if (htmlspecialchars($folder_name) == "Quality Assurances") {
-                            echo "http://$serverAddress/$projectName/Pages/qa-table.php";
-                        } else if ($folder_name == "Test and Tag") {
-                            echo "http://$serverAddress/$projectName/Pages/cable-table.php";
-                        } else if ($folder_name == "Work Health and Safety") {
-                            echo "http://$serverAddress/$projectName/Pages/whs-table.php";
-                        } else {
-                            echo "http://$serverAddress/$projectName/Pages/index.php";
-                        }
-                        ?>" class="text-decoration-none text-dark">
+                    <a href="<?php
+                    if (htmlspecialchars($folder_name) == "Asset") {
+                        echo "http://$serverAddress/$projectName/Pages/asset-table.php";
+                    } else if (htmlspecialchars($folder_name) == "CAPA") {
+                        echo "http://$serverAddress/$projectName/Pages/capa-table.php";
+                    } else if (htmlspecialchars($folder_name) == "Human Resources") {
+                        echo "http://$serverAddress/$projectName/Pages/employee-list-index.php";
+                    } else if (htmlspecialchars($folder_name) == "Project") {
+                        echo "http://$serverAddress/$projectName/Pages/project-table.php";
+                    } else if (htmlspecialchars($folder_name) == "Quality Assurances") {
+                        echo "http://$serverAddress/$projectName/Pages/qa-table.php";
+                    } else if ($folder_name == "Test and Tag") {
+                        echo "http://$serverAddress/$projectName/Pages/cable-table.php";
+                    } else if ($folder_name == "Work Health and Safety") {
+                        echo "http://$serverAddress/$projectName/Pages/whs-table.php";
+                    } else if ($folder_name == "Management") {
+                        echo "http://$serverAddress/$projectName/Pages/management-page.php";
+                    } else {
+                        echo "http://$serverAddress/$projectName/Pages/index.php";
+                    }
+                    ?>" class="text-decoration-none text-dark">
                         <li class=" py-2 p-1 fw-bold d-flex justify-content-center align-items-center">
                             <span class="folder-name"><?= htmlspecialchars($folder_name) ?></span>
                         </li>
@@ -303,6 +308,7 @@ $user_details_result->free();
             </ul>
         </div>
     </div>
+    <?php require_once("../logout.php") ?>
 </body>
 
 
@@ -337,5 +343,3 @@ $user_details_result->free();
         topMenuTitle.textContent = documentTitle;
     })
 </script>
-
-

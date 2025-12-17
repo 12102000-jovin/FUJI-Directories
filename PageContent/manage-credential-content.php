@@ -116,7 +116,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username']) && isset(
                                 <i class="fas fa-eye"></i>
                             </a>
                         </div>
-
                         <div class="text-center">
                             <button type="submit" class="btn signature-btn mt-3" id="updateCredentialButton">Save</button>
                         </div>
@@ -168,5 +167,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['username']) && isset(
         });
     </script>
 </body>
-
 </html>

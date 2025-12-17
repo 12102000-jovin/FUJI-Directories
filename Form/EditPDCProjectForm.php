@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['fbnToEdit'])) {
     $pdcProjectIdToEdit = !empty($_POST["pdcProjectIdToEdit"]) ? $_POST["pdcProjectIdToEdit"] : NULL;
     $projectNo = !empty($_POST["projectNoToEdit"]) ? $_POST["projectNoToEdit"] : NULL;
     $fbn = $_POST["fbnToEdit"];
@@ -25,9 +25,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
     $rosdChangedConfirmation = isset($_POST["rosdChangedConfirmationToEdit"]) ? $_POST["rosdChangedConfirmationToEdit"] : NULL;
     $rosdCorrectConfirmation = isset($_POST["rosdCorrectConfirmationToEdit"]) ? $_POST["rosdCorrectConfirmationToEdit"] : NULL;
     $freightType = $_POST["freightTypeToEdit"];
-    $estimatedDepartureDate = !empty($_POST["estimatedDepartureDateToEdit"]) ? date('Y-m-d', strtotime($_POST["estimatedDepartureDateToEdit"])) : NULL;
     $actualDepartureDate = !empty($_POST["actualDepartureDateToEdit"]) ? date('Y-m-d', strtotime($_POST["actualDepartureDateToEdit"])) : NULL;
     $actualDeliveredDate = !empty($_POST["actualDeliveredDateToEdit"]) ? date('Y-m-d', strtotime($_POST["actualDeliveredDateToEdit"])) : NULL;
+    $notes = !empty($_POST["notesToEdit"]) ? htmlspecialchars($_POST["notesToEdit"]) : NULL;
 
     // Calculate conflict 
     if ($rosdPO !== null && $rosdForecast !== null && ($rosdPO === $rosdForecast)) {
@@ -59,15 +59,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
         freight_type = ?, 
         rosd_change_approval = ?, 
         rosd_changed = ?, 
-        estimated_departure_date = ?, 
         actual_departure_date = ?, 
         actual_delivered_date = ?, 
-        approved = ?
+        approved = ?,
+        notes = ?
         WHERE pdc_project_id = ?";
 
     if ($edit_pdc_project_stmt = $conn->prepare($edit_pdc_project_sql)) {
         $edit_pdc_project_stmt->bind_param(
-            "ssssssssssiissssisissssis",
+            "ssssssssssiissssisisssiss",
             $projectNo,
             $fbn,
             $siteType,
@@ -88,10 +88,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
             $freightType,
             $rosdChangedConfirmation,
             $rosdChanged,
-            $estimatedDepartureDate,
             $actualDepartureDate,
             $actualDeliveredDate,
             $rosdCorrectConfirmation,
+            $notes,
             $pdcProjectIdToEdit
         );
 
@@ -127,11 +127,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                     </div>
                     <div class="form-group col-md-6 mt-md-0 mt-3">
                         <label for="fbnToEdit" class="fw-bold">FBN</label>
-                        <input type="text" name="fbnToEdit" class="form-control" id="fbnToEdit">
+                        <input type="text" name="fbnToEdit" class="form-control" id="fbnToEdit" required>
+                        <div class="invalid-feedback fw-bold">
+                            Please provide the FBN.
+                        </div>
                     </div>
                     <div class="form-group col-md-6 mt-3">
                         <label for="siteTypeToEdit" class="fw-bold">Site Type</label>
-                        <input type="text" name="siteTypeToEdit" class="form-control" id="siteTypeToEdit">
+                        <input type="text" name="siteTypeToEdit" class="form-control" id="siteTypeToEdit" required>
+                        <div class="invalid-feedback fw-bold">
+                            Please provide the site type.
+                        </div>
                     </div>
                     <div class="form-group col-md-6 mt-3">
                         <label for="statusToEdit" class="fw-bold">Status</label>
@@ -207,7 +213,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                     </div>
                     <div class="form-group col-md-6 mt-3">
                         <label for="quantityToEdit" class="fw-bold">Quantity</label>
-                        <input type="number" name="quantityToEdit" id="quantityToEdit" class="form-control">
+                        <input type="number" name="quantityToEdit" id="quantityToEdit" class="form-control" required>
+                        <div class="invalid-feedback fw-bold">
+                            Please provide the quantity.
+                        </div>
                     </div>
                     <div class="form-group col-md-6 mt-3">
                         <label for="costToEdit" class="fw-bold">Cost</label>
@@ -219,8 +228,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                     </div>
                     <div class="form-group col-md-12 mt-3">
                         <label for="serialNumberToEdit" class="fw-bold">Serial Number</label>
-                        <textarea type="text" name="serialNumberToEdit" class="form-control" rows="4"
+                        <textarea type="text" name="serialNumberToEdit" class="form-control" rows="1"
                             id="serialNumberToEdit"> </textarea>
+                    </div>
+
+                    <div class="form-group col-md-12 mt-3">
+                        <label for="notesToEdit" class="fw-bold">Notes</label>
+                        <textarea type="text" name="notesToEdit" class="form-control" rows="1" id="notesToEdit"></textarea>
                     </div>
                 </div>
             </div>
@@ -233,7 +247,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                 <div class="row">
                     <div class="form-group col-md-6 mt-md-0 mt-3">
                         <label for="rosdForecastToEdit" class="fw-bold">rOSD (Forecast)</label>
-                        <input type="date" id="rosdForecastToEdit" name="rosdForecastToEdit" class="form-control">
+                        <input type="date" id="rosdForecastToEdit" name="rosdForecastToEdit" class="form-control" required>
                     </div>
                     <div class="form-group col-md-6">
                         <label for="rosdPOToEdit" class="fw-bold">rOSD (PO)</label>
@@ -263,8 +277,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                                 <input class="form-check-input" type="radio" value="1"
                                     name="rosdChangedConfirmationToEdit" id="rosdChangedYesToEdit"
                                     style="cursor: pointer">
-                                <label class="form-check-label" for="rosdChangedYesToEdit"
-                                    style="cursor: pointer">
+                                <label class="form-check-label" for="rosdChangedYesToEdit" style="cursor: pointer">
                                     Yes
                                 </label>
                             </div>
@@ -272,8 +285,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                                 <input class="form-check-input" type="radio" value="0"
                                     name="rosdChangedConfirmationToEdit" id="rosdChangedNoToEdit"
                                     style="cursor: pointer">
-                                <label class="form-check-label" for="rosdChangedNoToEdit"
-                                    style="cursor: pointer">
+                                <label class="form-check-label" for="rosdChangedNoToEdit" style="cursor: pointer">
                                     No
                                 </label>
                             </div>
@@ -327,11 +339,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
                         </select>
                     </div>
 
-                    <div class="form-group col-md-6 mt-3">
+                    <!-- <div class="form-group col-md-6 mt-3">
                         <label for="estimatedDepartureDateToEdit" class="fw-bold">Estimated Departure Date</label>
                         <input type="date" name="estimatedDepartureDateToEdit" id="estimatedDepartureDateToEdit"
                             class="form-control">
-                    </div>
+                    </div> -->
 
                     <div class="form-group col-md-6 mt-3">
                         <label for="actualDepartmentDateToEdit" class="fw-bold">Actual Departure Date</label>
@@ -474,4 +486,86 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['editPDCProjectForm'])
             rosdChangedYes.addEventListener('change', updateRosdChanged);
         });
     });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editPDCProjectForm = document.getElementById("editPDCProjectForm");
+        const errorMessage = document.getElementById('resultError');
+        const pdcProjectId = document.getElementById('pdcProjectIdToEdit');
+        const fbn = document.getElementById('fbnToEdit');
+
+        // Function to check for duplicate documents
+        function checkDuplicateDocument() {
+            return fetch('../AJAXphp/check-pdc-duplicate.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ pdcProjectId: pdcProjectId.value, fbn: fbn.value })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Server Response:', data); // Log response for debugging
+                    return data === '0'; // Return true if no duplicate (0), false if duplicate (1)
+                });
+        }
+
+     // Function to validate the form
+     function validateForm() {
+            return checkDuplicateDocument().then(isDuplicateValid => {
+                return isDuplicateValid;
+            });
+        }
+
+        // Event listener for editing WHS document
+        editPDCProjectForm.addEventListener('submit', function (event) {
+            // Prevent default form submission
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Clear previous error message
+            errorMessage.classList.add('d-none');
+            errorMessage.innerHTML = '';
+
+            // Check validity of the form
+            if (editPDCProjectForm.checkValidity() === false) {
+                editPDCProjectForm.classList.add('was-validated');
+            } else {
+                // Perform duplicate document validation if the form is valid
+                validateForm().then(isValid => {
+                    if (isValid) {
+                        // Show loading spinner
+                        // loadingSpinnerEdit.classList.remove('d-none');
+
+                        // Perform AJAX submission instead of standard form submission
+                        fetch(editPDCProjectForm.action, {
+                            method: 'POST',
+                            body: new FormData(editPDCProjectForm)
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.text(); // or response.json() depending on your server response
+                            })
+                            .then(data => {
+                                // loadingSpinnerEdit.classList.add('d-none'); // Hide loading spinner after submission
+                                // Handle the server response (you may want to show a success message or update the UI)
+                                location.reload();
+                            })
+                            .catch(error => {
+                                // Handle error (display message to user)
+                                // loadingSpinnerEdit.classList.add('d-none');
+                                errorMessage.classList.remove('d-none');
+                                errorMessage.innerHTML = 'An error occurred. Please try again.';
+                            });
+                    } else {
+                        editPDCProjectForm.classList.add('was-validated');
+                        errorMessage.classList.remove('d-none');
+                        errorMessage.innerHTML = 'Duplicate FBN found.';
+                    }
+                });
+            }
+        });
+    });
+
 </script>

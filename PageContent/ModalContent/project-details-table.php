@@ -19,7 +19,6 @@
     }
 </style>
 
-
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -99,10 +98,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
     </div>
 </div>
 
-<div class="rounded-3 mb-0" style="overflow-y: hidden;">
+<div class="rounded-3 mb-0" style="max-height: 800px; overflow-y: auto;">
     <table class="table table-bordered table-hover mb-0 pb-0">
-        <thead class="print-table-head">
-            <tr>
+        <thead class="print-table-head sticky-top bg-light border-bottom-0">
+            <tr class="border-bottom border-dark">
                 <?php if ($role == "full control" || $role == "modify 1" || $role == "modify 2") { ?>
                     <th class="py-3 align-middle text-center hide-print" style="min-width: 200px">Action</th>
                 <?php } ?>
@@ -158,28 +157,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
 
         </tbody>
     </table>
-    <div class="row mt-3 m-0 mb-2 p-0">
-        <div class="col-10 d-flex justify-content-end align-items-center">
-            <h5 class="fw-bold m-0 p-0">Total Cost: </h5>
-        </div>
-        <div class="col-2 d-flex justify-content-end align-items-end">
-            <h5 id="totalValue" class="fw-bold me-5 mb-0 p-0">$0.00 </h5>
-        </div>
-    </div>
-    <div class="row m-0 mb-2 p-0">
-        <div class="col-10 d-flex justify-content-end align-items-center">
-            <h5 class="fw-bold m-0 p-0">10% Goods and Service Tax: </h5>
-        </div>
-        <div class="col-2 d-flex justify-content-end align-items-end">
-            <h5 id="taxValue" class="fw-bold me-5 mb-0 p-0">$0.00 </h5>
-        </div>
-    </div>
-    <div class="row m-0 p-0">
-        <div class="col-10 d-flex justify-content-end align-items-center">
-            <h5 class="fw-bold m-0 p-0">Total Amount Payable Including GST: </h5>
-        </div>
-        <div class="col-2 d-flex justify-content-end align-items-end">
-            <h5 id="totalWithGstValue" class="fw-bold me-5 mb-0 p-0">$0.00 </h5>
+</div>
+<div class="container-fluid">
+    <div class="row mt-4 justify-content-end">
+        <div class="col-md-3 col-lg-2">
+            <div class="d-flex justify-content-between border-bottom pb-1">
+                <span class="fw-bold signature-color">Total:</span>
+                <span class="fw-bold" id="totalValue">$0.00</span>
+            </div>
+            <div class="d-flex justify-content-between border-bottom pb-1">
+                <span class="fw-bold signature-color">GST (10%):</span>
+                <span class="fw-bold" id="taxValue">$0.00</span>
+            </div>
+            <div class="d-flex justify-content-between pt-1">
+                <span class="fw-bold signature-color">Total After GST:</span>
+                <span class="fw-bold" id="totalWithGstValue">$0.00</span>
+            </div>
         </div>
     </div>
 </div>
@@ -540,10 +533,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["addProjectDetails"]))
         $('#detailsModal').on('hidden.bs.modal', function () {
             resetModal();
         });
-
     });
-
 </script>
+
 <script>
     // JavaScript function to print the page
     function printPage() {

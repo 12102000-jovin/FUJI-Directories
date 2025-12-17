@@ -520,7 +520,7 @@ if (isset($_GET['file'])) {
                 <?php
                 $photo_found = false; // Initialize photo_found
                 $image_dir = "D:/FSMBEH-Data/00 - QA/04 - Assets/$asset_no/00 - Photos"; // Path to the actual folder on the server
-                $public_url_base = "http://192.168.0.7/assets/$asset_no/00%20-%20Photos"; // Public URL base for assets
+                $public_url_base = "http://$serverAddress/assets/$asset_no/00%20-%20Photos"; // Public URL base for assets
                 
                 if (is_dir($image_dir)) {
                     $files = scandir($image_dir); // Get all files in the folder
@@ -539,7 +539,7 @@ if (isset($_GET['file'])) {
                              class="rounded-2 asset-photo" 
                              data-bs-toggle="modal" 
                              data-bs-target="#imageModal" 
-                             data-bs-image="' . htmlspecialchars($file_path) . '">
+                             data-bs-image="' . htmlspecialchars($file_path) . '" style="object-fit: contain;">
                         <button class="btn btn-danger btn-sm delete-btn position-absolute top-0 end-0 m-1" 
                                 data-file="' . htmlspecialchars($file) . '">
                             &times;
@@ -580,7 +580,7 @@ if (isset($_GET['file'])) {
                             data-accounts-asset="<?= $row["accounts_asset"] ?>" data-whs-asset="<?= $row["whs_asset"] ?>"
                             data-purchase-date="<?= $row["purchase_date"] ?>" data-allocated-to="<?= $row["allocated_to"] ?>"
                             data-cost="<?= $row["cost"] ?>" data-notes="<?= $row["notes"] ?>"
-                            data-ict-asset="<?= $row["ict_asset"] ?>">
+                            data-disposal-date="<?= $row["disposal_date"] ?>" data-ict-asset="<?= $row["ict_asset"] ?>">
                             <i class="signature-color fa-solid fa-pen-to-square"></i>
                         </a>
                     <?php } ?>
@@ -643,6 +643,12 @@ if (isset($_GET['file'])) {
                                 <small>Status</small>
                                 <h4 class="fw-bold signature-color">
                                     <?= !empty($row['status']) ? htmlspecialchars($row['status']) : "N/A" ?>
+
+                                    <span class="text-danger">
+                                        <?= !empty($row['disposal_date'])
+                                            ? '(' . date('d M Y', strtotime($row['disposal_date'])) . ')'
+                                            : '' ?>
+                                    </span>
                                 </h4>
                             </div>
 
@@ -1223,7 +1229,7 @@ if (isset($_GET['file'])) {
                         </div>
                     </div>
 
-                                    <!-- <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <div class="p-3 shadow-lg rounded-3 mt-0 mt-md-4 signature-bg-color text-white">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mt-1 mb-1 pb-0">Others</h5>
@@ -1940,15 +1946,19 @@ if (isset($_GET['file'])) {
                 var department = button.getAttribute('data-department-id');
                 var assetName = button.getAttribute('data-asset-name');
                 var status = button.getAttribute('data-status');
+                var disposalDate = button.getAttribute('data-disposal-date');
                 var serialNumber = button.getAttribute('data-serial-number');
+                var cost = button.getAttribute('data-cost');
                 var purchaseDate = button.getAttribute('data-purchase-date');
                 var location = button.getAttribute('data-location');
+                var notes = button.getAttribute('data-notes');
+                var allocatedTo = button.getAttribute('data-allocated-to');
+                var depreciationTimeframe = button.getAttribute('data-depreciation-timeframe');
+                var depreciationPercentage = button.getAttribute('data-depreciation-percentage');
                 var accountsAsset = button.getAttribute('data-accounts-asset');
                 var whsAsset = button.getAttribute('data-whs-asset');
-                var allocatedTo = button.getAttribute('data-allocated-to');
-                var cost = button.getAttribute('data-cost');
-                var notes = button.getAttribute('data-notes');
                 var ictAsset = button.getAttribute('data-ict-asset');
+
 
                 // Update the modal's content with the extracted info
                 var modalAssetId = myModalEl.querySelector('#assetIdToEdit');
@@ -1956,25 +1966,36 @@ if (isset($_GET['file'])) {
                 var modalDepartment = myModalEl.querySelector('#departmentToEdit');
                 var modalAssetName = myModalEl.querySelector('#assetNameToEdit');
                 var modalStatus = myModalEl.querySelector('#statusToEdit');
+                var modalDisposalDate = myModalEl.querySelector('#disposalDateToEdit');
                 var modalSerialNumber = myModalEl.querySelector('#serialNumberToEdit');
+                var modalCost = myModalEl.querySelector('#costToEdit');
+                var modalAllocatedTo = myModalEl.querySelector('#allocatedToToEdit');
+                var modalDepreciationTimeframe = myModalEl.querySelector('#depreciationTimeframeToEdit');
+                var modalDepreciationPercentage = myModalEl.querySelector('#depreciationPercentageToEdit');
                 var modalPurchaseDate = myModalEl.querySelector('#purchaseDateToEdit');
                 var modalLocation = myModalEl.querySelector('#locationToEdit');
-                var modalAllocatedTo = myModalEl.querySelector('#allocatedToToEdit');
-                var modalCost = myModalEl.querySelector('#costToEdit');
                 var modalNotes = myModalEl.querySelector('#notesToEdit');
-
 
                 modalAssetId.value = assetId
                 modalAssetNo.value = assetNo.startsWith("FE") ? assetNo.substring(2) : assetNo;
                 modalDepartment.value = department;
                 modalAssetName.value = assetName;
                 modalStatus.value = status;
+                modalDisposalDate.value = disposalDate;
                 modalSerialNumber.value = serialNumber;
+                modalCost.value = cost;
                 modalPurchaseDate.value = purchaseDate;
                 modalLocation.value = location;
-                modalAllocatedTo.value = allocatedTo;
-                modalCost.value = cost;
                 modalNotes.value = notes;
+                modalAllocatedTo.value = allocatedTo;
+                
+                if (depreciationTimeframe) {
+                    modalDepreciationTimeframe.value = depreciationTimeframe;
+                }
+
+                if (depreciationPercentage) {
+                    modalDepreciationPercentage.value = depreciationPercentage;
+                }
 
                 if (accountsAsset === "1") {
                     document.getElementById("accountsAssetToEditYes").checked = true;
@@ -2014,6 +2035,8 @@ if (isset($_GET['file'])) {
 
                     // Attach change event listener
                     statusSelect.addEventListener('change', updateDisposalDateToEditFields);
+
+                    console.log("triggered details page");
                 }
                 // Initialize fields based on the currently selected option
                 updateDisposalDateToEditFields();
